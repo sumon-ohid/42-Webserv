@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstring>
+#include "Config.hpp"
 #include "unistd.h"
 
 #include "main.hpp"
@@ -51,6 +52,11 @@ int	create_socket()
 		}
 		char buffer[30000] = {0};
         valread = read( new_socket , buffer, 30000);
+		if (valread < 0)
+		{
+			std::cerr << "Error: Read failed" << std::endl;
+			return (-1);
+		}
         std::cout << buffer << "\n" << std::endl;
         write(new_socket , hello.c_str() , hello.size());
         std::cout << "------------------Hello message sent-------------------" << std::endl;;
@@ -59,10 +65,12 @@ int	create_socket()
 	}
 }
 
-int main(int argc, char **argv) {
-	(void)argv;
+int main(int argc, char **argv)
+{
+	Config config(argv[1]);
+	config.printConfig();
 	if (argc > 2) {
-		std::cerr << "Wrong unse of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
+		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
 		return ERROR;
 	}
 	std::cout << "Server started. Listening at Port " << PORT << std::endl;
