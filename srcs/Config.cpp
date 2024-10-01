@@ -1,10 +1,11 @@
 #include "Config.hpp"
 #include <cstddef>
-#include <cstring>
-#include <iterator>
-#include <map>
-#include <string>
 #include <vector>
+
+Config::Config()
+{
+    std::string configFile = "Default";
+}
 
 Config::Config(std::string configFile) : configFile(configFile)
 {
@@ -15,24 +16,20 @@ Config::Config(std::string configFile) : configFile(configFile)
         std::cerr << "The config file is invalid." << std::endl;
         exit(1);
     }
-    multiMapMaker();
 }
 
 Config::~Config()
 {
 }
 
-void Config::setConfig(std::string key, std::string value)
+void Config::setConfig(std::string line)
 {
-    configMap.insert(std::pair<std::string, std::string>(key, value));
+    configVector.push_back(line);
 }
 
-std::string Config::getConfig(std::string key)
+std::vector<std::string> Config::getConfig()
 {
-    std::map<std::string, std::string>::iterator it = configMap.find(key);
-    if (it != configMap.end())
-        return (it->second);
-    return ("");
+    return (configVector);
 }
 
 std::string Config::removeLeadingSpaces(std::string line)
@@ -70,24 +67,6 @@ void Config::readConfig()
     {
         std::cerr << "Error: cannot open config file" << std::endl;
         exit(1);
-    }
-}
-
-// --> print the config values
-void Config::printConfig()
-{
-    // size_t i = 0;
-    // while (i < configVector.size())
-    // {
-    //     std::cout << configVector[i] << std::endl;
-    //     i++;
-    // }
-
-    std::map<std::string, std::string>::iterator it = configMap.begin();
-    while (it != configMap.end())
-    {
-        std::cout << it->first << " --- " << it->second << std::endl;
-        it++;
     }
 }
 
@@ -140,31 +119,149 @@ bool Config::validationCheck()
     return (true);
 }
 
-void Config::multiMapMaker()
+// --> ServerConfig class
+ServerConfig::ServerConfig() : LocationConfig()
 {
-    std::vector<std::string> config = configVector;
-    size_t i = 1;
+}
 
-    while (i < config.size())
+ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
+{
+    std::vector<std::string> configVector = Config::getConfig();
+    size_t i = 0;
+    
+    while (i < configVector.size())
     {
-        std::string line = config[i];
-        //std::cout << "--->" << line << std::endl;
-        if (line.find("location") != std::string::npos || 
-            line.find("{") != std::string::npos || 
-            line.find("}") != std::string::npos)
+        std::string line = configVector[i];
+        
+        if (line.find("server") != std::string::npos)
         {
+            ServerConfig server;
             i++;
-            continue;
-        }
+            while (i < configVector.size())
+            {
+                line = configVector[i];
+                
+                // Check for the end of the server block
+                if (line.find('}') != std::string::npos)
+                    break;
+                
+                // Process server directives
+                if (line.find("listen") == 0)
+                {
+                    size_t pos = line.find(" ");
+                    if (pos != std::string::npos)
+                        server.listenPort = line.substr(pos + 1);
+                }
+                else if (line.find("server_name") == 0)
+                {
+                    size_t pos = line.find(" ");
+                    if (pos != std::string::npos)
+                        server.serverName = line.substr(pos + 1);
+                }
+                else if (line.find("error_page") == 0)
+                {
+                    size_t pos = line.find(" ");
+                    if (pos != std::string::npos)
+                        server.errorPage = line.substr(pos + 1);
+                }
+                else if (line.find("location") == 0)
+                {
+                    LocationConfig locationConfig(configFile);
+                    
+                    // Get location path
+                    size_t pos = line.find(" ");
+                    if (pos != std::string::npos)
+                        locationConfig.setPath(line.substr(pos + 1));
 
-        size_t pos = line.find(" ");
-        if (pos != std::string::npos)
-        {
-            std::string key = line.substr(0, pos);
-            std::string value = line.substr(pos + 1);
-            setConfig(key, value);
-        }
+                    // Process location block
+                    i++;
+                    while (i < configVector.size())
+                    {
+                        line = configVector[i];
+                        if (line.find('}') != std::string::npos)
+                            break;
 
+                        pos = line.find(' ');
+                        if (pos != std::string::npos)
+                        {
+                            std::string key = line.substr(0, pos);
+                            std::string value = line.substr(pos + 1);
+                            locationConfig.insertInMap(key, value);
+                        }
+                        i++;
+                    }
+                    server.locations.push_back(locationConfig);
+                }
+                
+                i++;
+            }
+            servers.push_back(server);
+        }
+        
         i++;
     }
+}
+
+void ServerConfig::displayConfig()
+{
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        ServerConfig server = servers[i];
+        std::cout << "Server: " << i + 1 << std::endl;
+        std::cout << "Listen Port: " << server.listenPort << std::endl;
+        std::cout << "Server Name: " << server.serverName << std::endl;
+        std::cout << "Error Page: " << server.errorPage << std::endl;
+        std::cout << "Locations: " << std::endl;
+        
+        for (size_t j = 0; j < server.locations.size(); j++)
+        {
+            LocationConfig location = server.locations[j];
+            std::multimap<std::string, std::string > locationMap = location.getLocationMap();
+            std::cout << "Path: " << location.getPath() << std::endl;
+            std::cout << "Location Map: " << std::endl;
+            std::multimap<std::string, std::string >::iterator it;
+            for ( it = locationMap.begin(); it != locationMap.end(); ++it)
+            {
+                std::cout << it->first << " : " << it->second << std::endl;
+            }
+        }
+        std::cout << std::endl;
+    }
+}
+
+ServerConfig::~ServerConfig()
+{
+}
+
+// --> LocationConfig class
+LocationConfig::LocationConfig() : Config()
+{
+}
+
+void LocationConfig::insertInMap(std::string key, std::string value)
+{
+    locationMap.insert(std::pair<std::string, std::string>(key, value));
+}
+
+LocationConfig::LocationConfig(std::string configFile) : Config(configFile)
+{
+}
+
+void LocationConfig::setPath(std::string path)
+{
+    this->path = path;
+}
+
+std::string LocationConfig::getPath()
+{
+    return (path);
+}
+
+std::multimap<std::string, std::string> LocationConfig::getLocationMap()
+{
+    return (locationMap);
+}
+
+LocationConfig::~LocationConfig()
+{
 }
