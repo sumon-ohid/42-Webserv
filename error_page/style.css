@@ -1,0 +1,32 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family:Georgia, 'Times New Roman', Times, serif;
+	margin: 0 auto;
+	max-width: 800px;
+	height: 100%;
+}
+
+img {
+	position: relative;
+	margin-left: 0;
+}
+
+h1, h2 {
+	font-size: 7em;
+	color: rgb(166, 218, 189);
+}
+
+h1 {
+	position: relative;
+	padding-top: 3em;
+	font-weight: 700;
+}
+
+h2 {
+	font-weight: 500;
+	padding-top: .3em;
+}
