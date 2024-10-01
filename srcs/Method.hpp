@@ -9,14 +9,19 @@ class Method {
 	private:
 		static const std::string	_mArray[ARRAY_SIZE];
 		std::string	_name;
-
-		Method();
+		std::string _path;
+		std::string _protocol;
 
 	public:
-		Method(std::string name);
+		Method();
+		Method(std::string name, const std::string path, const std::string protocol);
 		Method(const Method& other);
 		Method& operator=(const Method& other);
 		~Method();
+
+		std::string getName() const;
+		std::string getPath() const;
+		std::string getProtocol() const;
 
 };
 
