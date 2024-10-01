@@ -8,7 +8,9 @@ SRCS_DIR	= ./srcs
 
 SRCS		= 	$(addprefix $(SRCS_DIR)/,\
 				main.cpp \
-				Config.cpp)
+				Config.cpp \
+				Socket.cpp \
+				Exception.cpp)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)
 DEPS		 = $(SRCS:$(SRCS_DIR)%.cpp=${OBJ_DIR}/%.d)
