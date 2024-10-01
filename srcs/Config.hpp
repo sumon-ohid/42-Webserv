@@ -13,21 +13,55 @@
 class Config
 {
     private:
-        std::multimap<std::string, std::string> configMap;
         std::vector<std::string> configVector;
         std::string configFile;
-
-    protected:
-        void setConfig(std::string key, std::string value);
-
+        
     public:
+        Config();
         Config(std::string configFile);
         ~Config();
+
+        void setConfig(std::string line);
+        std::vector<std::string> getConfig();
         std::string removeLeadingSpaces(std::string line);
-        std::string getConfig(std::string key);
         void cleanComments();
         void readConfig();
-        void printConfig();
         bool validationCheck();
         void multiMapMaker();
+};
+
+//--> TODO- remove mltiple space after "server" and "location" and before "{"
+
+class LocationConfig : public Config
+{
+    private:
+        std::string path;
+        std::multimap<std::string, std::string > locationMap;
+
+    public:
+        LocationConfig();
+        LocationConfig(std::string configFile);
+        ~LocationConfig();
+
+        void insertInMap(std::string key, std::string value);
+        void setPath(std::string path);
+        std::string getPath();
+        std::multimap<std::string, std::string > getLocationMap();
+};
+
+class ServerConfig : public LocationConfig
+{
+    private:
+        std::string listenPort;
+        std::string serverName;
+        std::string errorPage;
+        std::vector<LocationConfig> locations;
+        std::vector<ServerConfig> servers;
+
+    public:
+        ServerConfig();
+        ServerConfig(std::string configFile);
+        ~ServerConfig();
+
+        void displayConfig();
 };
