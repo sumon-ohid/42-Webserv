@@ -1,13 +1,11 @@
 #include "Socket.hpp"
-#include "Config.hpp"
+#include "ServerConfig.hpp"
 #include "main.hpp"
 
 int main(int argc, char **argv)
 {
-	// Config config(argv[1]);
-	// config.printConfig();
-	(void) argv;
-	if (argc > 2) {
+	if (argc > 2)
+	{
 		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
 		return ERROR;
 	}
@@ -15,6 +13,8 @@ int main(int argc, char **argv)
 	Socket	socket(PORT);
 	try
 	{
+		ServerConfig config(argv[1]);
+		//config.displayConfig();
 		socket.createSocket();
 	}
 	catch (std::exception e)
