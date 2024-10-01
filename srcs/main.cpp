@@ -1,10 +1,13 @@
 #include "Socket.hpp"
+#include "Config.hpp"
 #include "main.hpp"
 
-int main(int argc, char **argv) {
-	(void)argv;
+int main(int argc, char **argv)
+{
+	Config config(argv[1]);
+	config.printConfig();
 	if (argc > 2) {
-		std::cerr << "Wrong unse of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
+		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
 		return ERROR;
 	}
 	std::cout << "Server started. Listening at Port " << PORT << std::endl;
