@@ -9,6 +9,7 @@
 class Header {
 	private:
 		bool	_firstLineChecked;
+		bool	_readingFinished;
 		int		_type; // request or answer
 		Method	_method;
 
@@ -22,10 +23,10 @@ class Header {
 		std::string getMethodName();
 		std::string getMethodPath();
 		std::string getMethodProtocol();
+		bool		getFirstLineChecked();
+		bool		getReadingFinished();
 
-		bool	getFirstLineChecked();
-
-		void	setFirstLineChecked();
+		void	checkFirstLine(std::vector<char> line);
 
 };
 

@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <string>
 
-const std::string Method::_mArray[ARRAY_SIZE] = {"OPTIONS", "HEAD", "GET", "POST"};
+const std::string Method::_mArray[ARRAY_SIZE] = {"OPTIONS", "HEAD", "GET", "POST", "DELETE"};
 
 Method::Method() {
 	this->_name = "";

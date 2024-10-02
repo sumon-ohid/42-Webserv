@@ -1,7 +1,10 @@
 #include "Socket.hpp"
 #include "Exception.hpp"
 #include <cstdio>
+#include <string>
 #include <vector>
+
+#include "./Header.hpp"
 
 // Exceptions
 
@@ -82,19 +85,30 @@ void	Socket::socketSetUpAddress()
 
 void	Socket::socketLoop()
 {
-	std::string hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+	std::string hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 13\n\nHello world!\n";
 	while (1)
 	{
+		Header header;
 		if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
 			throw SocketAcceptError();
 		_buffer.assign(_buffer.size(), 0);
 		_valread = read(_new_socket, &_buffer[0], _buffer.size());
 		if (_valread < 0)
 			throw ReadError();
-		std::cout << _buffer << "\n" << std::endl;
+		_buffer.resize(_valread);
+		while (header.getReadingFinished()) {
+			if(header.getFirstLineChecked()) {
+
+			} else {
+				header.checkFirstLine(_buffer);
+			}
+
+		}
+		std::string test(_buffer.begin(), _buffer.end());
+ 		std::cout << "$" << test << "$ " << _buffer.size() << std::endl;
 		write(_new_socket , hello.c_str() , hello.size());
-        std::cout << "------------------Hello message sent-------------------" << std::endl;;
-        close(_new_socket);
+    	std::cout << "------------------Hello message sent-------------------" << std::endl;;
+    	close(_new_socket);
 	}
 }
 

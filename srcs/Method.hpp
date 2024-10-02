@@ -2,8 +2,9 @@
 #define METHOD_HPP
 
 #include <string>
+#include <vector>
 
-#define ARRAY_SIZE 4
+#define ARRAY_SIZE 5
 
 class Method {
 	private:
@@ -22,6 +23,7 @@ class Method {
 		std::string getName() const;
 		std::string getPath() const;
 		std::string getProtocol() const;
+		void	checkFirstLine(std::vector<char> line);
 
 };
 
