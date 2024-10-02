@@ -1,4 +1,4 @@
-name: test cub3d
+name: test webserv
 
 on:
   push:
