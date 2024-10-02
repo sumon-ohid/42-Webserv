@@ -1,0 +1,49 @@
+name: test cub3d
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  compiling:
+    name: compiling test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: test compiling
+        run: make
+        shell: bash
+  # funcheck:
+  #   name: funcheck
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4
+  #     - name: install funcheck
+  #       run: |
+  #         git clone https://github.com/tmatis/funcheck.git
+  #         cd funcheck
+  #         cd library
+  #         make
+  #         cd ../host
+  #         make
+  #     - name: compiling
+  #       run: make
+  #       shell: bash
+      # - name: funcheck wo arguments
+      #   run: ./funcheck/host/funcheck ./cub3d
+      # - name: funcheck w map invalid
+      #   run: ./funcheck/host/funcheck ./cub3d ./map/inv_open_map.cub
+      # - name: funcheck w map no rights
+      #   run: |
+      #     chmod 000 ./map/no_rights.cub
+      #     ./funcheck/host/funcheck ./cub3d ./map/no_rights.cub
+      # - name: funcheck OK
+      #   run: ./funcheck/host/funcheck ./cub3d ./map/map1.cub
+# different funcheck tests - valid/invalid
