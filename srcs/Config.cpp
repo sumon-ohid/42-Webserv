@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include <stdexcept>
 
 // --> Config class
 // --> read the config file and store the values in the vector
@@ -15,10 +16,7 @@ Config::Config(std::string configFile) : configFile(configFile)
     readConfig(configFile);
     cleanComments();
     if (validationCheck() == false)
-    {
-        std::cerr << "The config file is invalid." << std::endl;
-        exit(1);
-    }
+        throw std::runtime_error ("The config file is invalid.");
 }
 
 Config::~Config()
@@ -67,10 +65,7 @@ void Config::readConfig(std::string configFile)
         file.close();
     }
     else
-    {
-        std::cerr << "Error: cannot open config file" << std::endl;
-        exit(1);
-    }
+        throw std::runtime_error ("Error: cannot open config file");
 }
 
 void Config::cleanComments()
@@ -99,10 +94,7 @@ bool Config::validationCheck()
         std::string line = temp[i];
         size_t pos = line.find_last_not_of(' ');
         if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
-        {
-            std::cerr << "Missing ; or { } in the config file." << std::endl;
-            return (false);
-        }
+            throw std::runtime_error ("Missing ; or { } in the config file.");
         i++;
     }
     i = 0;
