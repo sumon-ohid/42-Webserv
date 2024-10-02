@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 		//config.displayConfig();
 		socket.createSocket();
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
 		std::cout << "Error:\t" << e.what() << std::endl;
 	}
