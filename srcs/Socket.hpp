@@ -20,10 +20,10 @@
 class Socket
 {
 private:
-	int					_server_fd;
+	int					_fd;
 	int					_port;
-	int					_addrlen;
-	int					_new_socket;
+	socklen_t			_addrlen;
+	int					_newSocket;
 	long				_valread;
 	sockaddr_in			_address;
 	std::vector<char>	_buffer;
@@ -38,6 +38,13 @@ public:
 	void	bindToSocket(void);
 	void	socketSetUpAddress(void);
 	void	socketLoop(void);
+
+	const int&			getFdSocket(void) const;
+	const int&			getPort(void) const;
+	socklen_t&			getAddressLen(void);
+	socklen_t 			getAddressLen() const;
+	const sockaddr_in&	getAddress(void) const;
+
 
 	class	SocketBindingError;
 	class	SocketListenError;

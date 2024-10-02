@@ -1,6 +1,7 @@
 #include "Socket.hpp"
 #include "Exception.hpp"
 #include <cstdio>
+#include <sys/socket.h>
 #include <vector>
 
 // Exceptions
@@ -34,16 +35,16 @@ Socket::Socket() : _port(-1), _buffer(0, 0){}
 Socket::Socket(int port) : _port(port), _buffer(SOCKET_BUFFER_SIZE, 0)
 {}
 Socket::~Socket(){}
-Socket::Socket(const Socket &orig) : _server_fd(orig._server_fd), _addrlen(orig._addrlen), _new_socket(orig._new_socket), _valread(orig._valread), _address(orig._address), _buffer(orig._buffer)
+Socket::Socket(const Socket &orig) : _fd(orig._fd), _addrlen(orig._addrlen), _newSocket(orig._newSocket), _valread(orig._valread), _address(orig._address), _buffer(orig._buffer)
 {}
 Socket&	Socket::operator=(const Socket &rhs)
 {
 	if (this != &rhs)
 	{
-		_server_fd = rhs._server_fd;
+		_fd = rhs._fd;
 		_port = rhs._port;
 		_addrlen = rhs._addrlen;
-		_new_socket = rhs._new_socket;
+		_newSocket = rhs._newSocket;
 		_address = rhs._address;
 		_valread = rhs._valread;
 		_buffer = rhs._buffer;
@@ -55,8 +56,8 @@ Socket&	Socket::operator=(const Socket &rhs)
 
 void	Socket::createSocket()
 {
-	_server_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_server_fd < 0)
+	_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	if (_fd < 0)
 		throw SocketCreationError();
 	bindToSocket();
 }
@@ -64,9 +65,9 @@ void	Socket::createSocket()
 void	Socket::bindToSocket()
 {
 	socketSetUpAddress();
-	if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
+	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		throw SocketBindingError();
-	if (listen(_server_fd, SOCKET_MAX_LISTEN) < 0)
+	if (listen(_fd, SOCKET_MAX_LISTEN) < 0)
 		throw SocketListenError();
 	socketLoop();
 }
@@ -85,17 +86,42 @@ void	Socket::socketLoop()
 	std::string hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 	while (1)
 	{
-		if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
+		if ((_newSocket = accept(_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
 			throw SocketAcceptError();
 		_buffer.assign(_buffer.size(), 0);
-		_valread = read(_new_socket, &_buffer[0], _buffer.size());
+		_valread = read(_newSocket, &_buffer[0], _buffer.size());
 		if (_valread < 0)
 			throw ReadError();
 		std::cout << _buffer << "\n" << std::endl;
-		write(_new_socket , hello.c_str() , hello.size());
+		write(_newSocket , hello.c_str() , hello.size());
         std::cout << "------------------Hello message sent-------------------" << std::endl;;
-        close(_new_socket);
+        close(_newSocket);
 	}
+}
+
+const int&	Socket::getFdSocket() const
+{
+	return (_fd);
+}
+
+const int&	Socket::getPort() const
+{
+	return (_port);
+}
+
+socklen_t&			Socket::getAddressLen(void)
+{
+	return (_addrlen);
+}
+
+socklen_t	Socket::getAddressLen(void) const
+{
+	return (_addrlen);
+}
+
+const sockaddr_in&	Socket::getAddress(void) const
+{
+	return (_address);
 }
 
 // ostream
