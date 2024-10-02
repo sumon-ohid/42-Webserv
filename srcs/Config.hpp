@@ -25,7 +25,7 @@ class Config
         std::vector<std::string> getConfig();
         std::string removeLeadingSpaces(std::string line);
         void cleanComments();
-        void readConfig();
+        void readConfig(std::string configFile);
         bool validationCheck();
         void multiMapMaker();
 };
