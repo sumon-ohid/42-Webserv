@@ -1,6 +1,7 @@
 #include "Socket.hpp"
 #include "ServerConfig.hpp"
 #include "main.hpp"
+#include <exception>
 
 int main(int argc, char **argv)
 {
