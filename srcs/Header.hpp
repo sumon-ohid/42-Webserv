@@ -27,6 +27,7 @@ class Header {
 		bool		getReadingFinished();
 
 		void	checkFirstLine(std::vector<char> line);
+		void	checkLine(std::vector<char> line);
 
 };
 

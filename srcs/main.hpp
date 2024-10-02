@@ -1,3 +1,5 @@
+#pragma once
+
 #define OK 0
 #define ERROR 1
 
@@ -11,7 +13,9 @@
 
 
 // Benny
+#include <csignal>
 
+extern volatile sig_atomic_t stopSignal;
 
 
 // Sumon

@@ -1,4 +1,5 @@
 #include "Header.hpp"
+#include <stdexcept>
 
 Header::Header() {
 	this->_type = -1;
@@ -37,12 +38,13 @@ bool	Header::getFirstLineChecked() {
 	return this->_firstLineChecked;
 }
 
-// void	Header::setFirstLineChecked() {
-// 	this->_firstLineChecked = true;
-// }
-
 void	Header::checkFirstLine(std::vector<char> line) {
-	if (line.size() == 2)
-		return;
+	std::string strLine(line.begin(), line.end());
+	if (line.size() == 2) {
+		if (strLine == "\r\n")
+			return;
+		else
+		 	throw std::runtime_error("At the end of line expected: \\r\\n");
+	}
 	_firstLineChecked = true;
 }

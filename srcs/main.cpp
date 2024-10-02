@@ -1,9 +1,20 @@
+#include <csignal>
+
 #include "Socket.hpp"
 #include "Config.hpp"
 #include "main.hpp"
 
+volatile sig_atomic_t stopSignal = 0;
+
+void signalHandler(int signal) {
+	if (signal == SIGINT) {
+		stopSignal = 1;
+	}
+}
+
 int main(int argc, char **argv)
 {
+	signal(SIGINT, signalHandler);
 	// Config config(argv[1]);
 	// config.printConfig();
 	(void) argv;
@@ -17,7 +28,7 @@ int main(int argc, char **argv)
 	{
 		socket.createSocket();
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
 		std::cout << "Error:\t" << e.what() << std::endl;
 	}
