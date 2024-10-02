@@ -9,7 +9,9 @@ SRCS_DIR	= ./srcs
 SRCS		= 	$(addprefix $(SRCS_DIR)/,\
 				main.cpp \
 				Socket.cpp \
-				Exception.cpp)
+				Exception.cpp \
+				Header.cpp \
+				Method.cpp)
 				# Config.cpp \
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)

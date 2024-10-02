@@ -1,10 +1,12 @@
 #include "Socket.hpp"
 #include "Exception.hpp"
 #include <cstdio>
+#include <exception>
 #include <string>
 #include <vector>
 
 #include "./Header.hpp"
+#include "main.hpp"
 
 // Exceptions
 
@@ -34,7 +36,7 @@ class	Socket::SocketAcceptError
 
 // Coplien
 Socket::Socket() : _port(-1), _buffer(0, 0){}
-Socket::Socket(int port) : _port(port), _buffer(SOCKET_BUFFER_SIZE, 0)
+Socket::Socket(int port) : _port(port)
 {}
 Socket::~Socket(){}
 Socket::Socket(const Socket &orig) : _server_fd(orig._server_fd), _addrlen(orig._addrlen), _new_socket(orig._new_socket), _valread(orig._valread), _address(orig._address), _buffer(orig._buffer)
@@ -86,30 +88,34 @@ void	Socket::socketSetUpAddress()
 void	Socket::socketLoop()
 {
 	std::string hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 13\n\nHello world!\n";
-	while (1)
+	Header header;
+	if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
+		throw SocketAcceptError();
+	while (!stopSignal)
 	{
-		Header header;
-		if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
-			throw SocketAcceptError();
-		_buffer.assign(_buffer.size(), 0);
-		_valread = read(_new_socket, &_buffer[0], _buffer.size());
-		if (_valread < 0)
-			throw ReadError();
-		_buffer.resize(_valread);
-		while (header.getReadingFinished()) {
-			if(header.getFirstLineChecked()) {
-
-			} else {
-				header.checkFirstLine(_buffer);
+		while (!header.getReadingFinished() && !stopSignal) {
+			try {
+				_buffer.resize(SOCKET_BUFFER_SIZE);
+				_valread = read(_new_socket, &_buffer[0], _buffer.size());
+				if (_valread < 0)
+					throw ReadError();
+				std::cout << "buffer size: " << _buffer.size() << std::endl;
+				_buffer.resize(_valread);
+				if(header.getFirstLineChecked()) {
+					header.checkLine(_buffer);
+				} else {
+					header.checkFirstLine(_buffer);
+				}
+			} catch (std::exception& e) {
+				std::cout << e.what() << std::endl;
+				break;
 			}
-
 		}
-		std::string test(_buffer.begin(), _buffer.end());
- 		std::cout << "$" << test << "$ " << _buffer.size() << std::endl;
 		write(_new_socket , hello.c_str() , hello.size());
     	std::cout << "------------------Hello message sent-------------------" << std::endl;;
-    	close(_new_socket);
+		header.headerReset();
 	}
+    close(_new_socket);
 }
 
 // ostream

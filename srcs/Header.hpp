@@ -1,6 +1,9 @@
 #ifndef HEADER_HPP
 #define HEADER_HPP
 
+#include <vector>
+#include <map>
+
 #include "Method.hpp"
 
 #define CLIENT_REQUEST 1
@@ -12,6 +15,7 @@ class Header {
 		bool	_readingFinished;
 		int		_type; // request or answer
 		Method	_method;
+		std::map<std::string, std::string> headerMap;
 
 	public:
 		Header();
@@ -26,8 +30,10 @@ class Header {
 		bool		getFirstLineChecked();
 		bool		getReadingFinished();
 
-		void	checkFirstLine(std::vector<char> line);
-		void	checkLine(std::vector<char> line);
+		void	checkFirstLine(std::vector<char>& line);
+		void	checkLine(std::vector<char>& line);
+
+		void	headerReset();
 
 };
 
