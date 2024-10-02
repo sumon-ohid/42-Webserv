@@ -12,7 +12,7 @@ Config::Config()
 
 Config::Config(std::string configFile) : configFile(configFile)
 {
-    readConfig();
+    readConfig(configFile);
     cleanComments();
     if (validationCheck() == false)
     {
@@ -47,9 +47,9 @@ std::string Config::removeLeadingSpaces(std::string line)
 // --> read the config file and store the values in the map
 // --> ignore lines that start with # but need to improve this to ignore comments after the config value
 // --> need to add error handling for missing config values
-void Config::readConfig()
+void Config::readConfig(std::string configFile)
 {
-    std::ifstream file(configFile);
+    std::ifstream file(configFile.c_str());
     std::string line;
     std::string newLine;
     std::string key;
