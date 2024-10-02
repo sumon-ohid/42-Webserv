@@ -56,6 +56,7 @@ Socket&	Socket::operator=(const Socket &rhs)
 
 void	Socket::createSocket()
 {
+	std::cout << "Socket - create Socket" << std::endl;
 	_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (_fd < 0)
 		throw SocketCreationError();
@@ -64,21 +65,24 @@ void	Socket::createSocket()
 
 void	Socket::bindToSocket()
 {
+	std::cout << "Socket bind to socket\t" << std::endl;
 	socketSetUpAddress();
 	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		throw SocketBindingError();
 	if (listen(_fd, SOCKET_MAX_LISTEN) < 0)
 		throw SocketListenError();
-	socketLoop();
+	std::cout << "End of socket bind to socket" << std::endl;
 }
 
 void	Socket::socketSetUpAddress()
 {
+	std::cout << "Socket - set up address" << std::endl;
 	_addrlen = sizeof(_address);
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(_port);
 	std::memset(_address.sin_zero, '\0', sizeof _address.sin_zero);
+	std::cout << "Socket set up at port\t" << _port << std::endl;
 }
 
 void	Socket::socketLoop()
@@ -104,6 +108,11 @@ const int&	Socket::getFdSocket() const
 	return (_fd);
 }
 
+int&	Socket::getFdSocket(void)
+{
+	return (_fd);	
+}
+
 const int&	Socket::getPort() const
 {
 	return (_port);
@@ -114,7 +123,7 @@ socklen_t&			Socket::getAddressLen(void)
 	return (_addrlen);
 }
 
-socklen_t	Socket::getAddressLen(void) const
+const socklen_t&	Socket::getAddressLen(void) const
 {
 	return (_addrlen);
 }

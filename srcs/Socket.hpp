@@ -40,9 +40,10 @@ public:
 	void	socketLoop(void);
 
 	const int&			getFdSocket(void) const;
+	int&				getFdSocket(void);
 	const int&			getPort(void) const;
 	socklen_t&			getAddressLen(void);
-	socklen_t 			getAddressLen() const;
+	const socklen_t& 	getAddressLen() const;
 	const sockaddr_in&	getAddress(void) const;
 
 

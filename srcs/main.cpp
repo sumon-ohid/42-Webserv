@@ -1,4 +1,4 @@
-#include "Socket.hpp"
+#include "Server.hpp"
 #include "Config.hpp"
 #include "main.hpp"
 
@@ -11,14 +11,17 @@ int main(int argc, char **argv)
 		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
 		return ERROR;
 	}
-	std::cout << "Server started. Listening at Port " << PORT << std::endl;
-	Socket	socket(PORT);
+	Server	server;
+	// Socket	socket(PORT);
 	try
 	{
-		socket.createSocket();
+		// socket.createSocket();
+		server.createSockets();
+		server.callEpoll();
 	}
-	catch (std::exception e)
+	catch (std::exception &e)
 	{
 		std::cout << "Error:\t" << e.what() << std::endl;
+		
 	}
 }

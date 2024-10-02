@@ -18,3 +18,30 @@ unsigned	Server::getNumSockets() const
 	return (_sockets.size());
 }
 
+const vs&	Server::getSockets() const
+{
+	return (_sockets);
+}
+
+vs&	Server::getSocket()
+{
+	return (_sockets);
+}
+
+void	Server::createSockets()
+{
+	int numSockets = 3;
+	int ports[] = {3000, 4000, 5000};
+	for (int i = 0; i < numSockets; ++i)
+	{
+		Socket	tmp(ports[i]);
+		std::cout << "Server - create Sockets\t" << i << std::endl;
+		tmp.createSocket();
+		_sockets.push_back(tmp);
+	}
+}
+
+void	Server::callEpoll()
+{
+	_epoll.EpollUse(*this);
+}

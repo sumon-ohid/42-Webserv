@@ -2,9 +2,6 @@
 
 #include <sys/epoll.h>
 
-#define	EPOLL_CREATE_ERROR			"epoll - creation failed"
-#define	EPOLL_LISTEN_SOCKET_ERROR	"epoll_ctl: listen_sock"
-#define	EPOLL_WAIT_ERROR			"epoll_wait"
 #define	MAX_EVENTS					100000
 
 class Server;
@@ -25,10 +22,7 @@ public:
 	Epoll&	operator=(const Epoll&);
 
 	void	createEpoll(void);
-	void	registerSockets(Server&);
-	void	EpollLoop(Server&);
-
-	class	EpollCreateError;
-	class	EpollListenSocketError;
-	class	EpollWaitError;
+	void	registerSockets(const Server&);
+	void	EpollLoop(const Server&);
+	void	EpollUse(const Server&);
 };
