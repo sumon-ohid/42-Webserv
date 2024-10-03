@@ -11,18 +11,6 @@ Method::Method() {
 	this->_protocol = "";
 }
 
-// Method::Method(const std::string name, const std::string path, const std::string protocol) {
-
-// 	for (int i = 0; i < ARRAY_SIZE; i++) {
-// 		if (_mArray[i] == name) {
-// 			this->_name = name;
-// 		}
-// 	}
-// 	if (this->_name.empty())
-// 		throw std::runtime_error("not a valid method");
-
-// }
-
 Method::Method(const Method& other) : _name(other._name) {}
 
 Method& Method::operator=(const Method& other) {
@@ -48,8 +36,7 @@ std::string Method::getProtocol() const {
 
 void	Method::setName(std::string name) {
 	if (name.empty())
-		throw std::runtime_error("not a valid method");
-	// check spaces before
+		throw std::runtime_error("400 Bad Request");
 
 	for (int i = 0; i < ARRAY_SIZE; i++) {
 		if (_mArray[i] == name) {
@@ -57,17 +44,19 @@ void	Method::setName(std::string name) {
 			return;
 		}
 	}
-	throw std::runtime_error("not a valid method");
+	throw std::runtime_error("400 Bad Request");
 }
 
 void	Method::setPath(std::string path) {
 	if (path.empty())
-		throw std::runtime_error("not a valid method");
+		throw std::runtime_error("400 Bad Request");
 	this->_path = path;
 }
 
 void	Method::setProtocol(std::string protocol) {
-	// if (protocol != "HTTP/1.1")
-	// 	throw std::runtime_error("not a valid method");
+	if (protocol == "HTTP/2")
+		throw std::runtime_error("505 HTTP Version Not Supported");
+	if (protocol != "HTTP/1.1")
+		throw std::runtime_error("400 Bad Request");
 	this->_protocol = protocol;
 }

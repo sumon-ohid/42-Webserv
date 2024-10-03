@@ -8,11 +8,8 @@ Header::Header() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
+	this->_method = NULL;
 }
-
-// Header::Header(std::string method) {
-
-// }
 
 Header::Header(const Header& other) {
 	(void) other;
@@ -25,18 +22,26 @@ Header& Header::operator=(const Header& other) {
 	return *this;
 }
 
-Header::~Header() {}
+Header::~Header() {
+	delete this->_method;
+}
 
 std::string Header::getMethodName() {
-	return this->_method.getName();
+	if (this->_method)
+		return this->_method->getName();
+	throw	std::runtime_error("Server error 101");
 }
 
 std::string Header::getMethodPath() {
-	return this->_method.getPath();
+	if (this->_method)
+		return this->_method->getPath();
+	throw	std::runtime_error("Server error 102");
 }
 
 std::string Header::getMethodProtocol() {
-	return this->_method.getProtocol();
+	if (this->_method)
+		return this->_method->getProtocol();
+	return "HTTP/1.1"; // to also return when method is wrong
 }
 
 bool	Header::getFirstLineChecked() {
@@ -63,17 +68,23 @@ void	Header::checkFirstLine(std::vector<char>& line) {
 		return;
 	}
 	std::size_t spacePos = strLine.find(" ", 0);
+	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
-		throw std::runtime_error("space in header not found");
-	this->_method.setName(strLine.substr(0, spacePos));
-	std::cout << "$" << _method.getName() << "$" << std::endl;
+		throw std::runtime_error("400 Bad Request");
+	this->_method = new Method();
+	// check which method
+
+	this->_method->setName(methodName);
+	std::cout << "$" << _method->getName() << "$" << std::endl;
 
 	std::size_t spacePos2 = strLine.find(" ", spacePos + 1);
-	this->_method.setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
-	std::cout << "$" << _method.getPath() << "$" << std::endl;
+	if (spacePos2 == std::string::npos)
+		throw std::runtime_error("400 Bad Request");
+	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
+	std::cout << "$" << _method->getPath() << "$" << std::endl;
 
-	this->_method.setProtocol(strLine.substr(spacePos2 + 1));
-	std::cout << "$" << _method.getProtocol() << "$" << std::endl;
+	this->_method->setProtocol(strLine.substr(spacePos2 + 1));
+	std::cout << "$" << _method->getProtocol() << "$" << std::endl;
 	_firstLineChecked = true;
 }
 
@@ -87,7 +98,7 @@ void	Header::checkLine(std::vector<char>& line) {
 
 	std::size_t pos = strLine.find(":");
 	if (pos == std::string::npos)
-		throw std::runtime_error("no ':' in line");
+		return;
 	std::string	key = strLine.substr(0, pos);
 	std::string value = strLine.substr(pos + 1);
 	while (!value.empty() && value[0] == ' ') {
@@ -104,5 +115,5 @@ void	Header::headerReset() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
-	this->_method = Method();
+	this->_method = NULL;
 }

@@ -1,5 +1,4 @@
-#ifndef HEADER_HPP
-#define HEADER_HPP
+#pragma once
 
 #include <vector>
 #include <map>
@@ -13,8 +12,8 @@ class Header {
 	private:
 		bool	_firstLineChecked;
 		bool	_readingFinished;
-		int		_type; // request or answer
-		Method	_method;
+		int		_type; // request or response
+		Method*	_method;
 		std::map<std::string, std::string> headerMap;
 
 	public:
@@ -36,5 +35,3 @@ class Header {
 		void	headerReset();
 
 };
-
-#endif

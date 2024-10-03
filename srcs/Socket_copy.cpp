@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "./Header.hpp"
+#include "Response.hpp"
 #include "main.hpp"
 
 // Exceptions
@@ -87,35 +88,52 @@ void	Socket::socketSetUpAddress()
 
 void	Socket::socketLoop()
 {
+	bool	writeFlag = false;
 	std::string hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 13\n\nHello world!\n";
 	Header header;
-	if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
-		throw SocketAcceptError();
+	// if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
+	// 	throw SocketAcceptError();
 	while (!stopSignal)
 	{
+		if ((_new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
+			throw SocketAcceptError();
 		while (!header.getReadingFinished() && !stopSignal) {
 			try {
 				_buffer.resize(SOCKET_BUFFER_SIZE);
 				_valread = read(_new_socket, &_buffer[0], _buffer.size());
+				if (stopSignal) {
+					close(_new_socket);
+					throw std::runtime_error(" Server stopped by signal");
+				}
 				if (_valread < 0)
 					throw ReadError();
-				std::cout << "buffer size: " << _buffer.size() << std::endl;
 				_buffer.resize(_valread);
+				// if (_buffer.size() == 5)
+				// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
 				if(header.getFirstLineChecked()) {
 					header.checkLine(_buffer);
 				} else {
 					header.checkFirstLine(_buffer);
 				}
 			} catch (std::exception& e) {
-				std::cout << e.what() << std::endl;
+				write(_new_socket, e.what(), static_cast<std::string>(e.what()).size());
+				write(_new_socket, "\n", 1);
+				std::cout << "exception: " << e.what() << std::endl;
+				writeFlag = true;
+				// close(_new_socket)
 				break;
 			}
 		}
-		write(_new_socket , hello.c_str() , hello.size());
-    	std::cout << "------------------Hello message sent-------------------" << std::endl;;
+		if (!writeFlag) {
+			std::string test = "this is a test";
+			Response::headerAndBody(_new_socket, header, test);
+			// write(_new_socket , hello.c_str() , hello.size());
+		}
+    	std::cout << "------------------Hello message sent-------------------" << std::endl;
+    	close(_new_socket);
+		writeFlag = false;
 		header.headerReset();
 	}
-    close(_new_socket);
 }
 
 // ostream

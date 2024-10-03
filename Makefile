@@ -6,9 +6,9 @@ CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP -g
 OBJ_DIR		= ./objs
 SRCS_DIR	= ./srcs
 
-SRCS		= 	$(addprefix $(SRCS_DIR)/,\
+SRCS		= 	$(addprefix $(SRCS_DIR),\
 				main.cpp \
-				Socket_copy.cpp \
+				Socket_copy.cpp Response.cpp \
 				Exception.cpp \
 				Header.cpp \
 				Method.cpp)

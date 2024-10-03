@@ -7,14 +7,14 @@
 
 class Method {
 	private:
-		static const std::string	_mArray[ARRAY_SIZE];
 		std::string	_name;
 		std::string _path;
 		std::string _protocol;
 
 	public:
+		static const std::string	_mArray[ARRAY_SIZE];
+
 		Method();
-		Method(std::string name, const std::string path, const std::string protocol);
 		Method(const Method& other);
 		Method& operator=(const Method& other);
 		~Method();
@@ -26,7 +26,6 @@ class Method {
 		void	setName(std::string name);
 		void	setPath(std::string path);
 		void	setProtocol(std::string protocol);
-
 
 };
 
