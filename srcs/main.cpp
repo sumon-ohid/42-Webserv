@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	try
 	{
 		// socket.createSocket();
-		server.createSockets();
+		server.createLstnSockets();
 		server.callEpoll();
 	}
 	catch (std::exception &e)

@@ -1,10 +1,4 @@
 #include "Epoll.hpp"
-#include <cerrno>
-#include <exception>
-#include <stdexcept>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include "Server.hpp"
 
 Epoll::Epoll() {}
@@ -36,66 +30,65 @@ void	Epoll::createEpoll()
 		std::runtime_error("epoll - creation failed");
 }
 
-void	Epoll::registerSockets(const Server& serv)
+void	Epoll::registerLstnSockets(const Server& serv)
 {
-	_ev.events = EPOLLIN | EPOLLOUT;
-	vs	sockets = serv.getSockets();
-	for (vs::iterator it = sockets.begin(); it != sockets.end(); ++it)
+	// Set the event flags to monitor for incoming connections
+	_ev.events = EPOLLIN;
+	// Retrieve the list of listening sockets from the server
+	vecSocs	sockets = serv.getLstnSockets();
+    // Iterate over each listening socket
+	for (vecSocs::iterator it = sockets.begin(); it != sockets.end(); ++it)
 	{
+		// Update the event data with the file descriptor of the current socket
 		_ev.data.fd = it->getFdSocket();
-		try
-		{
-			if (epoll_ctl(_fd, EPOLL_CTL_ADD, it->getFdSocket(), &_ev) == -1)
-				throw std::runtime_error("epoll_ctl: listen_sock");
-		}
-		catch (std::exception &e)
-		{
-			std::cout << e.what() << std::endl;
-		}
+		// Add the socket to the epoll instance for monitoring
+        if (epoll_ctl(_fd, EPOLL_CTL_ADD, it->getFdSocket(), &_ev) == -1)
+			std::cerr << "Error:\tepoll_ctl: listen_sock" << std::endl;
 	}
 }
 
-//
-
-void Epoll::EpollLoop(const Server &serv)
+void Epoll::EpollMonitoring(const Server &serv)
 {
+	// Infinite loop to process events
 	while (1)
 	{
+		// Wait for events on the epoll instance
 		_nfds = epoll_wait(_fd, _events, MAX_EVENTS, -1);
 		if (_nfds == -1)
 			throw std::runtime_error("epoll_wait failed");
-
-		const vs& sockets = serv.getSockets();  // Use reference to avoid copying
+		const vecSocs& sockets = serv.getLstnSockets();  // Use reference to avoid copying
+		// Iterate over the events returned by epoll_wait
 		for (int i = 0; i < _nfds; ++i)
 		{
 			int event_fd = _events[i].data.fd;  // File descriptor for this event
 
 			// Check if the event corresponds to one of the listening sockets
 			bool is_listening_socket = false;
-			for (vs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
+			for (vecSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
 			{
+				// Compare event_fd with the listening socket's file descriptor
 				if (event_fd == it->getFdSocket())
 				{
-					// This is a listening socket, accept new client
+					// This is a listening socket, accept new client connection
 					socklen_t _addrlen = it->getAddressLen();
 					_connSock = accept4(it->getFdSocket(), (struct sockaddr *) &it->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 					if (_connSock < 0)
 					{
-						// perror("accept4 failed");
-						continue;  // Skip this socket
+						std::cerr << "Error:\taccept4 failed" << std::endl;
+						continue;  // Skip to the next socket if accept fails
 					}
 					std::cout << "New client connected: FD " << _connSock << std::endl;
 
 					// Register the new client socket with EPOLLIN (ready to read)
-					_ev.events = EPOLLIN;
-					_ev.data.fd = _connSock;
+					_ev.events = EPOLLIN;  // Set event to listen for incoming data
+					_ev.data.fd = _connSock;  // Set the file descriptor for the client socket
 					if (epoll_ctl(_fd, EPOLL_CTL_ADD, _connSock, &_ev) == -1)
 					{
-						// perror("epoll_ctl: conn_sock");
+						// If epoll_ctl fails, close the new socket
 						close(_connSock);
 					}
-					is_listening_socket = true;
-					break;  // Exit the loop as we handled this event
+					is_listening_socket = true;  // Mark that we've handled a listening socket
+					break;  // Exit the loop as we have accepted a new client
 				}
 			}
 
@@ -104,20 +97,20 @@ void Epoll::EpollLoop(const Server &serv)
 				continue;
 
 			// Handle events on existing client connections
-			if (_events[i].events & EPOLLIN)
+			if (_events[i].events & EPOLLIN)  // Check if the event is for reading
 			{
 				// Read data from the client
-				char buffer[300000] = {0};  // Zero-initialize the buffer
-				ssize_t count = read(event_fd, buffer, sizeof(buffer));
+				char buffer[300000] = {0};  // Zero-initialize the buffer for incoming data
+				ssize_t count = read(event_fd, buffer, sizeof(buffer));  // Read data from the client socket
 
 				if (count == -1)
 				{
+					// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
 					if (errno != EAGAIN && errno != EWOULDBLOCK)
 					{
-						// perror("read error");
-						close(event_fd);
+						close(event_fd);  // Close the socket on other read errors
 					}
-					continue;
+					continue;  // Move to the next event
 				}
 				else if (count == 0)
 				{
@@ -131,13 +124,14 @@ void Epoll::EpollLoop(const Server &serv)
 					// Successfully read data, print it and respond
 					std::cout << "Received " << count << " bytes: " << buffer << std::endl;
 
+					// Prepare a simple HTTP response
 					std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!\n";
-					ssize_t sent = write(event_fd, response.c_str(), response.size());
+					ssize_t sent = write(event_fd, response.c_str(), response.size());  // Send response to the client
 
 					if (sent == -1)
 					{
-						// perror("write failed");
-						close(event_fd);  // Close socket on write failure
+						// Handle write failure by closing the socket
+						close(event_fd);
 					}
 					else
 					{
@@ -149,9 +143,110 @@ void Epoll::EpollLoop(const Server &serv)
 	}
 }
 
-void	Epoll::EpollUse(const Server& serv)
+void Epoll::EpollEventMonitoring(const Server& serv)
+{
+	for (int i = 0; i < _nfds; ++i)
+	{
+		int event_fd = _events[i].data.fd;  // File descriptor for this event
+		// Check if the event corresponds to one of the listening sockets
+		bool newClient = EpollNewClient(serv, event_fd);
+		// If it's a new client connection, skip to the next event
+		if (newClient)
+			continue;
+		// Handle events on existing client connections
+		if (_events[i].events & EPOLLIN)  // Check if the event is for reading
+			EpollExistingClient(event_fd);
+	}
+}
+
+bool	Epoll::EpollNewClient(const Server &serv, const int &event_fd)
+{
+	// retrieve listening sockets
+	const vecSocs& sockets = serv.getLstnSockets();
+	// iterate over listening sockets
+	for (vecSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
+	{
+		// Compare event_fd with the listening socket's file descriptor
+		if (event_fd == it->getFdSocket())
+		{
+			// This is a listening socket, accept new client connection
+			socklen_t _addrlen = it->getAddressLen();
+			_connSock = accept4(it->getFdSocket(), (struct sockaddr *) &it->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+			if (_connSock < 0)
+			{
+				std::cerr << "Error:\taccept4 failed" << std::endl;
+				continue;  // Skip to the next socket if accept fails
+			}
+			std::cout << "New client connected: FD " << _connSock << std::endl;
+
+			
+			// Register the new client socket with EPOLLIN (ready to read)
+			_ev.events = EPOLLIN;  // Set event to listen for incoming data
+			_ev.data.fd = _connSock;  // Set the file descriptor for the client socket
+			if (epoll_ctl(_fd, EPOLL_CTL_ADD, _connSock, &_ev) == -1)
+				close(_connSock);
+			return (true);  // Mark that we've handled a listening socket
+		}
+	}
+	return (false);
+}
+
+bool	Epoll::EpollAcceptNewClient(const Server &serv, const vecSocs::const_iterator& it)
+{
+	socklen_t _addrlen = it->getAddressLen();
+	_connSock = accept4(it->getFdSocket(), (struct sockaddr *) &it->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	if (_connSock < 0)
+	{
+		std::cerr << "Error:\taccept4 failed" << std::endl;
+		return (false);  // Skip to the next socket if accept fails
+	}
+	std::cout << "New client connected: FD " << _connSock << std::endl;
+	serv.
+	vecInt&	clntSocks = serv.getCnctSockets();
+	clntSocks.push_back(_connSock);
+	return (true);
+}
+
+int	Epoll::EpollExistingClient(const int &event_fd)
+{
+	// Read data from the client
+	char buffer[300000] = {0};  // Zero-initialize the buffer for incoming data
+	ssize_t count = read(event_fd, buffer, sizeof(buffer));  // Read data from the client socket
+
+	if (count == -1)
+	{
+		// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+			close(event_fd);  // Close the socket on other read errors
+		return (-1); // Move to the next event
+	}
+	else if (count == 0)
+	{
+		// Client disconnected, close the socket and remove from epoll
+		std::cout << "Client disconnected: FD " << event_fd << std::endl;
+		close(event_fd);
+		return (-1); // Move to the next event
+	}
+	else
+	{
+		// Successfully read data, print it and respond
+		std::cout << "Received " << count << " bytes: " << buffer << std::endl;
+		// Prepare a simple HTTP response
+		std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!\n";
+		ssize_t sent = write(event_fd, response.c_str(), response.size());  // Send response to the client
+
+		if (sent == -1)
+			// Handle write failure by closing the socket
+			close(event_fd);
+		else
+			std::cout << "Response sent to client on FD " << event_fd << std::endl;
+	}
+	return (0);
+}
+
+void	Epoll::EpollRoutine(const Server& serv)
 {
 	createEpoll();
-	registerSockets(serv);
-	EpollLoop(serv);
+	registerLstnSockets(serv);
+	EpollMonitoring(serv);
 }

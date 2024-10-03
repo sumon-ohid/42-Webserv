@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Clients.hpp"
 #include "Socket.hpp"
 #include "Epoll.hpp"
 #include <vector>
@@ -9,19 +10,31 @@ typedef std::vector<Socket> vecSocs;
 class Server
 {
 private:
+	// stores lsiten sockets
 	vecSocs		_lstnSockets;
-	vecSocs		_cnctSockets;
+	// sotres clients' (connection sockets') fds
+	Clients		_clnts;
+	// handles the event monitoring
 	Epoll		_epoll;
 public:
+	// Coplien's form
 	Server();
 	~Server();
 	Server(const Server&);
 	Server&	operator=(const Server&);
 
-	void	createSockets();
+	// listen sockets
+	void	createLstnSockets();
+	
+	// epoll
 	void	callEpoll();
 
-	unsigned	getNumSockets(void) const;
-	const vs&	getSockets(void) const;
-	vs&			getSocket(void);
+	// client handling
+	void	addCnctSocket(int);
+
+	// getters
+	unsigned		getLstnSocketsCount() const;
+	unsigned		getNumCnctSockets() const;
+	const vecSocs&	getLstnSockets() const;
+	const lstInt&	getCnctFds() const;
 };

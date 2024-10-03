@@ -6,16 +6,11 @@
 #include <sys/socket.h>
 #include <vector>
 #include <cstring>
-#include <exception>
 #include <unistd.h>
 #include <iostream>
 
 #define	SOCKET_BUFFER_SIZE		30000
 #define SOCKET_MAX_LISTEN		1000
-#define SOCKET_BINDING_ERROR	"socket - binding to socket failed"
-#define	SOCKET_LISTEN_ERROR		"socket - listen failed"
-#define	SOCKET_CREATION_ERROR	"socket - could not create socket"
-#define	SOCKET_ACCEPT_ERROR		"socket - accept failed"
 
 class Socket
 {
@@ -34,8 +29,32 @@ public:
 	Socket(const Socket&);
 	Socket&	operator=(const Socket&);
 
+	/**
+	* Creates a socket file descriptor for TCP communication.
+	*
+	* Initializes a socket with:
+	* - Address family: IPv4 (AF_INET)
+	* - Socket type: TCP (SOCK_STREAM)
+	* - Mode: Non-blocking (SOCK_NONBLOCK)
+	* - Protocol: Default (0)
+	*/
 	void	createSocket(void);
-	void	bindToSocket(void);
+	/**
+ 	* Binds the socket to a specific port and IP address.
+ 	*
+ 	* Instructs the socket to listen for incoming connection requests.
+ 	*/
+	void	bindToSocketAndListen(void);
+	/**
+ 	* Sets up the socket address for binding.
+ 	*
+ 	* This function:
+ 	* - Initializes the address structure for IPv4.
+ 	* - Binds to all interfaces (INADDR_ANY).
+ 	* - Sets the port number.
+ 	* - Clears the padding field.
+ 	* - Logs the port number.
+ 	*/
 	void	socketSetUpAddress(void);
 	void	socketLoop(void);
 
@@ -45,12 +64,6 @@ public:
 	socklen_t&			getAddressLen(void);
 	const socklen_t& 	getAddressLen() const;
 	const sockaddr_in&	getAddress(void) const;
-
-
-	class	SocketBindingError;
-	class	SocketListenError;
-	class	SocketCreationError;
-	class	SocketAcceptError;
 };
 
 std::ostream&	operator<<(std::ostream &os, const std::vector<char> &vc);
