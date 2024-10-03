@@ -18,7 +18,7 @@ Server&	Server::operator=(const Server &rhs)
 	return (*this);
 }
 
-// ------------- handle connections -------------
+// ------------- Sockets -------------
 
 void	Server::createLstnSockets()
 {
@@ -35,39 +35,78 @@ void	Server::createLstnSockets()
 	}
 }
 
-void	Server::addCnctSocket(int fd)
-{
-	_clnts.addClient(fd);
-}
+// ------------- Epoll ------------- 
 
-void	Server::callEpoll()
+void	Server::startEpollRoutine()
 {
 	// call epoll to set up the monitoring and enable to have clients 
     // connect to listening sockets
     _epoll.EpollRoutine(*this);
 }
 
-// ------------- getters -------------
+// ------------- Clients ------------- 
 
-// Get the number of listening sockets
+void	Server::addClientFd(int fd)
+{
+	_clnts.addClient(fd);
+}
+
+void	Server::removeClientFd(int fd)
+{
+	_clnts.removeClient(fd);
+}
+
+void	Server::listClients() const
+{
+	_clnts.listClients();
+}
+
+bool	Server::isClientConnected(int fd) const
+{
+	return (_clnts.isClientConnected(fd));
+}
+
+// ------------- Shutdown -------------
+
+void	Server::shutdownServer()
+{
+	disconnectClients();
+	disconnectLstnSockets();
+}
+
+void	Server::disconnectClients(void)
+{
+	const	lstInt&	clientsFds = _clnts.getClientFds();
+	for (lstInt::const_iterator it = clientsFds.begin(); it != clientsFds.end(); ++it)
+		_epoll.removeFd(*this, *it);
+}
+
+void	Server::disconnectLstnSockets(void)
+{
+	for (lstSocs::iterator it = _lstnSockets.begin(); it != _lstnSockets.end();)
+	{
+		_epoll.removeFdEpoll(it->getFdSocket());
+		it = _lstnSockets.erase(it);
+	}
+}
+
+// ------------- Getters -------------
+
 unsigned	Server::getLstnSocketsCount() const
 {
 	return (_lstnSockets.size());
 }
 
-// Get the number of connected client sockets
 unsigned	Server::getNumCnctSockets() const
 {
 	return (_clnts.getClientCount());
 }
 
-// Get a const reference to the list of listening sockets
-const vecSocs& Server::getLstnSockets() const
+const lstSocs& Server::getLstnSockets() const
 {
 	return (_lstnSockets);
 }
 
-// Get a const reference to the list of connected sockets (client FDs)
 const lstInt& Server::getCnctFds() const
 {
 	return (_clnts.getClientFds());

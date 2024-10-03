@@ -24,13 +24,14 @@ void Clients::removeClient(int fd)
 	_clnts.remove(fd); // Removes all occurrences of fd
 }
 
-void Clients::listClients() 
+void Clients::listClients() const
 {
-	for (lstInt::iterator it = _clnts.begin(); it != _clnts.end(); ++it) 
+	for (lstInt::const_iterator it = _clnts.begin(); it != _clnts.end(); ++it) 
 		std::cout << "FD: " << *it << std::endl;
 }
 
-bool Clients::isClientConnected(int fd) {
+bool Clients::isClientConnected(int fd) const
+{
 	return (std::find(_clnts.begin(), _clnts.end(), fd) != _clnts.end());
 }
 

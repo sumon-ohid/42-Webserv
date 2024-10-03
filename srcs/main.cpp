@@ -17,11 +17,11 @@ int main(int argc, char **argv)
 	{
 		// socket.createSocket();
 		server.createLstnSockets();
-		server.callEpoll();
+		server.startEpollRoutine();
 	}
 	catch (std::exception &e)
 	{
 		std::cout << "Error:\t" << e.what() << std::endl;
-		
 	}
+	server.shutdownServer();
 }
