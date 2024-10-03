@@ -9,7 +9,9 @@ SRCS_DIR	= ./srcs
 SRCS		= 	$(addprefix $(SRCS_DIR),\
 				main.cpp \
 				Socket.cpp \
-				Exception.cpp \
+				Clients.cpp \
+				Server.cpp \
+				Epoll.cpp \
 				Header.cpp \
 				Method.cpp \
 				Response.cpp \
