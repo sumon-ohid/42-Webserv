@@ -15,7 +15,7 @@ void signalHandler(int signal) {
 
 int main(int argc, char **argv)
 {
-	signal(SIGINT, signalHandler);
+	// signal(SIGINT, signalHandler);
 	// Config config(argv[1]);
 	// config.printConfig();
 	(void) argv;
@@ -27,8 +27,10 @@ int main(int argc, char **argv)
 	Socket	socket(PORT);
 	try
 	{
-		ServerConfig config(argv[1]);
-		//config.displayConfig();
+		if (argc == 2) {
+			ServerConfig config(argv[1]);
+			//config.displayConfig();
+		}
 		socket.createSocket();
 	}
 	catch (std::exception& e)
