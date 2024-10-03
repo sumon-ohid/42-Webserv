@@ -53,7 +53,14 @@ void	Method::setPath(std::string path) {
 	this->_path = path;
 }
 
+#include <iostream>
+
 void	Method::setProtocol(std::string protocol) {
+	if (protocol.empty()) {
+		this->_protocol = "HTTP/1.1";
+		return;
+	}
+	std::cout << "$" << protocol << "$" << std::endl;
 	if (protocol == "HTTP/2")
 		throw std::runtime_error("505 HTTP Version Not Supported");
 	if (protocol != "HTTP/1.1")

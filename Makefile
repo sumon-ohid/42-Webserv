@@ -8,7 +8,7 @@ SRCS_DIR	= ./srcs
 
 SRCS		= 	$(addprefix $(SRCS_DIR),\
 				main.cpp \
-				Socket.cpp \
+				Socket_copy.cpp \
 				Exception.cpp \
 				Header.cpp \
 				Method.cpp \
