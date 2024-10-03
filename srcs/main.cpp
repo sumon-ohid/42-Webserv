@@ -1,8 +1,9 @@
 #include <csignal>
 
 #include "Socket.hpp"
-#include "Config.hpp"
+#include "ServerConfig.hpp"
 #include "main.hpp"
+#include <exception>
 
 volatile sig_atomic_t stopSignal = 0;
 
@@ -26,6 +27,8 @@ int main(int argc, char **argv)
 	Socket	socket(PORT);
 	try
 	{
+		ServerConfig config(argv[1]);
+		//config.displayConfig();
 		socket.createSocket();
 	}
 	catch (std::exception& e)

@@ -13,21 +13,19 @@
 class Config
 {
     private:
-        std::multimap<std::string, std::string> configMap;
         std::vector<std::string> configVector;
         std::string configFile;
-
-    protected:
-        void setConfig(std::string key, std::string value);
-
+        
     public:
+        Config();
         Config(std::string configFile);
         ~Config();
+
+        void setConfig(std::string line);
+        std::vector<std::string> getConfig();
         std::string removeLeadingSpaces(std::string line);
-        std::string getConfig(std::string key);
         void cleanComments();
-        void readConfig();
-        void printConfig();
+        void readConfig(std::string configFile);
         bool validationCheck();
         void multiMapMaker();
 };
