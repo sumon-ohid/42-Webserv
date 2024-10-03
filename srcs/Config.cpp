@@ -1,38 +1,36 @@
 #include "Config.hpp"
-#include <cstddef>
-#include <cstring>
-#include <iterator>
-#include <map>
-#include <string>
-#include <vector>
+#include <stdexcept>
+
+// --> Config class
+// --> read the config file and store the values in the vector
+// --> ignore lines that start with # but need to improve this to ignore comments after the config value
+// --> need to add error handling for missing config values
+// --> validation can be improved
+Config::Config()
+{
+    std::string configFile = "Default";
+}
 
 Config::Config(std::string configFile) : configFile(configFile)
 {
-    readConfig();
+    readConfig(configFile);
     cleanComments();
     if (validationCheck() == false)
-    {
-        std::cerr << "The config file is invalid." << std::endl;
-        exit(1);
-    }
-    multiMapMaker();
+        throw std::runtime_error ("The config file is invalid.");
 }
 
 Config::~Config()
 {
 }
 
-void Config::setConfig(std::string key, std::string value)
+void Config::setConfig(std::string line)
 {
-    configMap.insert(std::pair<std::string, std::string>(key, value));
+    configVector.push_back(line);
 }
 
-std::string Config::getConfig(std::string key)
+std::vector<std::string> Config::getConfig()
 {
-    std::map<std::string, std::string>::iterator it = configMap.find(key);
-    if (it != configMap.end())
-        return (it->second);
-    return ("");
+    return (configVector);
 }
 
 std::string Config::removeLeadingSpaces(std::string line)
@@ -47,9 +45,9 @@ std::string Config::removeLeadingSpaces(std::string line)
 // --> read the config file and store the values in the map
 // --> ignore lines that start with # but need to improve this to ignore comments after the config value
 // --> need to add error handling for missing config values
-void Config::readConfig()
+void Config::readConfig(std::string configFile)
 {
-    std::ifstream file(configFile);
+    std::ifstream file(configFile.c_str());
     std::string line;
     std::string newLine;
     std::string key;
@@ -67,28 +65,7 @@ void Config::readConfig()
         file.close();
     }
     else
-    {
-        std::cerr << "Error: cannot open config file" << std::endl;
-        exit(1);
-    }
-}
-
-// --> print the config values
-void Config::printConfig()
-{
-    // size_t i = 0;
-    // while (i < configVector.size())
-    // {
-    //     std::cout << configVector[i] << std::endl;
-    //     i++;
-    // }
-
-    std::map<std::string, std::string>::iterator it = configMap.begin();
-    while (it != configMap.end())
-    {
-        std::cout << it->first << " --- " << it->second << std::endl;
-        it++;
-    }
+        throw std::runtime_error ("Error: cannot open config file");
 }
 
 void Config::cleanComments()
@@ -117,10 +94,7 @@ bool Config::validationCheck()
         std::string line = temp[i];
         size_t pos = line.find_last_not_of(' ');
         if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
-        {
-            std::cerr << "Missing ; or { } in the config file." << std::endl;
-            return (false);
-        }
+            throw std::runtime_error ("Missing ; or { } in the config file.");
         i++;
     }
     i = 0;
@@ -138,33 +112,4 @@ bool Config::validationCheck()
     if (bracketFlag == false)
         return (false);
     return (true);
-}
-
-void Config::multiMapMaker()
-{
-    std::vector<std::string> config = configVector;
-    size_t i = 1;
-
-    while (i < config.size())
-    {
-        std::string line = config[i];
-        //std::cout << "--->" << line << std::endl;
-        if (line.find("location") != std::string::npos || 
-            line.find("{") != std::string::npos || 
-            line.find("}") != std::string::npos)
-        {
-            i++;
-            continue;
-        }
-
-        size_t pos = line.find(" ");
-        if (pos != std::string::npos)
-        {
-            std::string key = line.substr(0, pos);
-            std::string value = line.substr(pos + 1);
-            setConfig(key, value);
-        }
-
-        i++;
-    }
 }

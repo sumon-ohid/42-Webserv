@@ -1,18 +1,24 @@
 NAME 		= webserv
 
 CXX 		= c++
-CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP -g
+CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP
 
 OBJ_DIR		= ./objs
 SRCS_DIR	= ./srcs
 
-SRCS		= 	$(addprefix $(SRCS_DIR)/,\
+SRCS		= 	$(addprefix $(SRCS_DIR),\
 				main.cpp \
 				Socket.cpp \
 				Clients.cpp \
 				Server.cpp \
-				Epoll.cpp)
-				# Config.cpp \
+				Epoll.cpp \
+				Header.cpp \
+				Method.cpp \
+				Response.cpp \
+				Config.cpp \
+				LocationConfig.cpp \
+				ServerConfig.cpp \
+				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)
 DEPS		 = $(SRCS:$(SRCS_DIR)%.cpp=${OBJ_DIR}/%.d)
