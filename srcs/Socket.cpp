@@ -1,4 +1,5 @@
 #include "Socket.hpp"
+#include <exception>
 
 // Coplien
 Socket::Socket() : _port(-1), _buffer(0, 0){}
@@ -24,6 +25,25 @@ Socket&	Socket::operator=(const Socket &rhs)
 
 // Functions
 
+void	Socket::setUpSocket()
+{
+	try
+	{
+		createSocket();
+		socketSetUpAddress();
+		bindToSocketAndListen();
+	}
+	catch (std::exception &e)
+	{
+		if (_fd != -1)
+		{
+			close (_fd);
+			_fd = -1;
+		}
+		std::cerr << "Couldn't create a socket that listens at port:\t" << _port << std::endl;
+	}
+}
+
 void	Socket::createSocket()
 {
 	std::cout << "Socket - create Socket" << std::endl;
@@ -34,15 +54,17 @@ void	Socket::createSocket()
     // if there was an error creating the socket
 	if (_fd < 0)
 		throw std::runtime_error("socket - could not create socket");
-	bindToSocketAndListen();
 }
 
 
 void	Socket::bindToSocketAndListen()
 {
 	std::cout << "Socket bind to socket\t" << std::endl;
-    // prepare the address (where and with which protocol the socket should be bound)
-	socketSetUpAddress();
+	int	opt = 1;
+		/// Enable SO_REUSEADDR (set opt = 1) to allow binding to a port in TIME_WAIT state,
+		// facilitating quick restarts of the server without waiting for the socket to be released.
+	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+			throw std::runtime_error("socket - could not set SO_REUSEADDR option");
     // binds the socket file descriptor to the specified port and IP address
 	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		throw std::runtime_error("socket - binding to socket failed");
@@ -59,16 +81,15 @@ void	Socket::socketSetUpAddress()
     // total size of sockaddr_in structure; later indicates how many bytes
     // should be read/written
 	_addrlen = sizeof(_address);
-    // specifies communication domain (here: IPv4)
-	_address.sin_family = AF_INET;
+	std::memset(&_address, 0, sizeof(_address)); // Clear the whole structure
+	_address.sin_family = AF_INET; // specifies communication domain (here: IPv4)
     // specifies the IP address that the socket should listen to;
     // INADDR_ANY: binds the socket to all available interfaces
     // (is a constant equal to zero);
     // to bind to specific IP address (e.g., localhost: 
     // _address.sin_addr.s_addr = inet_addr("127.0.0.1");)
 	_address.sin_addr.s_addr = INADDR_ANY;
-    // sets the port number
-	_address.sin_port = htons(_port);
+	_address.sin_port = htons(_port); // sets the port number
     // clears or initializes the sin_zero field which is used as padding
     // to ensure that the size of the sockaddr_in structure
     // is the same as the sockaddr structure.

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdio>
 
-Epoll::Epoll() {}
+Epoll::Epoll() : _epollFd(-1) {}
 Epoll::~Epoll() {}
 Epoll::Epoll(const Epoll &orig) : _epollFd(orig._epollFd), _connSock(orig._connSock), _nfds(orig._nfds), _ev(orig._ev)
 {
@@ -169,7 +169,7 @@ void	Epoll::EpollRoutine(Server& serv)
 void	Epoll:: removeFdEpoll(int fd)
 {
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1)
-        // std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
+        std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
     // Close the client socket
     close(fd);
 }
@@ -183,4 +183,9 @@ void	Epoll::removeFd(Server& serv, int fd)
 {
 	removeFdEpoll(fd);
 	removeFdClients(serv, fd);
+}
+
+int	Epoll::getFd() const
+{
+	return (_epollFd);
 }

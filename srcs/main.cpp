@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 			//config.displayConfig();
 		}
 		// socket.createSocket();
-		server.createLstnSockets();
+		server.setUpLstnSockets();
 		server.startEpollRoutine();
 	}
 	catch (std::exception& e)

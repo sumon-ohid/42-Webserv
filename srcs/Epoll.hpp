@@ -79,4 +79,6 @@ public:
 	void	removeFdClients(Server&, int);
 	// removes fd from clients and from epoll and closes it
 	void	removeFd(Server&, int);
+
+	int		getFd(void) const;
 };

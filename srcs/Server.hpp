@@ -27,7 +27,7 @@ public:
 	// listen sockets
 
 	// creates a socket to listen on for all the IP, port combinations requested
-	void	createLstnSockets();
+	void	setUpLstnSockets();
 	
 	// epoll
 	// initializes the epoll routine
