@@ -22,7 +22,7 @@ public:
 	// client fd handling
 
 	// adds clients' to the internal list, keeping track of their fds
-	void addClient(int fd);
+	void addClient(int &fd);
 	//  removes clients' fds from the internal list
 	void removeClient(int fd);
 	// prints the fds of the currently connected clients
@@ -34,6 +34,8 @@ public:
 
 	// returns a list containing the clients' fds
 	const lstInt&	getClientFds() const;
+
+	lstInt&	getClientFds() ;
 	// returns the amount of clients currently connected
 	size_t			getClientCount() const;
 };

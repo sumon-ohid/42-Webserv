@@ -1,7 +1,7 @@
 NAME 		= webserv
 
 CXX 		= c++
-CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP
+CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP -g
 
 OBJ_DIR		= ./objs
 SRCS_DIR	= ./srcs

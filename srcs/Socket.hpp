@@ -29,6 +29,8 @@ public:
 	Socket(const Socket&);
 	Socket&	operator=(const Socket&);
 
+	// sets up a socket to use at a specified port
+	void	setUpSocket(void);
 	/**
 	* Creates a socket file descriptor for TCP communication.
 	*

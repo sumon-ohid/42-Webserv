@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "Clients.hpp"
 #include "Epoll.hpp"
+#include <stdexcept>
 
 // ------------- Coplien's form -------------
 
@@ -20,7 +21,7 @@ Server&	Server::operator=(const Server &rhs)
 
 // ------------- Sockets -------------
 
-void	Server::createLstnSockets()
+void	Server::setUpLstnSockets()
 {
 	int numSockets = 3;
 	int ports[] = {3000, 4000, 5000};
@@ -29,10 +30,14 @@ void	Server::createLstnSockets()
         // create a temporary socket instance which will listen to a specific port
 		Socket	tmp(ports[i]);
 		std::cout << "Server - create Sockets\t" << i << std::endl;
-		tmp.createSocket();
-        // store the socket in a vector to keep track of all listening sockets
-		_lstnSockets.push_back(tmp);
+		tmp.setUpSocket();
+        // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
+		if (tmp.getFdSocket() != -1)
+			_lstnSockets.push_back(tmp);
 	}
+	// check if there is at least one listening socket
+	if (_lstnSockets.empty())
+		throw std::runtime_error("couldn't create any listen socket");
 }
 
 // ------------- Epoll ------------- 
@@ -72,20 +77,29 @@ void	Server::shutdownServer()
 {
 	disconnectClients();
 	disconnectLstnSockets();
+	int	epollFd = _epoll.getFd();
+	if (epollFd != -1)
+		close(_epoll.getFd());
 }
 
 void	Server::disconnectClients(void)
 {
-	const	lstInt&	clientsFds = _clnts.getClientFds();
-	for (lstInt::const_iterator it = clientsFds.begin(); it != clientsFds.end(); ++it)
-		_epoll.removeFd(*this, *it);
+	lstInt&	clientsFds = _clnts.getClientFds();
+	std::cout << "disconnectClients" << std::endl;
+	for (lstInt::iterator it = clientsFds.begin(); it != clientsFds.end();)
+	{
+		int	&fd = *(it++);
+		if (fd != -1)
+			_epoll.removeFdEpoll(fd);
+	}
 }
 
 void	Server::disconnectLstnSockets(void)
 {
 	for (lstSocs::iterator it = _lstnSockets.begin(); it != _lstnSockets.end();)
 	{
-		_epoll.removeFdEpoll(it->getFdSocket());
+		if (it->getFdSocket() != -1)
+			_epoll.removeFdEpoll(it->getFdSocket());
 		it = _lstnSockets.erase(it);
 	}
 }
@@ -110,4 +124,9 @@ const lstSocs& Server::getLstnSockets() const
 const lstInt& Server::getCnctFds() const
 {
 	return (_clnts.getClientFds());
+}
+
+void	Server::printLst()
+{
+	_clnts.listClients();
 }

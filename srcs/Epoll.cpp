@@ -3,8 +3,10 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
+#include <exception>
+#include <sys/types.h>
 
-Epoll::Epoll() {}
+Epoll::Epoll() : _epollFd(-1) {}
 Epoll::~Epoll() {}
 Epoll::Epoll(const Epoll &orig) : _epollFd(orig._epollFd), _connSock(orig._connSock), _nfds(orig._nfds), _ev(orig._ev)
 {
@@ -63,7 +65,7 @@ void Epoll::EpollMonitoring(Server& serv)
 		if (_nfds == -1)
 		{
 			if (errno == EINTR)
-				serv.shutdownServer();
+				break;
 			else
 				throw std::runtime_error("epoll_wait failed");
 		}
@@ -114,46 +116,81 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	serv.addClientFd(_connSock);
+	std::cout << "in EpollAcceptNewClient" << std::endl;
 	return (true);
 }
 
 int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 {
 	// Read data from the client
-	char buffer[300000] = {0};  // Zero-initialize the buffer for incoming data
-	ssize_t count = read(event_fd, buffer, sizeof(buffer));  // Read data from the client socket
+	bool	writeFlag = false;
+	Header header;
+	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
+	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
-	if (count == -1)
+	while (!header.getReadingFinished())
 	{
-		// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-			removeFd(serv, event_fd);  // Close the socket on other read errors
-		return (-1); // Move to the next event
+		try 
+		{
+			buffer.resize(SOCKET_BUFFER_SIZE);
+			ssize_t count = read(event_fd, &buffer[0], buffer.size());
+			if (count == -1)
+				return (invalidRequest(serv, event_fd));
+			else if (count == 0)
+				return (emptyRequest(serv, event_fd));
+			else
+				validRequest(buffer, count, header);
+		} 
+		catch (std::exception &e) 
+		{
+			write(event_fd, e.what(), static_cast<std::string>(e.what()).size());
+			write(event_fd, "\n", 1);
+			std::cout << "exception: " << e.what() << std::endl;
+			writeFlag = true;
+			break;
+		}
 	}
-	else if (count == 0)
+	if (!writeFlag) 
 	{
-		// Client disconnected, close the socket and remove from epoll
-		std::cout << "Client disconnected: FD " << event_fd << std::endl;
-		removeFd(serv, event_fd);
-		return (-1); // Move to the next event
+		std::string test = "this is a test";
+		Response::headerAndBody(event_fd, header, test);
+		// write(_new_socket , hello.c_str() , hello.size());
+    	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
-	else
-	{
-		// Successfully read data, print it and respond
-		std::cout << "Received " << count << " bytes: " << buffer << std::endl;
-		// Prepare a simple HTTP response
-		std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!\n";
-		ssize_t sent = write(event_fd, response.c_str(), response.size());  // Send response to the client
-
-		if (sent == -1)
-			// Handle write failure by closing the socket
-			removeFd(serv, event_fd);
-		else
-			std::cout << "Response sent to client on FD " << event_fd << std::endl;
-	}
+	(void)count;
+	writeFlag = false;
+	header.headerReset();
 	return (0);
 }
 
+int	Epoll::invalidRequest(Server& serv, const int &event_fd)
+{
+	if (errno == EINTR)
+		return (-1);
+	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
+	if (errno != EAGAIN && errno != EWOULDBLOCK)
+		removeFd(serv, event_fd);  // Close the socket on other read errors
+	return (-1); // Move to the next event
+}
+
+int	Epoll::emptyRequest(Server& serv, const int &event_fd)
+{
+	std::cout << "Client disconnected: FD " << event_fd << std::endl;
+	removeFd(serv, event_fd);
+	return (-1); // Move to the next event
+}
+
+void	Epoll::validRequest(std::vector<char> buffer, ssize_t count, Header& header)
+{
+	buffer.resize(count);
+	// if (_buffer.size() == 5)
+	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
+	if(header.getFirstLineChecked()) {
+		header.checkLine(buffer);
+	} else {
+		header.checkFirstLine(buffer);
+	}
+}
 
 void	Epoll::EpollRoutine(Server& serv)
 {
@@ -179,4 +216,9 @@ void	Epoll::removeFd(Server& serv, int fd)
 {
 	removeFdEpoll(fd);
 	removeFdClients(serv, fd);
+}
+
+int	Epoll::getFd() const
+{
+	return (_epollFd);
 }

@@ -14,7 +14,7 @@ Clients&	Clients::operator=(const Clients& rhs)
 
 // ------------- Client Management -------------
 
-void Clients::addClient(int fd) 
+void Clients::addClient(int &fd) 
 {
     _clnts.push_back(fd);
 }
@@ -24,7 +24,7 @@ void Clients::removeClient(int fd)
 	_clnts.remove(fd); // Removes all occurrences of fd
 }
 
-void Clients::listClients() const
+void Clients:: listClients() const
 {
 	for (lstInt::const_iterator it = _clnts.begin(); it != _clnts.end(); ++it) 
 		std::cout << "FD: " << *it << std::endl;
@@ -45,4 +45,9 @@ const lstInt&	Clients::getClientFds() const
 size_t			Clients::getClientCount() const
 {
 	return (_clnts.size());
+}
+
+lstInt&	Clients::getClientFds()
+{
+	return (_clnts);
 }
