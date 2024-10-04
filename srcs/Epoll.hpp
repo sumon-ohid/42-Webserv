@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <list>
 #include "Socket.hpp"
+#include "./Header.hpp"
+#include "Response.hpp"
 
 #define	MAX_EVENTS					100000
 
@@ -68,6 +70,12 @@ public:
 	 * Returns 0 on success, -1 on errors or client disconnection.
 	 */
 	int		EpollExistingClient(Server&, const int&);
+
+	// DISCUSS: should be handled in Request
+	void	validRequest(std::vector<char>, ssize_t, Header&);
+	int		invalidRequest(Server&, const int&);
+	int		emptyRequest(Server&, const int&);
+
 	/**
 	 * Initializes the epoll instance, registers listening sockets, 
 	 * and enters the monitoring loop to handle incoming events.
