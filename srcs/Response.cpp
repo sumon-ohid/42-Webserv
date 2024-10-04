@@ -51,7 +51,7 @@ static std::string createHeaderString(Header& header, std::string& body, std::st
 
 static std::string createHeaderAndBodyString(Header& header, std::string& body, std::string statusCode) {
 	std::stringstream ss;
-	ss << createHeaderString(header, body, "200") << "\n";
+	ss << createHeaderString(header, body, statusCode) << "\n";
 	ss << body << "\n"; //BP: \n at the end - do we need this?
 
 	return ss.str();

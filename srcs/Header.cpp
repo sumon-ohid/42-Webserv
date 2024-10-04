@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Header.hpp"
+#include "GetHeadMethod.hpp"
 
 Header::Header() {
 	this->_type = -1;
@@ -71,7 +72,7 @@ void	Header::checkFirstLine(std::vector<char>& line) {
 	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
 		throw std::runtime_error("400 Bad Request");
-	this->_method = new Method();
+	this->_method = new GetHeadMethod();
 	// check which method
 
 	this->_method->setName(methodName);

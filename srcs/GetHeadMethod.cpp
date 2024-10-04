@@ -7,7 +7,12 @@ GetHeadMethod::GetHeadMethod() : Method() {}
 
 GetHeadMethod::GetHeadMethod(const GetHeadMethod& other) : Method(other) {}
 
-GetHeadMethod&	GetHeadMethod::operator=(const GetHeadMethod& other) {}
+GetHeadMethod&	GetHeadMethod::operator=(const GetHeadMethod& other) {
+	if (this == &other)
+		return *this;
+	Method::operator=(other);
+	return *this;
+}
 
 GetHeadMethod::~GetHeadMethod() {}
 

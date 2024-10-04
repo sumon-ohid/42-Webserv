@@ -11,7 +11,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				Socket_copy.cpp \
 				Exception.cpp \
 				Header.cpp \
-				Method.cpp \
+				Method.cpp GetHeadMethod.cpp \
 				Response.cpp \
 				Config.cpp \
 				LocationConfig.cpp \
