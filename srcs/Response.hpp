@@ -13,6 +13,8 @@ class Response {
 		~Response();
 
 	public:
+		static const std::map<std::string, std::string> statusCodes;
+
 		static std::string getActualTimeString();
 
 		static void header(int socketFd, Header& header, std::string& body);

@@ -5,6 +5,27 @@
 
 #include "Response.hpp"
 
+static std::map<std::string, std::string> initMap() {
+	std::map<std::string, std::string> codes;
+	codes["200"] = "OK";
+	codes["201"] = "Created";
+	codes["204"] = "No Content";
+	codes["301"] = "Moved Permanently";
+	codes["302"] = "Found";
+	codes["400"] = "Bad Request";
+	codes["401"] = "Unauthorized";
+	codes["403"] = "Forbidden";
+	codes["404"] = "Not Found";
+	codes["405"] = "Not Allowed";
+	codes["413"] = "Request Entity Too Large";
+	codes["500"] = "Internal Server Error";
+	codes["503"] = "Service Unavailable";
+	codes["505"] = "HTTP Version Not Supported";
+	return codes;
+}
+
+const std::map<std::string, std::string> Response::statusCodes = initMap();
+
 Response::Response() {}
 
 Response::Response(const Response& other) {
@@ -63,7 +84,6 @@ void	Response::header(int socketFd, Header& header, std::string& body) {
 }
 
 void	Response::headerAndBody(int socketFd, Header& header, std::string& body) {
-
 	std::string totalString = createHeaderAndBodyString(header, body, "200");
 	write(socketFd , totalString.c_str(), totalString.size());
 }
