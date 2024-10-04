@@ -55,6 +55,12 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             if (pos != std::string::npos)
                 server.errorPage = line.substr(pos + 1);
         }
+        else if (line.find("cgi-bin") == 0)
+        {
+            size_t pos = line.find(" ");
+            if (pos != std::string::npos)
+                server.cgiFile = line.substr(pos + 1);
+        }
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
         i++;
@@ -90,6 +96,7 @@ void ServerConfig::displayConfig()
         std::cout << "Listen Port: " << server.listenPort << std::endl;
         std::cout << "Server Name: " << server.serverName << std::endl;
         std::cout << "Error Page: " << server.errorPage << std::endl;
+        std::cout << "CGI File: " << server.cgiFile << std::endl;
         std::cout << "Locations: " << std::endl;
         
         for (size_t j = 0; j < server.locations.size(); j++)
@@ -121,6 +128,11 @@ std::string ServerConfig::getServerName()
 std::string ServerConfig::getErrorPage()
 {
     return (errorPage);
+}
+
+std::string ServerConfig::getCgiFile()
+{
+    return (cgiFile);
 }
 
 std::vector<LocationConfig> ServerConfig::getLocations()
