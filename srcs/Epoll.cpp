@@ -63,7 +63,7 @@ void Epoll::EpollMonitoring(Server& serv)
 		if (_nfds == -1)
 		{
 			if (errno == EINTR)
-				serv.shutdownServer();
+				break;
 			else
 				throw std::runtime_error("epoll_wait failed");
 		}
@@ -114,6 +114,8 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	serv.addClientFd(_connSock);
+	std::cout << "in EpollAcceptNewClient" << std::endl;
+	serv.listClients();
 	return (true);
 }
 
@@ -125,6 +127,8 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 
 	if (count == -1)
 	{
+		if (errno == EINTR)
+			return (-1);
 		// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
 		if (errno != EAGAIN && errno != EWOULDBLOCK)
 			removeFd(serv, event_fd);  // Close the socket on other read errors
@@ -165,7 +169,7 @@ void	Epoll::EpollRoutine(Server& serv)
 void	Epoll:: removeFdEpoll(int fd)
 {
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1)
-        std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
+        // std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
     // Close the client socket
     close(fd);
 }

@@ -44,7 +44,7 @@ public:
 	// returns true if client is connected and false if not
 	bool	isClientConnected(int fd) const;
 
-	
+	void	printLst();
 
 	// server shutdown
 	// removes all current fds from epoll and, if it is a connection socekt, from _clnts and closes the fds

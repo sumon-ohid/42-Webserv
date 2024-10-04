@@ -15,7 +15,7 @@ void signalHandler(int signal) {
 
 int main(int argc, char **argv)
 {
-	// signal(SIGINT, signalHandler);
+	signal(SIGINT, signalHandler);
 	// Config config(argv[1]);
 	// config.printConfig();
 	(void) argv;

@@ -76,9 +76,15 @@ void	Server::shutdownServer()
 
 void	Server::disconnectClients(void)
 {
-	const	lstInt&	clientsFds = _clnts.getClientFds();
-	for (lstInt::const_iterator it = clientsFds.begin(); it != clientsFds.end(); ++it)
-		_epoll.removeFd(*this, *it);
+	lstInt&	clientsFds = _clnts.getClientFds();
+	
+	std::cout << "disconnectClients" << std::endl;
+	printLst();
+	for (lstInt::iterator it = clientsFds.begin(); it != clientsFds.end();)
+	{
+		_epoll.removeFdEpoll(*it);
+		it = clientsFds.erase(it);
+	}
 }
 
 void	Server::disconnectLstnSockets(void)
@@ -110,4 +116,9 @@ const lstSocs& Server::getLstnSockets() const
 const lstInt& Server::getCnctFds() const
 {
 	return (_clnts.getClientFds());
+}
+
+void	Server::printLst()
+{
+	_clnts.listClients();
 }
