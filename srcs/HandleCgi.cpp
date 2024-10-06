@@ -1,27 +1,80 @@
 #include "HandleCgi.hpp"
 #include "ServerConfig.hpp"
 #include <cstddef>
+#include <iostream>
 #include <string.h>
+#include <string>
 #include <sys/wait.h>
 #include <unistd.h>
 
 HandleCgi::HandleCgi()
 {
     cgiPath = "./cgi-bin/";
+    cgiConf = "Default";
 }
 
-HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket)
+//-- Function to get the path of the CGI from configuration file
+//-- then I will compare it with the path from the request
+//-- if it matches, I will return the path of the CGI file
+//-- else I will throw an exception and show 404 not found
+void HandleCgi::getCgiConfPath(std::string configFile)
 {
-    std::vector<ServerConfig> servers = getServers();
+    ServerConfig serverConfig(configFile);
+    std::vector<ServerConfig> servers = serverConfig.getServers();
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        ServerConfig server = servers[i];
+        std::string cgiFile = server.getCgiFile();
+        std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
+        if (cgiFile == fullCgiPath)
+        {
+            this->cgiConf = cgiFile;
+        }
+    }
+}
 
+//-- Constructor to handle the CGI request
+//-- I will parse the request to get the path of the CGI file
+//-- then I will call the proccessCGI function to execute the CGI script
+//-- and send the output to the client
+HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string configFile) : ServerConfig(configFile)
+{
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
     size_t pos = clientMessage.find("/cgi-bin/");
-    if (pos != clientMessage.npos)
+    if (pos != std::string::npos)
     {
-        size_t newPos = clientMessage.find("HTTP");
-        std::string tempPath = clientMessage.substr(pos, newPos);
-        cgiPath = tempPath.substr(9);
-        proccessCGI(nSocket);
+        size_t endPos = clientMessage.find(' ', pos);
+        if (endPos == std::string::npos)
+            endPos = clientMessage.find('\r', pos); //--- Handle end of line
+
+        if (endPos != std::string::npos)
+        {
+            cgiPath = clientMessage.substr(pos + 9, endPos - pos - 9); //--- Extract path after "/cgi-bin/"
+            
+            try  
+            {
+                std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
+                getCgiConfPath(configFile);
+                if (cgiConf != fullCgiPath)
+                    throw std::runtime_error("404 Not Found !!");
+                proccessCGI(nSocket);
+            }
+            catch (std::exception &e)
+            {
+                std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
+                std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
+                char buffer[1024];
+                FILE *html_file = fopen("404.html", "r");
+                if (!html_file)
+                    throw std::runtime_error("Failed to open 404.html file !!");
+                while (fgets(buffer, sizeof(buffer), html_file) != NULL)
+                {
+                    error_response += buffer;
+                }
+                fclose(html_file);
+                send(nSocket, error_response.c_str(), error_response.size(), 0);
+            }
+        }
     }
 }
 
@@ -29,78 +82,68 @@ void HandleCgi::proccessCGI(int nSocket)
 {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1)
-        throw std::runtime_error ("Pipe failed !!");
+        throw std::runtime_error("Pipe failed !!");
 
     pid_t pid = fork();
     if (pid < 0)
-        throw std::runtime_error("Forki failed !!");
+        throw std::runtime_error("Fork failed !!");
     else if (pid == 0)
     {
+        //--- Child process
         //--- Redirect stdout to the pipe's write end
-        //--- Close unused read end
-        //--- Close write end after redirection
         dup2(pipe_fd[1], STDOUT_FILENO);
-        close(pipe_fd[0]); 
-        close(pipe_fd[1]);
-        size_t pos = cgiPath.find(".");
+        close(pipe_fd[0]); //--- Close unused read end
+        close(pipe_fd[1]); //--- Close write end after redirection
 
-        //-- for now hard coded. Later will be read from config file
-        std::string exe = cgiPath.substr(pos);
-        if (exe == ".py")
+        //--- Determine the executable based on the file extension
+        size_t pos = cgiPath.find(".");
+        std::string extension = cgiPath.substr(pos);
+        std::string exe;
+
+        if (extension == ".py")
             exe = "/usr/bin/python3";
-        else if (exe == ".php")
+        else if (extension == ".php")
             exe = "/usr/bin/php";
-        else if (exe == ".sh")
+        else if (extension == ".sh")
             exe = "/usr/bin/bash";
         else
-            throw std::runtime_error("Invalid CGI file !!");
-        
-        std::string cgiPath = "./cgi-bin/" + this->cgiPath;
-        std::vector<ServerConfig> servers = getServers();
-        std::string cgiFile;
-        size_t i = 0;
-        while (i < servers.size())
-        {
-            ServerConfig server = servers[i];
-            cgiFile = server.getCgiFile();
-            if (cgiFile.empty())
-                throw std::runtime_error("CGI not configured !!");
-            if (cgiFile == this->cgiPath)
-                break;
-            else  
-                throw std::runtime_error("CGI file not found !!");
-            i++;
-        }
-        std::cout << "CGI FILE : " << cgiFile << std::endl;
-        execve(exe.c_str(), (char *[]) {(char *)exe.c_str(), (char *)cgiPath.c_str(), NULL}, NULL);
+            throw std::runtime_error("This file extension is not supported !!");
+
+        std::string fullCgiPath = "./cgi-bin/" + cgiPath;
+
+        //--- Prepare arguments for execve
+        char *const argv[] = { (char *)exe.c_str(), (char *)fullCgiPath.c_str(), NULL };
+        char *const envp[] = { NULL };
+
+        execve(exe.c_str(), argv, envp);
         throw std::runtime_error("Execve failed !!");
     }
     else
     {
-        //--- parent process
-        //--- Close unused write end
-        //--- Close read end after reading
-        close(pipe_fd[1]);
+        //--- Parent process
+        close(pipe_fd[1]); //--- Close unused write end
 
-        std::vector<char> cgiOutput;
-        ssize_t n = read(pipe_fd[0], &cgiOutput[0], cgiOutput.size());
+        //--- Read CGI output from the pipe
+        std::vector<char> cgiOutput(1024);
+        ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
         if (n < 0)
             throw std::runtime_error("Read failed !!");
-        else  
-        {
-            cgiOutput[n] = '\0';
-            std::string httpHeader = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + to_string(n) + "\n\n";
 
-            //--- Send the HTTP header
-            send(nSocket, httpHeader.c_str(), httpHeader.size(), 0);
+        //--- Resize the vector to the actual size of the read data
+        cgiOutput.resize(n);
 
-            //--- Send the CGI output
-            send(nSocket, &cgiOutput[0], n, 0);
-        }
+        //--- Prepare HTTP response header
+        std::string httpHeader = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + to_string(n) + "\n\n";
 
-        close(pipe_fd[0]);
-        waitpid(pid, NULL, 0);
-    }    
+        //--- Send the HTTP header
+        send(nSocket, httpHeader.c_str(), httpHeader.size(), 0);
+
+        //--- Send the CGI output
+        send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
+
+        close(pipe_fd[0]); //--- Close read end
+        waitpid(pid, NULL, 0); //--- Wait for the child process to finish
+    }
 }
 
 HandleCgi::~HandleCgi()

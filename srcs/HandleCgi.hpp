@@ -18,10 +18,11 @@ class HandleCgi : public ServerConfig
 
     public:
         HandleCgi();
-        HandleCgi(std::vector<char> requestBuffer, int nSocket);
+        HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string configFile);
         ~HandleCgi();
 
         void proccessCGI(int nSocket);
+        void getCgiConfPath(std::string configFile);
 
         // Function template to convert various types to string
         template <typename T>
