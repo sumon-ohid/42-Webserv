@@ -1,11 +1,6 @@
+//-- Written by : msumon
+
 #include "HandleCgi.hpp"
-#include "ServerConfig.hpp"
-#include <cstddef>
-#include <iostream>
-#include <string.h>
-#include <string>
-#include <sys/wait.h>
-#include <unistd.h>
 
 HandleCgi::HandleCgi()
 {

@@ -1,3 +1,5 @@
+//-- Written by : msumon
+
 #include "LocationConfig.hpp"
 
 LocationConfig::LocationConfig() : Config()

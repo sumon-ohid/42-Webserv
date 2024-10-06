@@ -1,5 +1,6 @@
+//-- Written by : msumon
+
 #include "ServerConfig.hpp"
-#include <vector>
 
 ServerConfig::ServerConfig() : LocationConfig()
 {
