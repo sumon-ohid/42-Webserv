@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Header.hpp"
+#include "GetHeadMethod.hpp"
 
 Header::Header() {
 	this->_type = -1;
@@ -71,7 +72,7 @@ void	Header::checkFirstLine(std::vector<char>& line) {
 	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
 		throw std::runtime_error("400 Bad Request");
-	this->_method = new Method();
+	this->_method = new GetHeadMethod();
 	// check which method
 
 	this->_method->setName(methodName);
@@ -83,7 +84,11 @@ void	Header::checkFirstLine(std::vector<char>& line) {
 	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
 	std::cout << "$" << _method->getPath() << "$" << std::endl;
 
-	this->_method->setProtocol(strLine.substr(spacePos2 + 1));
+	std::size_t spacePos3 = strLine.find("\r\n", spacePos2 + 1);
+	if (spacePos3 == std::string::npos)
+		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
+	else
+		this->_method->setProtocol(strLine.substr(spacePos2 + 1, spacePos3 - (spacePos2 + 1)));
 	std::cout << "$" << _method->getProtocol() << "$" << std::endl;
 	_firstLineChecked = true;
 }

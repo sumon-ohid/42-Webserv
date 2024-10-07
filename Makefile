@@ -14,6 +14,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				Epoll.cpp \
 				Header.cpp \
 				Method.cpp \
+        GetHeadMethod.cpp \
 				Response.cpp \
 				Config.cpp \
 				LocationConfig.cpp \

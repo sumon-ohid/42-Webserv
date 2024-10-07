@@ -17,5 +17,9 @@
 
 extern volatile sig_atomic_t stopSignal;
 
+#define GET "GET"
+#define HEAD "HEAD"
+#define POST "POST"
+
 
 // Sumon

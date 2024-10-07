@@ -20,4 +20,5 @@ class Response {
 
 		static void header(int socketFd, Header& header, std::string& body);
 		static void	headerAndBody(int socketFd, Header& header, std::string& body);
+		static void FallbackError(int socketFd, Header& header, std::string statusCode);
 };
