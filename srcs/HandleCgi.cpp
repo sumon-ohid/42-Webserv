@@ -32,9 +32,14 @@ void HandleCgi::getCgiConfPath(std::string configFile)
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string configFile) : ServerConfig(configFile)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, std::string configFile) : ServerConfig(configFile)
 {
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
+
+    std::cout << "----> " << clientMessage << " <----" << std::endl;
+    std::cout << "----> " << nSocket << " <----" << std::endl;
+    std::cout << "----> " << configFile << " <----" << std::endl;
+
     size_t pos = clientMessage.find("/cgi-bin/");
     if (pos != std::string::npos)
     {

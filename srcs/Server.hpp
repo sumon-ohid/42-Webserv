@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Clients.hpp"
+#include "ServerConfig.hpp"
 #include "Socket.hpp"
 #include "Epoll.hpp"
 #include <list>
@@ -16,10 +17,14 @@ private:
 	Clients		_clnts;
 	// handles the event monitoring
 	Epoll		_epoll;
+
+	std::string _configFile;
+	ServerConfig _server;
 public:
 	// Coplien's form
 
 	Server();
+	Server(ServerConfig server);
 	~Server();
 	Server(const Server&);
 	Server&	operator=(const Server&);
@@ -65,4 +70,6 @@ public:
 	const lstSocs&	getLstnSockets(void) const;
 	// Get a const reference to the list of connected sockets (client FDs)
 	const lstInt&	getCnctFds(void) const;
+
+	std::string getConfigFile();
 };

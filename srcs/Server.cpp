@@ -1,11 +1,13 @@
 #include "Server.hpp"
 #include "Clients.hpp"
 #include "Epoll.hpp"
+#include "ServerConfig.hpp"
 #include <stdexcept>
 
 // ------------- Coplien's form -------------
 
-Server::Server() {}
+Server::Server() { _configFile = "None";}
+Server::Server(ServerConfig server) : _server(server) {}
 Server::~Server() {}
 Server::Server(const Server &orig) : _lstnSockets(orig._lstnSockets), _clnts(orig._clnts), _epoll(orig._epoll) {}
 Server&	Server::operator=(const Server &rhs)
@@ -129,4 +131,9 @@ const lstInt& Server::getCnctFds() const
 void	Server::printLst()
 {
 	_clnts.listClients();
+}
+
+std::string Server::getConfigFile()
+{
+	return (_configFile);
 }

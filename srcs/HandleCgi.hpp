@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <sstream>
 #include "ServerConfig.hpp"
 
@@ -20,7 +21,7 @@ class HandleCgi : public ServerConfig
 
     public:
         HandleCgi();
-        HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string configFile);
+        HandleCgi(std::string requestBuffer, int nSocket, std::string configFile);
         ~HandleCgi();
 
         void proccessCGI(int nSocket);

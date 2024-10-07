@@ -1,6 +1,8 @@
 //-- Written by : msumon
 
 #include "ServerConfig.hpp"
+#include <cstddef>
+#include <vector>
 
 ServerConfig::ServerConfig() : LocationConfig()
 {
@@ -42,7 +44,10 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         {
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
+            {
                 server.listenPort = line.substr(pos + 1);
+                server.makePortVector();
+            }
         }
         else if (line.find("server_name") == 0)
         {
@@ -65,7 +70,7 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
         i++;
-    }
+}
 }
 
 ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
@@ -100,6 +105,11 @@ void ServerConfig::displayConfig()
         std::cout << "CGI File: " << server.cgiFile << std::endl;
         std::cout << "Locations: " << std::endl;
         
+        for (size_t k = 0; k < server.getListenPorts().size(); k++)
+        {
+            std::cout << "Multiple Port " << server.getListenPorts()[k] << std::endl;
+        }
+
         for (size_t j = 0; j < server.locations.size(); j++)
         {
             LocationConfig location = server.locations[j];
@@ -113,6 +123,24 @@ void ServerConfig::displayConfig()
         }
         std::cout << std::endl;
     }
+}
+
+void ServerConfig::makePortVector()
+{
+    std::vector<int> tempPorts;
+    std::string ports = getListenPort();
+
+    while (!ports.empty())
+    {
+        size_t pos = ports.find(" ");
+        std::string temp = ports.substr(0, pos);
+        int port = atoi(temp.c_str());
+        tempPorts.push_back(port);
+        if (pos == std::string::npos)
+            break;
+        ports.erase(0, pos + 1);
+    }
+    listenPorts = tempPorts;
 }
 
 //--- > Get functions
@@ -144,6 +172,11 @@ std::vector<LocationConfig> ServerConfig::getLocations()
 std::vector<ServerConfig> ServerConfig::getServers()
 {
     return (servers);
+}
+
+std::vector<int> ServerConfig::getListenPorts()
+{
+    return (listenPorts);
 }
 
 ServerConfig::~ServerConfig()

@@ -27,6 +27,7 @@ private:
 	int					_nfds;
 	struct epoll_event _ev;
 	struct epoll_event	_events[MAX_EVENTS];
+	std::vector<char> _buffer;
 public:
 	Epoll();
 	~Epoll();
@@ -72,7 +73,7 @@ public:
 	int		EpollExistingClient(Server&, const int&);
 
 	// DISCUSS: should be handled in Request
-	void	validRequest(std::vector<char>, ssize_t, Header&);
+	void	validRequest(Server & serv, std::vector<char>, ssize_t, Header&);
 	int		invalidRequest(Server&, const int&);
 	int		emptyRequest(Server&, const int&);
 
