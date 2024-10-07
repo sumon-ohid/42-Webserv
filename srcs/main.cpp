@@ -1,6 +1,6 @@
 #include <csignal>
 
-#include "Socket.hpp"
+#include "Server.hpp"
 #include "ServerConfig.hpp"
 #include "main.hpp"
 #include <exception>
@@ -15,7 +15,7 @@ void signalHandler(int signal) {
 
 int main(int argc, char **argv)
 {
-	// signal(SIGINT, signalHandler);
+	signal(SIGINT, signalHandler);
 	// Config config(argv[1]);
 	// config.printConfig();
 	(void) argv;
@@ -23,18 +23,21 @@ int main(int argc, char **argv)
 		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
 		return ERROR;
 	}
-	std::cout << "Server started. Listening at Port " << PORT << std::endl;
-	Socket	socket(PORT);
+	Server	server;
+	// Socket	socket(PORT);
 	try
 	{
 		if (argc == 2) {
 			ServerConfig config(argv[1]);
 			//config.displayConfig();
 		}
-		socket.createSocket();
+		// socket.createSocket();
+		server.setUpLstnSockets();
+		server.startEpollRoutine();
 	}
 	catch (std::exception& e)
 	{
 		std::cout << "Error:\t" << e.what() << std::endl;
 	}
+	server.shutdownServer();
 }

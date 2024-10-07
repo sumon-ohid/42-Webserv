@@ -1,17 +1,20 @@
 NAME 		= webserv
 
 CXX 		= c++
-CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP
+CXXFLAGS 	= -std=c++98 -Wall -Werror -Wextra -MD -MP -g
 
 OBJ_DIR		= ./objs
 SRCS_DIR	= ./srcs
 
 SRCS		= 	$(addprefix $(SRCS_DIR),\
 				main.cpp \
-				Socket_copy.cpp \
-				Exception.cpp \
+				Socket.cpp \
+				Clients.cpp \
+				Server.cpp \
+				Epoll.cpp \
 				Header.cpp \
-				Method.cpp GetHeadMethod.cpp \
+				Method.cpp \
+        GetHeadMethod.cpp \
 				Response.cpp \
 				Config.cpp \
 				LocationConfig.cpp \

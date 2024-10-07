@@ -1,3 +1,5 @@
+//-- Written by : msumon
+
 #pragma once
 
 #include <string>
@@ -18,6 +20,7 @@ class ServerConfig : public LocationConfig
         std::string listenPort;
         std::string serverName;
         std::string errorPage;
+        std::string cgiFile;
         std::vector<LocationConfig> locations;
         std::vector<ServerConfig> servers;
 
@@ -30,6 +33,7 @@ class ServerConfig : public LocationConfig
         std::string getListenPort();
         std::string getServerName();
         std::string getErrorPage();
+        std::string getCgiFile();
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
 

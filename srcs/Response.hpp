@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 
 #include "Header.hpp"
 #include "Socket.hpp"
