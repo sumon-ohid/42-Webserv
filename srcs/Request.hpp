@@ -8,20 +8,20 @@
 #define CLIENT_REQUEST 1
 #define SERVER_RESPONSE 2
 
-class Header {
+class Request {
 	private:
 		bool	_firstLineChecked;
 		bool	_readingFinished;
 		int		_type; // request or response
 		Method*	_method;
-		std::map<std::string, std::string> headerMap;
+		std::map<std::string, std::string> requestMap;
 
 	public:
-		Header();
-		Header(std::string method);
-		Header(const Header& other);
-		Header& operator=(const Header& other);
-		~Header();
+		Request();
+		Request(std::string method);
+		Request(const Request& other);
+		Request& operator=(const Request& other);
+		~Request();
 
 		std::string getMethodName();
 		std::string getMethodPath();
@@ -32,6 +32,6 @@ class Header {
 		void	checkFirstLine(std::vector<char>& line);
 		void	checkLine(std::vector<char>& line);
 
-		void	headerReset();
+		void	requestReset();
 
 };

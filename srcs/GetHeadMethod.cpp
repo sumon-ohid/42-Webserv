@@ -1,7 +1,7 @@
 #include "GetHeadMethod.hpp"
 #include "main.hpp"
 #include "Response.hpp"
-#include "Header.hpp"
+#include "Request.hpp"
 
 GetHeadMethod::GetHeadMethod() : Method() {}
 
@@ -16,14 +16,14 @@ GetHeadMethod&	GetHeadMethod::operator=(const GetHeadMethod& other) {
 
 GetHeadMethod::~GetHeadMethod() {}
 
-void	GetHeadMethod::executeMethod(int socketFd, Header& header) const {
+void	GetHeadMethod::executeMethod(int socketFd, Request& request) const {
 
 	std::string body;
 
 
 	if (this->_name == GET)
-		Response::headerAndBody(socketFd, header, body);
+		Response::requestAndBody(socketFd, request, body);
 	else if (this->_name == HEAD)
-		Response::header(socketFd, header, body);
+		Response::request(socketFd, request, body);
 
 }

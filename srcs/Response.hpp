@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-#include "Header.hpp"
+#include "Request.hpp"
 #include "Socket.hpp"
 
 class Response {
@@ -18,7 +18,7 @@ class Response {
 
 		static std::string getActualTimeString();
 
-		static void header(int socketFd, Header& header, std::string& body);
-		static void	headerAndBody(int socketFd, Header& header, std::string& body);
-		static void FallbackError(int socketFd, Header& header, std::string statusCode);
+		static void request(int socketFd, Request& request, std::string& body);
+		static void	requestAndBody(int socketFd, Request& request, std::string& body);
+		static void FallbackError(int socketFd, Request& request, std::string statusCode);
 };

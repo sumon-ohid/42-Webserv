@@ -45,8 +45,8 @@ HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string c
         if (endPos != std::string::npos)
         {
             cgiPath = clientMessage.substr(pos + 9, endPos - pos - 9); //--- Extract path after "/cgi-bin/"
-            
-            try  
+
+            try
             {
                 std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
                 getCgiConfPath(configFile);
@@ -127,11 +127,11 @@ void HandleCgi::proccessCGI(int nSocket)
         //--- Resize the vector to the actual size of the read data
         cgiOutput.resize(n);
 
-        //--- Prepare HTTP response header
-        std::string httpHeader = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + to_string(n) + "\n\n";
+        //--- Prepare HTTP response request
+        std::string httpRequest = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + to_string(n) + "\n\n";
 
-        //--- Send the HTTP header
-        send(nSocket, httpHeader.c_str(), httpHeader.size(), 0);
+        //--- Send the HTTP request
+        send(nSocket, httpRequest.c_str(), httpRequest.size(), 0);
 
         //--- Send the CGI output
         send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);

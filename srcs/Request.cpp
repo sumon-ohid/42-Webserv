@@ -2,54 +2,54 @@
 #include <stdexcept>
 #include <string>
 
-#include "Header.hpp"
+#include "Request.hpp"
 #include "GetHeadMethod.hpp"
 
-Header::Header() {
+Request::Request() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
 	this->_method = NULL;
 }
 
-Header::Header(const Header& other) {
+Request::Request(const Request& other) {
 	(void) other;
 }
 
-Header& Header::operator=(const Header& other) {
+Request& Request::operator=(const Request& other) {
 	if (this == &other)
 		return *this;
 	// copy variables here
 	return *this;
 }
 
-Header::~Header() {
+Request::~Request() {
 	delete this->_method;
 }
 
-std::string Header::getMethodName() {
+std::string Request::getMethodName() {
 	if (this->_method)
 		return this->_method->getName();
 	throw	std::runtime_error("Server error 101");
 }
 
-std::string Header::getMethodPath() {
+std::string Request::getMethodPath() {
 	if (this->_method)
 		return this->_method->getPath();
 	throw	std::runtime_error("Server error 102");
 }
 
-std::string Header::getMethodProtocol() {
+std::string Request::getMethodProtocol() {
 	if (this->_method)
 		return this->_method->getProtocol();
 	return "HTTP/1.1"; // to also return when method is wrong
 }
 
-bool	Header::getFirstLineChecked() {
+bool	Request::getFirstLineChecked() {
 	return this->_firstLineChecked;
 }
 
-bool	Header::getReadingFinished() {
+bool	Request::getReadingFinished() {
 	return this->_readingFinished;
 }
 
@@ -62,7 +62,7 @@ static void	checkLineLastChars(std::string& line) {
 		line.resize(line.size() - 1);
 }
 
-void	Header::checkFirstLine(std::vector<char>& line) {
+void	Request::checkFirstLine(std::vector<char>& line) {
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
@@ -93,7 +93,7 @@ void	Header::checkFirstLine(std::vector<char>& line) {
 	_firstLineChecked = true;
 }
 
-void	Header::checkLine(std::vector<char>& line) {
+void	Request::checkLine(std::vector<char>& line) {
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
@@ -116,7 +116,7 @@ void	Header::checkLine(std::vector<char>& line) {
 }
 
 
-void	Header::headerReset() {
+void	Request::requestReset() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
