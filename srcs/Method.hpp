@@ -1,7 +1,7 @@
 #ifndef METHOD_HPP
 #define METHOD_HPP
 
-class Header;
+class Request;
 
 #include <string>
 
@@ -29,7 +29,7 @@ class Method {
 		void	setPath(std::string path);
 		void	setProtocol(std::string protocol);
 
-		virtual void	executeMethod(int socketFd, Header& header) const = 0;
+		virtual void	executeMethod(int socketFd, Request& request) const = 0;
 
 };
 

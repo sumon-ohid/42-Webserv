@@ -1,6 +1,6 @@
 #pragma once
 
-class Header;
+class Request;
 
 #include "Method.hpp"
 
@@ -14,6 +14,6 @@ class GetHeadMethod : public Method {
 		GetHeadMethod& operator=(const GetHeadMethod& other);
 		~GetHeadMethod();
 
-		void	executeMethod(int socketFd, Header& header) const;
+		void	executeMethod(int socketFd, Request& request) const;
 
 };
