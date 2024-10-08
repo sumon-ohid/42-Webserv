@@ -117,10 +117,10 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 	}
 
 	//--- Handle cgi
-	std::string bufferRead(_buffer.begin(), _buffer.end());
-	size_t pos = bufferRead.find("cgi-bin");
-	if (pos != std::string::npos)
-		HandleCgi cgi(bufferRead, _connSock, serv);
+	// std::string bufferRead(_buffer.begin(), _buffer.end());
+	// size_t pos = bufferRead.find("cgi-bin");
+	// if (pos != std::string::npos)
+	// 	HandleCgi cgi(bufferRead, _connSock, serv);
 
 	//-- End of cgi
 
