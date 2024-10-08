@@ -1,12 +1,14 @@
 #include "Epoll.hpp"
+#include "HandleCgi.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
+#include "main.hpp"
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
 #include <exception>
 #include <sys/types.h>
-#include "main.hpp"
+#include <vector>
 
 Epoll::Epoll() : _epollFd(-1) {}
 Epoll::~Epoll() {}
@@ -115,6 +117,15 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 		std::cerr << "Error:\taccept4 failed" << std::endl;
 		return (false);  // Skip to the next socket if accept fails
 	}
+
+	//--- Handle cgi
+	// std::string bufferRead(_buffer.begin(), _buffer.end());
+	// size_t pos = bufferRead.find("cgi-bin");
+	// if (pos != std::string::npos)
+	// 	HandleCgi cgi(bufferRead, _connSock, serv);
+
+	//-- End of cgi
+
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	serv.addClientFd(_connSock);
@@ -141,7 +152,7 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 			else if (count == 0)
 				return (emptyRequest(serv, event_fd));
 			else
-				validRequest(buffer, count, request);
+				validRequest(serv, buffer, count, request);
 		}
 		catch (std::exception &e)
 		{
@@ -155,10 +166,11 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 			break;
 		}
 	}
+	_buffer = buffer;
 	if (!writeFlag)
 	{
 		std::string test = "this is a test";
-		Response::requestAndBody(event_fd, request, test);
+		Response::headerAndBody(event_fd, request, test);
 		// write(_new_socket , hello.c_str() , hello.size());
     	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
@@ -185,8 +197,9 @@ int	Epoll::emptyRequest(Server& serv, const int &event_fd)
 	return (-1); // Move to the next event
 }
 
-void	Epoll::validRequest(std::vector<char> buffer, ssize_t count, Request& request)
+void	Epoll::validRequest(Server& serv, std::vector<char> buffer, ssize_t count, Request& request)
 {
+	(void) serv;
 	buffer.resize(count);
 	// if (_buffer.size() == 5)
 	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
@@ -195,6 +208,11 @@ void	Epoll::validRequest(std::vector<char> buffer, ssize_t count, Request& reque
 	} else {
 		request.checkFirstLine(buffer);
 	}
+	//--- This should be here
+	std::string bufferRead(buffer.begin(), buffer.end());
+	size_t pos = bufferRead.find("cgi-bin");
+	if (pos != std::string::npos)
+		HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
 void	Epoll::EpollRoutine(Server& serv)

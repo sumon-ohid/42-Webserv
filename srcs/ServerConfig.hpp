@@ -23,6 +23,8 @@ class ServerConfig : public LocationConfig
         std::string cgiFile;
         std::vector<LocationConfig> locations;
         std::vector<ServerConfig> servers;
+        std::vector<int> listenPorts;
+        std::string _configFile;
 
     public:
         ServerConfig();
@@ -37,6 +39,8 @@ class ServerConfig : public LocationConfig
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
 
+        void makePortVector();
+        std::vector<int> getListenPorts();
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
 };

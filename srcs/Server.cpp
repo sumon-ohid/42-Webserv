@@ -1,11 +1,15 @@
 #include "Server.hpp"
 #include "Clients.hpp"
 #include "Epoll.hpp"
+#include "ServerConfig.hpp"
+#include <cstddef>
 #include <stdexcept>
+#include <vector>
 
 // ------------- Coplien's form -------------
 
-Server::Server() {}
+Server::Server() { _configFile = "None";}
+Server::Server(ServerConfig server) : _serverConfig(server) {}
 Server::~Server() {}
 Server::Server(const Server &orig) : _lstnSockets(orig._lstnSockets), _clnts(orig._clnts), _epoll(orig._epoll) {}
 Server&	Server::operator=(const Server &rhs)
@@ -23,12 +27,12 @@ Server&	Server::operator=(const Server &rhs)
 
 void	Server::setUpLstnSockets()
 {
-	int numSockets = 3;
-	int ports[] = {3000, 4000, 5000};
-	for (int i = 0; i < numSockets; ++i)
+	std::vector<int> ports = this->_serverConfig.getListenPorts();
+	for (size_t i = 0; i < ports.size(); ++i)
 	{
+		int port = ports[i];
         // create a temporary socket instance which will listen to a specific port
-		Socket	tmp(ports[i]);
+		Socket	tmp(port);
 		std::cout << "Server - create Sockets\t" << i << std::endl;
 		tmp.setUpSocket();
         // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
@@ -129,4 +133,14 @@ const lstInt& Server::getCnctFds() const
 void	Server::printLst()
 {
 	_clnts.listClients();
+}
+
+std::string Server::getConfigFile()
+{
+	return (_configFile);
+}
+
+ServerConfig Server::getServerConf()
+{
+	return (_serverConfig);
 }

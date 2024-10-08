@@ -18,7 +18,7 @@ class Response {
 
 		static std::string getActualTimeString();
 
-		static void request(int socketFd, Request& request, std::string& body);
-		static void	requestAndBody(int socketFd, Request& request, std::string& body);
+		static void header(int socketFd, Request& request, std::string& body);
+		static void	headerAndBody(int socketFd, Request& request, std::string& body);
 		static void FallbackError(int socketFd, Request& request, std::string statusCode);
 };
