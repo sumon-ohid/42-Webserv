@@ -14,11 +14,12 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				Epoll.cpp \
 				Request.cpp \
 				Method.cpp \
-        GetHeadMethod.cpp \
+        		GetHeadMethod.cpp \
 				Response.cpp \
 				Config.cpp \
 				LocationConfig.cpp \
 				ServerConfig.cpp \
+				HandleCgi.cpp \
 				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)

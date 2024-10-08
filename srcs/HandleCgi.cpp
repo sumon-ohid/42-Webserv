@@ -1,6 +1,8 @@
 //-- Written by : msumon
 
 #include "HandleCgi.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
 
 HandleCgi::HandleCgi()
 {
@@ -12,29 +14,16 @@ HandleCgi::HandleCgi()
 //-- then I will compare it with the path from the request
 //-- if it matches, I will return the path of the CGI file
 //-- else I will throw an exception and show 404 not found
-void HandleCgi::getCgiConfPath(std::string configFile)
-{
-    ServerConfig serverConfig(configFile);
-    std::vector<ServerConfig> servers = serverConfig.getServers();
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        ServerConfig server = servers[i];
-        std::string cgiFile = server.getCgiFile();
-        std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-        if (cgiFile == fullCgiPath)
-        {
-            this->cgiConf = cgiFile;
-        }
-    }
-}
+
 
 //-- Constructor to handle the CGI request
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string configFile) : ServerConfig(configFile)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server& server)
 {
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
+
     size_t pos = clientMessage.find("/cgi-bin/");
     if (pos != std::string::npos)
     {
@@ -49,7 +38,11 @@ HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string c
             try
             {
                 std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-                getCgiConfPath(configFile);
+                ServerConfig serverConf = server.getServerConf();
+                serverConf.displayConfig();
+
+                cgiConf = serverConf.getCgiFile();
+                std::cout << cgiConf << "+++++++++" << std::endl;
                 if (cgiConf != fullCgiPath)
                     throw std::runtime_error("404 Not Found !!");
                 proccessCGI(nSocket);

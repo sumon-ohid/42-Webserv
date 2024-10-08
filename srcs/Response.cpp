@@ -78,12 +78,12 @@ static std::string createRequestAndBodyString(Request& request, std::string& bod
 	return ss.str();
 }
 
-void	Response::request(int socketFd, Request& request, std::string& body) {
+void	Response::header(int socketFd, Request& request, std::string& body) {
 	std::string headString = createRequestString(request, body, "200");
 	write(socketFd , headString.c_str(), headString.size());
 }
 
-void	Response::requestAndBody(int socketFd, Request& request, std::string& body) {
+void	Response::headerAndBody(int socketFd, Request& request, std::string& body) {
 	std::string totalString = createRequestAndBodyString(request, body, "200");
 	write(socketFd , totalString.c_str(), totalString.size());
 }

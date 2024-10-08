@@ -3,7 +3,9 @@
 #include "Server.hpp"
 #include "ServerConfig.hpp"
 #include "main.hpp"
+#include <cstddef>
 #include <exception>
+#include <vector>
 
 volatile sig_atomic_t stopSignal = 0;
 
@@ -16,28 +18,39 @@ void signalHandler(int signal) {
 int main(int argc, char **argv)
 {
 	signal(SIGINT, signalHandler);
-	// Config config(argv[1]);
-	// config.printConfig();
-	(void) argv;
-	if (argc > 2) {
-		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
-		return ERROR;
-	}
-	Server	server;
-	// Socket	socket(PORT);
-	try
+	std::vector<Server> servers;
+    try {
+        //-- We can run a loop of servers, and pass server[i] to Server server(config[i]);
+		if (argc == 2) 
+		{
+            ServerConfig config(argv[1]);
+            std::vector<ServerConfig> serversConf = config.getServers();
+            //config.displayConfig();
+            for (size_t i = 0; i < serversConf.size(); ++i)
+			{
+                ServerConfig singleServerConf = serversConf[i];
+                Server server(singleServerConf);
+                server.setUpLstnSockets();
+                server.startEpollRoutine();
+                servers.push_back(server);
+            }
+        }
+		else
+		{
+            std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+            return 1;
+        }
+    }
+    catch (std::exception& e)
 	{
-		if (argc == 2) {
-			ServerConfig config(argv[1]);
-			//config.displayConfig();
-		}
-		// socket.createSocket();
-		server.setUpLstnSockets();
-		server.startEpollRoutine();
-	}
-	catch (std::exception& e)
+        std::cout << "Error:\t" << e.what() << std::endl;
+        return 1;
+    }
+
+    for (size_t i = 0; i < servers.size(); ++i)
 	{
-		std::cout << "Error:\t" << e.what() << std::endl;
-	}
-	server.shutdownServer();
+        servers[i].shutdownServer();
+    }
+
+    return 0;
 }
