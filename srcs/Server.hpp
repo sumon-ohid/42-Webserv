@@ -1,21 +1,22 @@
 #pragma once
 
-#include "Clients.hpp"
+#include "Client.hpp"
 #include "Socket.hpp"
 #include "Epoll.hpp"
 #include <list>
 
 typedef std::list<Socket> lstSocs;
+typedef std::list<Client> lstClients;
 
 class Server
 {
 private:
 	// stores lsiten sockets
-	lstSocs		_lstnSockets;
+	lstSocs			_listenSockets;
 	// sotres clients' (connection sockets') fds
-	Clients		_clnts;
+	lstClients		_clients;
 	// handles the event monitoring
-	Epoll		_epoll;
+	Epoll			_epoll;
 public:
 	// Coplien's form
 
@@ -28,6 +29,8 @@ public:
 
 	// creates a socket to listen on for all the IP, port combinations requested
 	void	setUpLstnSockets();
+
+	void	startServer();
 	
 	// epoll
 	// initializes the epoll routine
@@ -39,7 +42,7 @@ public:
 	void	addClientFd(int);
 	// removes a client's fd from _clnts
 	void	removeClientFd(int);
-	// lists all clients currently connected 
+	// lists all clients currently connected
 	void	listClients(void) const;
 	// returns true if client is connected and false if not
 	bool	isClientConnected(int fd) const;
@@ -57,12 +60,11 @@ public:
 
 	// Getters
 
-	// Get the number of listening sockets
-	unsigned		getLstnSocketsCount(void) const;
+
+	unsigned		listenSocketsCount() const;
 	// Get the number of connected client sockets
-	unsigned		getNumCnctSockets(void) const;
+	unsigned		CnctSocketsCount(void) const;
 	// Get a const reference to the list of listening sockets
 	const lstSocs&	getLstnSockets(void) const;
-	// Get a const reference to the list of connected sockets (client FDs)
-	const lstInt&	getCnctFds(void) const;
+
 };

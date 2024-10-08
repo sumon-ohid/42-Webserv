@@ -1,5 +1,5 @@
 #include "Server.hpp"
-#include "Clients.hpp"
+#include "Client.hpp"
 #include "Epoll.hpp"
 #include <stdexcept>
 
@@ -7,13 +7,13 @@
 
 Server::Server() {}
 Server::~Server() {}
-Server::Server(const Server &orig) : _lstnSockets(orig._lstnSockets), _clnts(orig._clnts), _epoll(orig._epoll) {}
+Server::Server(const Server &orig) : _listenSockets(orig._listenSockets), _clients(orig._clients), _epoll(orig._epoll) {}
 Server&	Server::operator=(const Server &rhs)
 {
 	if (this != &rhs)
 	{
-		_lstnSockets = rhs._lstnSockets;
-		_clnts = rhs._clnts;
+		_listenSockets = rhs._listenSockets;
+		_clients = rhs._clients;
 		_epoll = rhs._epoll;
 	}
 	return (*this);
@@ -33,42 +33,48 @@ void	Server::setUpLstnSockets()
 		tmp.setUpSocket();
         // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
 		if (tmp.getFdSocket() != -1)
-			_lstnSockets.push_back(tmp);
+			_listenSockets.push_back(tmp);
 	}
 	// check if there is at least one listening socket
-	if (_lstnSockets.empty())
+	if (_listenSockets.empty())
 		throw std::runtime_error("couldn't create any listen socket");
 }
 
-// ------------- Epoll ------------- 
+// ------------- Epoll -------------
+
+void	Server::startServer()
+{
+	setUpLstnSockets();
+	_epoll.EpollRoutine(*this);
+}
 
 void	Server::startEpollRoutine()
 {
-	// call epoll to set up the monitoring and enable to have clients 
+	// call epoll to set up the monitoring and enable to have clients
     // connect to listening sockets
     _epoll.EpollRoutine(*this);
 }
 
-// ------------- Clients ------------- 
+// ------------- Clients -------------
 
-void	Server::addClientFd(int fd)
+void	Server::addClient(int fd)
 {
-	_clnts.addClient(fd);
+	_clients.push_back(Client(fd));
 }
 
 void	Server::removeClientFd(int fd)
 {
-	_clnts.removeClient(fd);
+	_clients.removeClient(fd);
 }
 
 void	Server::listClients() const
 {
-	_clnts.listClients();
+	_clients.listClients();
 }
 
 bool	Server::isClientConnected(int fd) const
 {
-	return (_clnts.isClientConnected(fd));
+	return (_clients.isClientConnected(fd));
 }
 
 // ------------- Shutdown -------------
@@ -84,11 +90,10 @@ void	Server::shutdownServer()
 
 void	Server::disconnectClients(void)
 {
-	lstInt&	clientsFds = _clnts.getClientFds();
 	std::cout << "disconnectClients" << std::endl;
-	for (lstInt::iterator it = clientsFds.begin(); it != clientsFds.end();)
+	for (lstClients::iterator it = _clients.begin(); it != _clients.end();)
 	{
-		int	&fd = *(it++);
+		int	fd = (it++)->getFd();
 		if (fd != -1)
 			_epoll.removeFdEpoll(fd);
 	}
@@ -96,37 +101,27 @@ void	Server::disconnectClients(void)
 
 void	Server::disconnectLstnSockets(void)
 {
-	for (lstSocs::iterator it = _lstnSockets.begin(); it != _lstnSockets.end();)
+	for (lstSocs::iterator it = _listenSockets.begin(); it != _listenSockets.end();)
 	{
 		if (it->getFdSocket() != -1)
 			_epoll.removeFdEpoll(it->getFdSocket());
-		it = _lstnSockets.erase(it);
+		it = _listenSockets.erase(it);
 	}
 }
 
 // ------------- Getters -------------
 
-unsigned	Server::getLstnSocketsCount() const
+unsigned	Server::listenSocketsCount() const
 {
-	return (_lstnSockets.size());
+	return (_listenSockets.size());
 }
 
-unsigned	Server::getNumCnctSockets() const
+unsigned	Server::CnctSocketsCount() const
 {
-	return (_clnts.getClientCount());
+	return (_clients.size());
 }
 
 const lstSocs& Server::getLstnSockets() const
 {
-	return (_lstnSockets);
-}
-
-const lstInt& Server::getCnctFds() const
-{
-	return (_clnts.getClientFds());
-}
-
-void	Server::printLst()
-{
-	_clnts.listClients();
+	return (_listenSockets);
 }

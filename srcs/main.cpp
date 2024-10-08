@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 		return ERROR;
 	}
 	Server	server;
+
 	// Socket	socket(PORT);
 	try
 	{
@@ -32,7 +33,7 @@ int main(int argc, char **argv)
 			//config.displayConfig();
 		}
 		// socket.createSocket();
-		server.setUpLstnSockets();
+		server.setUpLstnSockets();	
 		server.startEpollRoutine();
 	}
 	catch (std::exception& e)

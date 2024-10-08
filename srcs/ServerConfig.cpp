@@ -72,7 +72,7 @@ ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
 {
     std::vector<std::string> configVector = Config::getConfig();
     size_t i = 0;
-    
+
     while (i < configVector.size())
     {
         std::string line = configVector[i];
@@ -99,7 +99,7 @@ void ServerConfig::displayConfig()
         std::cout << "Error Page: " << server.errorPage << std::endl;
         std::cout << "CGI File: " << server.cgiFile << std::endl;
         std::cout << "Locations: " << std::endl;
-        
+
         for (size_t j = 0; j < server.locations.size(); j++)
         {
             LocationConfig location = server.locations[j];

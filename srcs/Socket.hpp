@@ -18,10 +18,7 @@ private:
 	int					_fd;
 	int					_port;
 	socklen_t			_addrlen;
-	int					_newSocket;
-	long				_valread;
 	sockaddr_in			_address;
-	std::vector<char>	_buffer;
 public:
 	Socket();
 	Socket(int);

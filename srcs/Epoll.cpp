@@ -36,7 +36,6 @@ void	Epoll::createEpoll()
 
 void	Epoll::registerLstnSockets(const Server& serv)
 {
-
 	_ev.events = EPOLLIN;
 	// Retrieve the list of listening sockets from the server
 	const lstSocs&	sockets = serv.getLstnSockets();
