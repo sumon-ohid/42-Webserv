@@ -86,6 +86,7 @@ void	Response::header(int socketFd, Request& request, std::string& body) {
 
 void	Response::headerAndBody(int socketFd, Request& request, std::string& body) {
 	std::string totalString = createRequestAndBodyString(request, body, "200");
+	std::cout << totalString << std::endl;
 	write(socketFd , totalString.c_str(), totalString.size());
 }
 

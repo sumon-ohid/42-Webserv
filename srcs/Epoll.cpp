@@ -141,22 +141,18 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
 	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
-	std::cout << "test0" << std::endl;
 	while (!request.getReadingFinished())
 	{
 		try
 		{
-			std::cout << "test00" << std::endl;
 			buffer.resize(SOCKET_BUFFER_SIZE);
 			ssize_t count = read(event_fd, &buffer[0], buffer.size());
-			std::cout << "test01: " << count << std::endl;
 			if (count == -1)
 				return (invalidRequest(serv, event_fd));
 			else if (count == 0)
 				return (emptyRequest(serv, event_fd));
 			else
 				validRequest(serv, buffer, count, request);
-			std::cout << "test02" << std::endl;
 		}
 		catch (std::exception &e)
 		{
@@ -182,6 +178,7 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 	(void) count;
 	writeFlag = false;
 	std::map<std::string, std::string> testMap = request.getHeaderMap();
+	std::cout << request.getMethodName() << " " << request.getMethodPath() << " " << request.getMethodProtocol() << std::endl;
 	std::cout << "map size: " << testMap.size() << std::endl;
 	request.requestReset();
 	return (0);

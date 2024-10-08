@@ -22,26 +22,24 @@ GetMethod::~GetMethod() {}
 void	GetMethod::executeMethod(int socketFd, Request& request) const {
 
 	std::string body;
-	std::string path = "./conf/webpage/"; //BP: should be from config file
+	std::string path = "./conf/webpageBP/"; //BP: should be from config file
 
 	if (request.getMethodPath() == "/")
 		path += "index.html";
 	else
 		path += request.getMethodPath();
 
+	std::cout << path << std::endl;
 	std::ifstream file(path.c_str()); // BP: check for file extension to send right mime type
-	if (!file.is_open())
-		throw std::runtime_error("404");
+	if (!file.is_open()) {
+		Response::FallbackError(socketFd, request, "404");
+		return;
+	}
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 	body = buffer.str();
-	std::cout << "test" << std::endl;
-	std::cout << body << std::endl;
-
 	file.close();
-	// if (this->_name == GET)
 	Response::headerAndBody(socketFd, request, body);
-	// else if (this->_name == HEAD)
 	// 	Response::header(socketFd, request, body);
 
 }

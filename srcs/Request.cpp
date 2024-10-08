@@ -130,7 +130,6 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 		_readingFinished = true;
 	}
 	_firstLineChecked = true;
-	std::cout << "done" << std::endl;
 }
 
 void	Request::checkLine(std::vector<char>& line) {
