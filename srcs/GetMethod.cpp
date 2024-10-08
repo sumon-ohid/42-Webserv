@@ -1,22 +1,22 @@
-#include "GetHeadMethod.hpp"
+#include "GetMethod.hpp"
 #include "main.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 
-GetHeadMethod::GetHeadMethod() : Method() {}
+GetMethod::GetMethod() : Method() {}
 
-GetHeadMethod::GetHeadMethod(const GetHeadMethod& other) : Method(other) {}
+GetMethod::GetMethod(const GetMethod& other) : Method(other) {}
 
-GetHeadMethod&	GetHeadMethod::operator=(const GetHeadMethod& other) {
+GetMethod&	GetMethod::operator=(const GetMethod& other) {
 	if (this == &other)
 		return *this;
 	Method::operator=(other);
 	return *this;
 }
 
-GetHeadMethod::~GetHeadMethod() {}
+GetMethod::~GetMethod() {}
 
-void	GetHeadMethod::executeMethod(int socketFd, Request& request) const {
+void	GetMethod::executeMethod(int socketFd, Request& request) const {
 
 	std::string body;
 

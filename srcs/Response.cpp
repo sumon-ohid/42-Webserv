@@ -59,8 +59,9 @@ std::string Response::getActualTimeString() {
 
 static std::string createRequestString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
+	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
 
-	ss << request.getMethodProtocol() << " " << statusCode << " " << "STATUS MESSAGE" << "\n"; // or use string directly
+	ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
 	ss << "Date: " << Response::getActualTimeString() << "\n";
 	ss << "Content-Type: " << "someContentType" << "\n";
@@ -90,12 +91,16 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 
 void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
 	std::stringstream ss;
-	ss << "<html>\n<head><title>" << statusCode << "STATUS MESSAGE" << "</title></head>\n";
-	ss << "<body>\n<center><h1>" << statusCode << "STATUS MESSAGE" << "</h1></center>\n";
+	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
+
+	ss << "<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
+	ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";
 	ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
 	std::string body = ss.str();
 	std::string totalString = createRequestAndBodyString(request, body, statusCode);
 	write(socketFd, totalString.c_str(), totalString.size());
+
+	std::cout << "Fallback" << std::endl;
 }
 
 //hardcoding of internal server Error (check case stringsteam fails)
