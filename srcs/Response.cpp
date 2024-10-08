@@ -57,10 +57,10 @@ std::string Response::getActualTimeString() {
 	return ss.str();
 }
 
-static std::string createHeaderString(Header& header, std::string& body) {
+static std::string createRequestString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
 
-	ss << header.getMethodProtocol() << " " << "200" << " " << "OK" << "\n"; // or use string directly
+	ss << request.getMethodProtocol() << " " << statusCode << " " << "STATUS MESSAGE" << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
 	ss << "Date: " << Response::getActualTimeString() << "\n";
 	ss << "Content-Type: " << "someContentType" << "\n";
@@ -70,16 +70,37 @@ static std::string createHeaderString(Header& header, std::string& body) {
 	return ss.str();
 }
 
-void	Response::header(int socketFd, Header& header, std::string& body) {
-	std::string headString = createHeaderString(header, body);
+static std::string createRequestAndBodyString(Request& request, std::string& body, std::string statusCode) {
+	std::stringstream ss;
+	ss << createRequestString(request, body, statusCode) << "\n";
+	ss << body << "\n"; //BP: \n at the end - do we need this?
+
+	return ss.str();
+}
+
+void	Response::header(int socketFd, Request& request, std::string& body) {
+	std::string headString = createRequestString(request, body, "200");
 	write(socketFd , headString.c_str(), headString.size());
 }
 
-void	Response::headerAndBody(int socketFd, Header& header, std::string& body) {
-	std::stringstream ss;
-	ss << createHeaderString(header, body) << "\n";
-	ss << body << "\n"; //BP: \n at the end - do we need this?
-	std::string totalString = ss.str();
-
+void	Response::headerAndBody(int socketFd, Request& request, std::string& body) {
+	std::string totalString = createRequestAndBodyString(request, body, "200");
 	write(socketFd , totalString.c_str(), totalString.size());
 }
+
+void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
+	std::stringstream ss;
+	ss << "<html>\n<head><title>" << statusCode << "STATUS MESSAGE" << "</title></head>\n";
+	ss << "<body>\n<center><h1>" << statusCode << "STATUS MESSAGE" << "</h1></center>\n";
+	ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
+	std::string body = ss.str();
+	std::string totalString = createRequestAndBodyString(request, body, statusCode);
+	write(socketFd, totalString.c_str(), totalString.size());
+}
+
+//hardcoding of internal server Error (check case stringsteam fails)
+// what if connection was closed due to no connection, whatever?
+// check what happens with a fd if the connection is closed
+// what happens in case of a write error?
+// try again mechanism?
+// how to decide implement if we keep a connection open or closing?

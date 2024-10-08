@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <list>
 #include "Socket.hpp"
-#include "./Header.hpp"
+#include "./Request.hpp"
 #include "Response.hpp"
 
 #define	MAX_EVENTS					100000
@@ -54,31 +54,31 @@ public:
 	 */
 	void	EpollMonitoring(Server&);
 	/**
- 	* Checks if the given file descriptor corresponds to a listening socket 
- 	* and attempts to accept a new client connection if so. 
+ 	* Checks if the given file descriptor corresponds to a listening socket
+ 	* and attempts to accept a new client connection if so.
  	* Returns true if a new client connection was accepted, otherwise false.
  	*/
-	bool	EpollNewClient(Server&, const int&); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down 
+	bool	EpollNewClient(Server&, const int&); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
 	/**
-	 * Accepts a new client connection on the specified listening socket. 
+	 * Accepts a new client connection on the specified listening socket.
 	 * Returns true if the new client was successfully accepted, otherwise false.
 	 */
 	bool	EpollAcceptNewClient(Server&, const lstSocs::const_iterator&);
 	/**
-	 * Handles communication with an existing client by reading data from the 
-	 * specified file descriptor. Responds to the client with a simple message 
-	 * and manages socket state on errors or disconnections. 
+	 * Handles communication with an existing client by reading data from the
+	 * specified file descriptor. Responds to the client with a simple message
+	 * and manages socket state on errors or disconnections.
 	 * Returns 0 on success, -1 on errors or client disconnection.
 	 */
 	int		EpollExistingClient(Server&, const int&);
 
 	// DISCUSS: should be handled in Request
-	void	validRequest(Server & serv, std::vector<char>, ssize_t, Header&);
+	void	validRequest(Server&, std::vector<char>, ssize_t, Request&);
 	int		invalidRequest(Server&, const int&);
 	int		emptyRequest(Server&, const int&);
 
 	/**
-	 * Initializes the epoll instance, registers listening sockets, 
+	 * Initializes the epoll instance, registers listening sockets,
 	 * and enters the monitoring loop to handle incoming events.
 	 */
 	void	EpollRoutine(Server&);
