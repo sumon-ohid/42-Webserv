@@ -22,8 +22,8 @@ void	GetHeadMethod::executeMethod(int socketFd, Request& request) const {
 
 
 	if (this->_name == GET)
-		Response::requestAndBody(socketFd, request, body);
+		Response::headerAndBody(socketFd, request, body);
 	else if (this->_name == HEAD)
-		Response::request(socketFd, request, body);
+		Response::header(socketFd, request, body);
 
 }
