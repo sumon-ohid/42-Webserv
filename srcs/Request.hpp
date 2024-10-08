@@ -5,16 +5,15 @@
 
 #include "Method.hpp"
 
-#define CLIENT_REQUEST 1
-#define SERVER_RESPONSE 2
-
 class Request {
 	private:
 		bool	_firstLineChecked;
 		bool	_readingFinished;
 		int		_type; // request or response
 		Method*	_method;
-		std::map<std::string, std::string> requestMap;
+		std::map<std::string, std::string> _headerMap;
+
+		void	checkOneLine(std::string oneLine);
 
 	public:
 		Request();

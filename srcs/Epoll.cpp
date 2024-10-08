@@ -137,7 +137,7 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 {
 	// Read data from the client
 	bool	writeFlag = false;
-	Request request;
+	Request request; // add to client?
 	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
 	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
@@ -200,6 +200,7 @@ int	Epoll::emptyRequest(Server& serv, const int &event_fd)
 void	Epoll::validRequest(Server& serv, std::vector<char> buffer, ssize_t count, Request& request)
 {
 	(void) serv;
+	std::cout << "test1" << std::endl;
 	buffer.resize(count);
 	// if (_buffer.size() == 5)
 	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
@@ -208,11 +209,13 @@ void	Epoll::validRequest(Server& serv, std::vector<char> buffer, ssize_t count, 
 	} else {
 		request.checkFirstLine(buffer);
 	}
+	std::cout << "test2" << std::endl;
 	//--- This should be here
 	std::string bufferRead(buffer.begin(), buffer.end());
 	size_t pos = bufferRead.find("cgi-bin");
 	if (pos != std::string::npos)
 		HandleCgi cgi(request.getMethodPath(), _connSock, serv);
+	std::cout << "test3" << std::endl;
 }
 
 void	Epoll::EpollRoutine(Server& serv)
