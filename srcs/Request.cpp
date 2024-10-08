@@ -73,11 +73,24 @@ static void	checkInterruption(std::vector<char>& line) {
 	}
 }
 
-static void checkOneLine(std::string oneLine) {
-	std::cout << "$" << oneLine << "$" << std::endl;
+void Request::checkOneLine(std::string oneLine) {
+	std::size_t pos = oneLine.find(":");
+	if (pos == std::string::npos)
+		return;
+	std::string	key = oneLine.substr(0, pos);
+	std::string value = oneLine.substr(pos + 1);
+	while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
+		value.erase(0, 1);
+	}
+	if (_headerMap.find(key) != _headerMap.end())
+		_headerMap[key] = value;
+	else
+		_headerMap[key] += value;
+	std::cout << "$" << key << "$" << value << "$" << std::endl;
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
+	std::cout << "firstlineNotchecked" << std::endl;
 	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
@@ -110,12 +123,14 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 			spacePos3 = pos;
 			pos = strLine.find("\r\n", spacePos3 + 1);
 		}
+		_readingFinished = true;
 	}
 	_firstLineChecked = true;
 	std::cout << "done" << std::endl;
 }
 
 void	Request::checkLine(std::vector<char>& line) {
+	std::cout << "checkline_start" << std::endl;
 	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
@@ -123,19 +138,10 @@ void	Request::checkLine(std::vector<char>& line) {
 		this->_readingFinished = true;
 		return;
 	}
-
-	std::size_t pos = strLine.find(":");
-	if (pos == std::string::npos)
-		return;
-	std::string	key = strLine.substr(0, pos);
-	std::string value = strLine.substr(pos + 1);
-	while (!value.empty() && value[0] == ' ') {
-		value.erase(0, 1);
-	}
+	checkOneLine(strLine);
+	std::cout << "checkline_end" << std::endl;
 	// if (value.empty())
 	// 	throw std::runtime_error("empty value string");
-
-	std::cout << "$" << key << "$" << value << "$" << std::endl;
 }
 
 
