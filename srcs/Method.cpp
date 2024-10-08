@@ -62,7 +62,6 @@ void	Method::setProtocol(std::string protocol) {
 		this->_protocol = "HTTP/0.9";
 		return;
 	}
-	std::cout << "$" << protocol << "$" << std::endl;
 	if (protocol == "HTTP/2")
 		throw std::runtime_error("505");
 	if (protocol != "HTTP/1.1")

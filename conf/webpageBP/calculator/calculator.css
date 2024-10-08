@@ -1,0 +1,64 @@
+
+body {
+    margin: 0;
+    background-color: #050565;
+}
+
+#whole-calculator {
+    max-width: 700px;
+    margin: auto;
+}
+
+table {
+    width: 100%;
+    height: 62.5vh;
+    background-color: #050565;
+    color: #fa9435;
+    padding: 0 4%;
+
+}
+
+
+td {
+    width: 25%;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bolder;
+    font-family: 'Titillium Web', sans-serif;
+    border-radius: 10%;
+    background-color: #fa9435;
+
+}
+
+td:hover {
+    background-color: #202080;
+    cursor: pointer;
+}
+
+#result-area {
+    height: 30vh;
+    background-color: #2d2df7;
+    color: #fa9435;
+    font-weight: bold;
+    font-size: 48px;
+    border-radius: 20px;
+    display: flex;
+    margin: 2.5vh 4%;
+    padding: 2%;
+    justify-content: flex-end;
+    align-items: center;
+    box-sizing:border-box;
+
+}
+
+#result {
+    background-color: #7d058d;
+}
+
+#result:hover {
+    background-color: #9b2321;
+}
+
+.highlight {
+    background-color: #20208f;
+}

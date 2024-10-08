@@ -141,22 +141,18 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
 	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
-	std::cout << "test0" << std::endl;
 	while (!request.getReadingFinished())
 	{
 		try
 		{
-			std::cout << "test00" << std::endl;
 			buffer.resize(SOCKET_BUFFER_SIZE);
 			ssize_t count = read(event_fd, &buffer[0], buffer.size());
-			std::cout << "test01: " << count << std::endl;
 			if (count == -1)
 				return (invalidRequest(serv, event_fd));
 			else if (count == 0)
 				return (emptyRequest(serv, event_fd));
 			else
 				validRequest(serv, buffer, count, request);
-			std::cout << "test02" << std::endl;
 		}
 		catch (std::exception &e)
 		{
@@ -173,14 +169,16 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 	_buffer = buffer;
 	if (!writeFlag)
 	{
-		std::string test = "this is a test";
-		Response::headerAndBody(event_fd, request, test);
+		request.executeMethod(event_fd);
+		// std::string test = "this is a test";
+		// Response::headerAndBody(event_fd, request, test);
 		// write(_new_socket , hello.c_str() , hello.size());
     	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
 	(void) count;
 	writeFlag = false;
 	std::map<std::string, std::string> testMap = request.getHeaderMap();
+	std::cout << request.getMethodName() << " " << request.getMethodPath() << " " << request.getMethodProtocol() << std::endl;
 	std::cout << "map size: " << testMap.size() << std::endl;
 	request.requestReset();
 	return (0);
@@ -206,7 +204,7 @@ int	Epoll::emptyRequest(Server& serv, const int &event_fd)
 void	Epoll::validRequest(Server& serv, std::vector<char> buffer, ssize_t count, Request& request)
 {
 	(void) serv;
-	std::cout << "test1: " << request.getFirstLineChecked() << std::endl;
+	// std::cout << "test1: " << request.getFirstLineChecked() << std::endl;
 	buffer.resize(count);
 	// if (_buffer.size() == 5)
 	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
@@ -215,7 +213,7 @@ void	Epoll::validRequest(Server& serv, std::vector<char> buffer, ssize_t count, 
 	} else {
 		request.checkFirstLine(buffer);
 	}
-	std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
+	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
 	//--- This should be here
 	std::string bufferRead(buffer.begin(), buffer.end());
 	size_t pos = bufferRead.find("cgi-bin");

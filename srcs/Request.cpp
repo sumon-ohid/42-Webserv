@@ -130,7 +130,6 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 		_readingFinished = true;
 	}
 	_firstLineChecked = true;
-	std::cout << "done" << std::endl;
 }
 
 void	Request::checkLine(std::vector<char>& line) {
@@ -146,6 +145,10 @@ void	Request::checkLine(std::vector<char>& line) {
 	std::cout << "checkline_end" << std::endl;
 	// if (value.empty())
 	// 	throw std::runtime_error("empty value string");
+}
+
+void	Request::executeMethod(int socketFd)  {
+	this->_method->executeMethod(socketFd, *this);
 }
 
 
