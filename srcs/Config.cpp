@@ -68,7 +68,6 @@ void Config::readConfig(std::string configFile)
     }
     else
     {
-        file.close();
         throw std::runtime_error ("cannot open config file");
     }
 }

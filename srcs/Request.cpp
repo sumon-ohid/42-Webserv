@@ -148,6 +148,10 @@ void	Request::checkLine(std::vector<char>& line) {
 	// 	throw std::runtime_error("empty value string");
 }
 
+void	Request::executeMethod(int socketFd)  {
+	this->_method->executeMethod(socketFd, *this);
+}
+
 
 void	Request::requestReset() {
 	this->_type = -1;

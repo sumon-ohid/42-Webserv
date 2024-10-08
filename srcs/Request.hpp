@@ -31,6 +31,7 @@ class Request {
 
 		void	checkFirstLine(std::vector<char>& line);
 		void	checkLine(std::vector<char>& line);
+		void	executeMethod(int socketFd);
 
 		void	requestReset();
 
