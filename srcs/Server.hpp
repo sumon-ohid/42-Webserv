@@ -19,7 +19,7 @@ private:
 	Epoll		_epoll;
 
 	std::string _configFile;
-	ServerConfig _server;
+	ServerConfig _serverConfig;
 public:
 	// Coplien's form
 
@@ -72,4 +72,5 @@ public:
 	const lstInt&	getCnctFds(void) const;
 
 	std::string getConfigFile();
+	ServerConfig getServerConf();
 };

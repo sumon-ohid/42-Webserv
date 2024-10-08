@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <sstream>
 #include "ServerConfig.hpp"
+#include "Server.hpp"
 
 class HandleCgi : public ServerConfig
 {
@@ -21,7 +22,7 @@ class HandleCgi : public ServerConfig
 
     public:
         HandleCgi();
-        HandleCgi(std::string requestBuffer, int nSocket, std::string configFile);
+        HandleCgi(std::string requestBuffer, int nSocket, Server&);
         ~HandleCgi();
 
         void proccessCGI(int nSocket);

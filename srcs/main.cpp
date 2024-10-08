@@ -26,7 +26,6 @@ int main(int argc, char **argv)
 		return ERROR;
 	}
 	// Socket	socket(PORT);
-	
 	std::vector<Server> servers;
 	try
 	{
@@ -34,6 +33,7 @@ int main(int argc, char **argv)
 		if (argc == 2)
 		{
 			ServerConfig config(argv[1]);
+			//config.displayConfig();
 			std::vector<ServerConfig> serversConf = config.getServers();
 			for (size_t i = 0; i < serversConf.size(); ++i)
 			{
@@ -43,7 +43,6 @@ int main(int argc, char **argv)
 				server.startEpollRoutine();
 				servers.push_back(server);
 			}
-			config.displayConfig();
 		}
 	}
 	catch (std::exception& e)

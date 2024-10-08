@@ -118,7 +118,7 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 	std::string bufferRead(_buffer.begin(), _buffer.end());
 	size_t pos = bufferRead.find("cgi-bin");
 	if (pos != std::string::npos)
-		HandleCgi cgi(bufferRead, _connSock, serv.getConfigFile());
+		HandleCgi cgi(bufferRead, _connSock, serv);
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	serv.addClientFd(_connSock);

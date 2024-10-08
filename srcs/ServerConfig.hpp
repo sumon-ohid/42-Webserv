@@ -24,6 +24,7 @@ class ServerConfig : public LocationConfig
         std::vector<LocationConfig> locations;
         std::vector<ServerConfig> servers;
         std::vector<int> listenPorts;
+        std::string _configFile;
 
     public:
         ServerConfig();

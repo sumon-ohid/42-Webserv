@@ -70,11 +70,13 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
         i++;
-}
+    }
 }
 
+//-- Constructor with parameter
 ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
 {
+    this->_configFile = configFile;
     std::vector<std::string> configVector = Config::getConfig();
     size_t i = 0;
     
