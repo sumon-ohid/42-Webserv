@@ -3,7 +3,7 @@
 #include <string>
 
 #include "Request.hpp"
-#include "GetHeadMethod.hpp"
+#include "GetMethod.hpp"
 
 Request::Request() {
 	this->_type = -1;
@@ -72,7 +72,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
 		throw std::runtime_error("400 Bad Request");
-	this->_method = new GetHeadMethod();
+	this->_method = new GetMethod();
 	// check which method
 
 	this->_method->setName(methodName);

@@ -59,6 +59,7 @@ std::string Response::getActualTimeString() {
 
 static std::string createRequestString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
+	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
 
 	ss << request.getMethodProtocol() << " " << statusCode << " " << "STATUS MESSAGE" << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
