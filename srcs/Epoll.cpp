@@ -1,10 +1,12 @@
 #include "Epoll.hpp"
 #include "Server.hpp"
+#include "Response.hpp"
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
 #include <exception>
 #include <sys/types.h>
+#include "main.hpp"
 
 Epoll::Epoll() : _epollFd(-1) {}
 Epoll::~Epoll() {}
@@ -143,8 +145,11 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 		}
 		catch (std::exception &e)
 		{
-			write(event_fd, e.what(), static_cast<std::string>(e.what()).size());
-			write(event_fd, "\n", 1);
+			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
+				Epoll::removeFd(serv, event_fd);
+			} else {
+				Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
+			}
 			std::cout << "exception: " << e.what() << std::endl;
 			writeFlag = true;
 			break;
@@ -157,7 +162,7 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 		// write(_new_socket , hello.c_str() , hello.size());
     	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
-	(void)count;
+	(void) count;
 	writeFlag = false;
 	request.requestReset();
 	return (0);

@@ -1,9 +1,11 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 
 #include "Request.hpp"
 #include "GetMethod.hpp"
+#include "main.hpp"
 
 Request::Request() {
 	this->_type = -1;
@@ -62,7 +64,18 @@ static void	checkLineLastChars(std::string& line) {
 		line.resize(line.size() - 1);
 }
 
+
+void	checkInterruption(std::vector<char>& line) {
+	char stopTelnet[] = {-1, -12, -1, -3, 6};
+
+	if (line.size() == 5 && std::equal(line.begin(), line.end(), stopTelnet)) {
+		throw std::runtime_error(TELNETSTOP);
+	}
+	std::cout << std::endl;
+}
+
 void	Request::checkFirstLine(std::vector<char>& line) {
+	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
@@ -71,7 +84,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	std::size_t spacePos = strLine.find(" ", 0);
 	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400");
 	this->_method = new GetMethod();
 	// check which method
 
@@ -80,7 +93,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 
 	std::size_t spacePos2 = strLine.find(" ", spacePos + 1);
 	if (spacePos2 == std::string::npos)
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400");
 	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
 	std::cout << "$" << _method->getPath() << "$" << std::endl;
 
@@ -94,6 +107,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 }
 
 void	Request::checkLine(std::vector<char>& line) {
+	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
