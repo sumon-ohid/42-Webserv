@@ -5,9 +5,6 @@
 
 #include "Method.hpp"
 
-#define CLIENT_REQUEST 1
-#define SERVER_RESPONSE 2
-
 class Request {
 	private:
 		bool	_firstLineChecked;

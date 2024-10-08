@@ -65,13 +65,16 @@ static void	checkLineLastChars(std::string& line) {
 }
 
 
-void	checkInterruption(std::vector<char>& line) {
+static void	checkInterruption(std::vector<char>& line) {
 	char stopTelnet[] = {-1, -12, -1, -3, 6};
 
 	if (line.size() == 5 && std::equal(line.begin(), line.end(), stopTelnet)) {
 		throw std::runtime_error(TELNETSTOP);
 	}
-	std::cout << std::endl;
+}
+
+static void checkOneLine(std::string oneLine) {
+	std::cout << "$" << oneLine << "$" << std::endl;
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
@@ -89,21 +92,27 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	// check which method
 
 	this->_method->setName(methodName);
-	std::cout << "$" << _method->getName() << "$" << std::endl;
 
 	std::size_t spacePos2 = strLine.find(" ", spacePos + 1);
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
 	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
-	std::cout << "$" << _method->getPath() << "$" << std::endl;
 
 	std::size_t spacePos3 = strLine.find("\r\n", spacePos2 + 1);
 	if (spacePos3 == std::string::npos)
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
-	else
+	else {
+		// multiline input
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1, spacePos3 - (spacePos2 + 1)));
-	std::cout << "$" << _method->getProtocol() << "$" << std::endl;
+		std::size_t pos = strLine.find("\r\n", spacePos3 + 1);
+		while (pos != std::string::npos) {
+			checkOneLine(strLine.substr(spacePos3 + 2, pos - (spacePos3 + 2)));
+			spacePos3 = pos;
+			pos = strLine.find("\r\n", spacePos3 + 1);
+		}
+	}
 	_firstLineChecked = true;
+	std::cout << "done" << std::endl;
 }
 
 void	Request::checkLine(std::vector<char>& line) {
