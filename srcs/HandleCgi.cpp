@@ -27,41 +27,33 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server& server)
     size_t pos = clientMessage.find("/cgi-bin/");
     if (pos != std::string::npos)
     {
-        size_t endPos = clientMessage.find(' ', pos);
-        if (endPos == std::string::npos)
-            endPos = clientMessage.find('\r', pos); //--- Handle end of line
+        cgiPath = clientMessage.substr(pos + 9); //--- Extract path after "/cgi-bin/"
 
-        if (endPos != std::string::npos)
+        try
         {
-            cgiPath = clientMessage.substr(pos + 9, endPos - pos - 9); //--- Extract path after "/cgi-bin/"
+            std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
+            ServerConfig serverConf = server.getServerConf();
+            serverConf.displayConfig();
 
-            try
+            cgiConf = serverConf.getCgiFile();
+            if (cgiConf != fullCgiPath)
+                throw std::runtime_error("404 Not Found !!");
+            proccessCGI(nSocket);
+        }
+        catch (std::exception &e)
+        {
+            std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
+            std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
+            char buffer[1024];
+            FILE *html_file = fopen("404.html", "r");
+            if (!html_file)
+                throw std::runtime_error("Failed to open 404.html file !!");
+            while (fgets(buffer, sizeof(buffer), html_file) != NULL)
             {
-                std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-                ServerConfig serverConf = server.getServerConf();
-                serverConf.displayConfig();
-
-                cgiConf = serverConf.getCgiFile();
-                std::cout << cgiConf << "+++++++++" << std::endl;
-                if (cgiConf != fullCgiPath)
-                    throw std::runtime_error("404 Not Found !!");
-                proccessCGI(nSocket);
+                error_response += buffer;
             }
-            catch (std::exception &e)
-            {
-                std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
-                std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
-                char buffer[1024];
-                FILE *html_file = fopen("404.html", "r");
-                if (!html_file)
-                    throw std::runtime_error("Failed to open 404.html file !!");
-                while (fgets(buffer, sizeof(buffer), html_file) != NULL)
-                {
-                    error_response += buffer;
-                }
-                fclose(html_file);
-                send(nSocket, error_response.c_str(), error_response.size(), 0);
-            }
+            fclose(html_file);
+            send(nSocket, error_response.c_str(), error_response.size(), 0);
         }
     }
 }
