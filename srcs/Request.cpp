@@ -29,30 +29,34 @@ Request::~Request() {
 	delete this->_method;
 }
 
-std::string Request::getMethodName() {
+std::string Request::getMethodName() const {
 	if (this->_method)
 		return this->_method->getName();
 	throw	std::runtime_error("Server error 101");
 }
 
-std::string Request::getMethodPath() {
+std::string Request::getMethodPath() const {
 	if (this->_method)
 		return this->_method->getPath();
 	throw	std::runtime_error("Server error 102");
 }
 
-std::string Request::getMethodProtocol() {
+std::string Request::getMethodProtocol() const {
 	if (this->_method)
 		return this->_method->getProtocol();
 	return "HTTP/1.1"; // to also return when method is wrong
 }
 
-bool	Request::getFirstLineChecked() {
+bool	Request::getFirstLineChecked() const {
 	return this->_firstLineChecked;
 }
 
-bool	Request::getReadingFinished() {
+bool	Request::getReadingFinished() const {
 	return this->_readingFinished;
+}
+
+std::map<std::string, std::string> Request::getHeaderMap() const {
+	return this->_headerMap;
 }
 
 #include <iostream>

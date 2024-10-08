@@ -22,11 +22,12 @@ class Request {
 		Request& operator=(const Request& other);
 		~Request();
 
-		std::string getMethodName();
-		std::string getMethodPath();
-		std::string getMethodProtocol();
-		bool		getFirstLineChecked();
-		bool		getReadingFinished();
+		std::string getMethodName() const;
+		std::string getMethodPath() const;
+		std::string getMethodProtocol() const;
+		bool		getFirstLineChecked() const;
+		bool		getReadingFinished() const;
+		std::map<std::string, std::string> getHeaderMap() const;
 
 		void	checkFirstLine(std::vector<char>& line);
 		void	checkLine(std::vector<char>& line);
