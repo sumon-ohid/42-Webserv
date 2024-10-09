@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 		{
             ServerConfig config(argv[1]);
             std::vector<ServerConfig> serversConf = config.getServers();
-            //config.displayConfig();
+            config.displayConfig();
             for (size_t i = 0; i < serversConf.size(); ++i)
 			{
                 ServerConfig singleServerConf = serversConf[i];

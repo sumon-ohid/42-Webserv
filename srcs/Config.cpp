@@ -2,6 +2,8 @@
 
 #include "Config.hpp"
 #include <cstddef>
+#include <algorithm>
+#include <sstream>
 #include <string>
 
 // --> Config class
@@ -17,9 +19,13 @@ Config::Config()
 Config::Config(std::string configFile) : configFile(configFile)
 {
     readConfig(configFile);
-    cleanComments();
     if (validationCheck() == false)
         throw std::runtime_error ("The config file is invalid.");
+    //-- removing ; from line after validation
+    for (size_t i = 0; i < configVector.size(); i++)
+    {
+        configVector[i].erase(remove(configVector[i].begin(), configVector[i].end(), ';'), configVector[i].end()); 
+    }
 }
 
 Config::~Config()
@@ -60,10 +66,37 @@ void Config::readConfig(std::string configFile)
         {
             if (line.empty())
                 continue;
-            newLine = removeLeadingSpaces(line);
-            if (newLine.empty())
-                continue;
-            configVector.push_back(newLine);
+            if (line.find("server") != std::string::npos)
+            {
+                size_t i = 0;
+                while (line[i])
+                {
+                    if (line[i] == '{' || line[i] == '}' || line[i] == ';')
+                    {
+                        line.insert(i + 1, 1, '\n');
+                        i++;
+                    }
+                    i++;
+                }
+            }
+            std::istringstream iss(line);
+            std::string splitLine;
+            while (std::getline(iss, splitLine, '\n'))
+            {
+                if (splitLine.empty())
+                    continue;
+                newLine = removeLeadingSpaces(splitLine);
+                if (newLine.empty())
+                    continue;
+                if (newLine.find("#") != std::string::npos)
+                {
+                    size_t pos = newLine.find("#");
+                    newLine = newLine.erase(pos);
+                    if (newLine.empty())
+                        continue;
+                }
+                configVector.push_back(newLine);
+            }
         }
         file.close();
     }
@@ -73,60 +106,40 @@ void Config::readConfig(std::string configFile)
     }
 }
 
-void Config::cleanComments()
-{
-    std::vector<std::string> temp = configVector;
-    size_t count = 0;
-    configVector.clear();
-    while (count < temp.size())
-    {
-        std::string line = temp[count];
-        if (line.find('#') != std::string::npos)
-        {
-            size_t pos = line.find('#');
-            temp[count].erase(pos);
-        }
-        else if (line.find("//") != std::string::npos)
-        {
-            size_t pos = line.find("//");
-            temp[count].erase(pos);
-        }
-        if (!temp[count].empty())
-            configVector.push_back(temp[count]);
-        count++;
-    }
-}
-
 bool Config::validationCheck()
 {
-    //size_t i = 0;
+    size_t i = 0;
     std::vector<std::string> temp = configVector;
-    for (size_t i = 0; i < temp.size(); i++)
-    {
-        std::cout << temp[i] << std::endl;
-    }
 
-    // while (i < temp.size())
-    // {
-    //     std::string line = temp[i];
-    //     size_t pos = line.find_last_not_of(' ');
-    //     if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
-    //         throw std::runtime_error ("Missing ; or { } in the config file.");
-    //     i++;
-    // }
-    // i = 0;
-    // bool bracketFlag = false;
-    // bool checker = false;
-    // while (i < temp.size())
-    // {
-    //     std::string line = temp[i];
-    //     if (line.find('{'))
-    //         checker = true;
-    //     if (checker && line.find('}'))
-    //         bracketFlag = true;
-    //     i++;
-    // }
-    // if (bracketFlag == false)
-    //     return (false);
+    while (i < temp.size())
+    {
+        std::string line = temp[i];
+        size_t pos = line.find_last_not_of(' ');
+        if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
+            throw std::runtime_error ("Missing ; or { } in the config file.");
+        i++;
+    }
+    i = 0;
+    bool bracketFlag = false;
+    bool checker = false;
+    int countOpen = 0;
+    int countClose = 0;
+
+    while (i < temp.size())
+    {
+        countOpen += std::count(temp[i].begin(), temp[i].end(), '{');
+        countClose += std::count(temp[i].begin(), temp[i].end(), '}');
+
+        std::string line = temp[i];
+        if (line.find('{') != std::string::npos)
+            checker = true;
+        if (checker && line.find('}' ) != std::string::npos)
+            bracketFlag = true;
+        i++;
+    }
+    if (bracketFlag == false)
+        return (false);
+    if (countOpen != countClose)
+        return (false);
     return (true);
 }
