@@ -22,6 +22,13 @@ Method& Method::operator=(const Method& other) {
 	return *this;
 }
 
+bool	Method::operator==(const Method& other) const
+{
+	return (_name == other._name &&
+			_path == other._path &&
+			_protocol == other._protocol);
+}
+
 Method::~Method() {}
 
 std::string Method::getName() const {

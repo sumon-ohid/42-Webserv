@@ -4,14 +4,11 @@
 #include "ServerConfig.hpp"
 #include "main.hpp"
 #include <exception>
-#include "ServerManager.hpp"
 
 volatile sig_atomic_t stopSignal = 0;
 
 void signalHandler(int signal) {
-	std::cout << "Got a signal" << std::endl;
 	if (signal == SIGINT) {
-		std::cout << "Signal was SIGINT" << std::endl;
 		stopSignal = 1;
 	}
 }
@@ -26,18 +23,22 @@ int main(int argc, char **argv)
 		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
 		return ERROR;
 	}
-	ServerManager	serverManager;
+	Server	server;
 
 	// Socket	socket(PORT);
 	try
 	{
-		serverManager.setUp(argc, argv);
-		serverManager.runRoutine();
-		
+		if (argc == 2) {
+			ServerConfig config(argv[1]);
+			//config.displayConfig();
+		}
+		// socket.createSocket();
+		server.setUpLstnSockets();
+		server.startEpollRoutine();
 	}
 	catch (std::exception& e)
 	{
 		std::cout << "Error:\t" << e.what() << std::endl;
 	}
-	serverManager.shutdown();
+	server.shutdownServer();
 }

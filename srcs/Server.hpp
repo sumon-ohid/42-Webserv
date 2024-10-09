@@ -1,29 +1,37 @@
 #pragma once
 
 #include "Client.hpp"
-#include "Socket.hpp"
 #include "Epoll.hpp"
+#include "ServerConfig.hpp"
+#include "Socket.hpp"
 #include <list>
 
 typedef std::list<Socket> lstSocs;
-typedef std::list<Client> lstClients;
+typedef std::map<int, Client> mpCl;
+
+class Client;
 
 class Server
 {
 private:
-	// stores lsiten sockets
+	//
+	// stores listen sockets
 	lstSocs			_listenSockets;
-	// sotres clients' (connection sockets') fds
-	lstClients		_clients;
+	// stores clients
+	mpCl			_clients;
 	// handles the event monitoring
-	Epoll			_epoll;
+	std::string		_configFile;
 public:
-	// Coplien's form
+	ServerConfig	_serverConfig;
 
+	// Coplien's form
+	Epoll*			_epoll;
 	Server();
+	Server(ServerConfig server);
 	~Server();
 	Server(const Server&);
 	Server&	operator=(const Server&);
+	bool operator==(const Server& other) const;
 
 	// listen sockets
 
@@ -31,7 +39,7 @@ public:
 	void	setUpLstnSockets();
 
 	void	startServer();
-	
+
 	// epoll
 	// initializes the epoll routine
 	void	startEpollRoutine();
@@ -39,9 +47,9 @@ public:
 	// client handling
 
 	// adds a client's fd to _clnts
-	void	addClientFd(int);
+	void	addClient(Client&);
 	// removes a client's fd from _clnts
-	void	removeClientFd(int);
+	void	removeClient(int);
 	// lists all clients currently connected
 	void	listClients(void) const;
 	// returns true if client is connected and false if not
@@ -66,5 +74,8 @@ public:
 	unsigned		CnctSocketsCount(void) const;
 	// Get a const reference to the list of listening sockets
 	const lstSocs&	getLstnSockets(void) const;
+	// returns a pointer to a client if the client is found connected to the server; otherwise NULL
+	Client*			getClient(int fd);
+
 
 };

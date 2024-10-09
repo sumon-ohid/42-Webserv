@@ -2,23 +2,35 @@
 #include "Client.hpp"
 #include "Epoll.hpp"
 #include <stdexcept>
+#include <utility>
 
 // ------------- Coplien's form -------------
 
-Server::Server() {}
+Server::Server() : _configFile("none"), _epoll(NULL) {}
+Server::Server(ServerConfig conf) : _serverConfig(conf), _epoll(NULL) {}
 Server::~Server() {}
-Server::Server(const Server &orig) : _listenSockets(orig._listenSockets), _clients(orig._clients), _epoll(orig._epoll) {}
+Server::Server(const Server &orig) : _listenSockets(orig._listenSockets), _clients(orig._clients), _configFile(orig._configFile), _serverConfig(orig._serverConfig), _epoll((orig._epoll)) {}
 Server&	Server::operator=(const Server &rhs)
 {
 	if (this != &rhs)
 	{
 		_listenSockets = rhs._listenSockets;
 		_clients = rhs._clients;
+		_configFile = rhs._configFile;
+		_serverConfig = rhs._serverConfig;
 		_epoll = rhs._epoll;
 	}
 	return (*this);
 }
 
+bool Server::operator==(const Server& other) const
+{
+	return (_listenSockets == other._listenSockets &&
+			_clients == other._clients &&
+			_configFile == other._configFile &&
+			_serverConfig == other._serverConfig &&
+			_epoll == other._epoll);
+}
 // ------------- Sockets -------------
 
 void	Server::setUpLstnSockets()
@@ -40,41 +52,49 @@ void	Server::setUpLstnSockets()
 		throw std::runtime_error("couldn't create any listen socket");
 }
 
-// ------------- Epoll -------------
-
-void	Server::startServer()
-{
-	setUpLstnSockets();
-	_epoll.EpollRoutine(*this);
-}
-
-void	Server::startEpollRoutine()
-{
-	// call epoll to set up the monitoring and enable to have clients
-    // connect to listening sockets
-    _epoll.EpollRoutine(*this);
-}
-
 // ------------- Clients -------------
 
-void	Server::addClient(int fd)
+void	Server::addClient(Client& cl)
 {
-	_clients.push_back(Client(fd));
+	_clients.insert(std::make_pair(cl.getFd(), cl));
 }
 
-void	Server::removeClientFd(int fd)
+void	Server::removeClient(int fd)
 {
-	_clients.removeClient(fd);
+	mpCl::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		_clients.erase(it);
+}
+
+Client*	Server::getClient(int fd)
+{
+	mpCl::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return (&it->second);
+	return (NULL);
 }
 
 void	Server::listClients() const
 {
-	_clients.listClients();
+	std::cout << "Clients connected to server listening at ports (insert ports)" << std::endl;
+	for (mpCl::const_iterator it = _clients.begin(); it != _clients.end();)
+	{
+		std::cout << it->second.getFd();
+		if (++it != _clients.end())
+			std::cout << ", ";
+	}
+	if (_clients.empty())
+		std::cout << "No clients connected" << std::endl;
+	else
+		std::cout << std::endl;
 }
 
 bool	Server::isClientConnected(int fd) const
 {
-	return (_clients.isClientConnected(fd));
+	mpCl::const_iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return (true);
+	return (false);
 }
 
 // ------------- Shutdown -------------
@@ -83,20 +103,18 @@ void	Server::shutdownServer()
 {
 	disconnectClients();
 	disconnectLstnSockets();
-	int	epollFd = _epoll.getFd();
-	if (epollFd != -1)
-		close(_epoll.getFd());
 }
 
 void	Server::disconnectClients(void)
 {
 	std::cout << "disconnectClients" << std::endl;
-	for (lstClients::iterator it = _clients.begin(); it != _clients.end();)
+	for (mpCl::iterator it = _clients.begin(); it != _clients.end();)
 	{
-		int	fd = (it++)->getFd();
+		int	fd = (it++)->second.getFd();
 		if (fd != -1)
-			_epoll.removeFdEpoll(fd);
+			_epoll->removeClientEpoll(fd);
 	}
+	_clients.clear();
 }
 
 void	Server::disconnectLstnSockets(void)
@@ -104,7 +122,7 @@ void	Server::disconnectLstnSockets(void)
 	for (lstSocs::iterator it = _listenSockets.begin(); it != _listenSockets.end();)
 	{
 		if (it->getFdSocket() != -1)
-			_epoll.removeFdEpoll(it->getFdSocket());
+			_epoll->removeClientEpoll(it->getFdSocket());
 		it = _listenSockets.erase(it);
 	}
 }

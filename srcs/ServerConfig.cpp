@@ -6,6 +6,15 @@ ServerConfig::ServerConfig() : LocationConfig()
 {
 }
 
+bool    ServerConfig::operator==(const ServerConfig& other) const {
+    return listenPort == other.listenPort &&
+           serverName == other.serverName &&
+           errorPage == other.errorPage &&
+           cgiFile == other.cgiFile &&
+           locations == other.locations &&
+           servers == other.servers;
+}
+
 void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile)
 {
     LocationConfig locationConfig(configFile);

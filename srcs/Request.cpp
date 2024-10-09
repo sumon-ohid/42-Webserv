@@ -13,18 +13,37 @@ Request::Request() {
 }
 
 Request::Request(const Request& other) {
-	(void) other;
+	_firstLineChecked = other._firstLineChecked;
+	_readingFinished = other._readingFinished;
+	_type = other._type;
+	_method = other._method;
+	requestMap = other.requestMap;
 }
 
-Request& Request::operator=(const Request& other) {
-	if (this == &other)
-		return *this;
-	// copy variables here
+Request&	Request::operator=(const Request& other) {
+	if (this != &other)
+	{
+		_firstLineChecked = other._firstLineChecked;
+		_readingFinished = other._readingFinished;
+		_type = other._type;
+		_method = other._method;
+		requestMap = other.requestMap;
+	}
 	return *this;
 }
 
+bool		Request::operator==(const Request& other) const
+{
+	return (_firstLineChecked == other._firstLineChecked &&
+			_readingFinished == other._readingFinished &&
+			_type == other._type &&
+			_method == other._method &&
+			requestMap == other.requestMap);
+}
+
 Request::~Request() {
-	delete this->_method;
+	if (_method)
+		delete this->_method;
 }
 
 std::string Request::getMethodName() {

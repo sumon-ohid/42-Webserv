@@ -25,6 +25,7 @@ public:
 	~Socket();
 	Socket(const Socket&);
 	Socket&	operator=(const Socket&);
+	bool	operator==(const Socket& other) const;
 
 	// sets up a socket to use at a specified port
 	void	setUpSocket(void);
@@ -55,7 +56,6 @@ public:
  	* - Logs the port number.
  	*/
 	void	socketSetUpAddress(void);
-	void	socketLoop(void);
 
 	const int&			getFdSocket(void) const;
 	int&				getFdSocket(void);

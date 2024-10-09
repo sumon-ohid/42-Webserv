@@ -28,6 +28,7 @@ class ServerConfig : public LocationConfig
         ServerConfig();
         ServerConfig(std::string configFile);
         ~ServerConfig();
+        bool operator==(const ServerConfig& other) const;
 
         void displayConfig();
         std::string getListenPort();
