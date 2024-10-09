@@ -93,7 +93,6 @@ void	Method::setProtocol(std::string protocol) {
 }
 
 void	Method::setMimeType(std::string& path) {
-	initMimeMap();
 	size_t endPos = path.rfind('.');
 	if (endPos == std::string::npos)
 		return;

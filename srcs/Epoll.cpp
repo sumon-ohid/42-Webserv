@@ -79,12 +79,10 @@ void Epoll::EpollMonitoring(vSrv& servers)
 	// Infinite loop to process events
 	while (1)
 	{
-		std::cout << "Got to epoll Monitoring" << std::endl;
 		// Wait for events on the epoll instance
 		_nfds = epoll_wait(_epollFd, _events, MAX_EVENTS, -1);
 		if (_nfds == -1)
 		{
-			std::cout << "EINTR" << std::endl;
 			if (errno == EINTR)
 				break;
 			else
@@ -165,7 +163,6 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 	Client	tmp(_connSock, &serv);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
-	std::cout << "in EpollAcceptNewClient" << std::endl;
 	return (true);
 }
 

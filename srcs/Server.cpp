@@ -44,7 +44,6 @@ void	Server::setUpLstnSockets()
 		int port = ports[i];
         // create a temporary socket instance which will listen to a specific port
 		Socket	tmp(port);
-		std::cout << "Server - create Sockets\t" << i << std::endl;
 		tmp.setUpSocket();
         // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
 		if (tmp.getFdSocket() != -1)
@@ -110,7 +109,6 @@ void	Server::shutdownServer()
 
 void	Server::disconnectClients(void)
 {
-	std::cout << "disconnectClients" << std::endl;
 	for (mpCl::iterator it = _clients.begin(); it != _clients.end();)
 	{
 		int	fd = (it++)->second.getFd();
@@ -146,5 +144,3 @@ const lstSocs& Server::getLstnSockets() const
 {
 	return (_listenSockets);
 }
-
-

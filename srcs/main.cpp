@@ -8,9 +8,7 @@
 volatile sig_atomic_t stopSignal = 0;
 
 void signalHandler(int signal) {
-	std::cout << "Got a signal" << std::endl;
 	if (signal == SIGINT) {
-		std::cout << "Signal was SIGINT" << std::endl;
 		stopSignal = 1;
 	}
 }
