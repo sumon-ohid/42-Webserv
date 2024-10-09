@@ -1,7 +1,10 @@
 //-- Written by : msumon
 
 #include "Config.hpp"
-#include <stdexcept>
+#include <cstddef>
+#include <algorithm>
+#include <sstream>
+#include <string>
 
 // --> Config class
 // --> read the config file and store the values in the vector
@@ -16,9 +19,13 @@ Config::Config()
 Config::Config(std::string configFile) : configFile(configFile)
 {
     readConfig(configFile);
-    cleanComments();
     if (validationCheck() == false)
         throw std::runtime_error ("The config file is invalid.");
+    //-- removing ; from line after validation
+    for (size_t i = 0; i < configVector.size(); i++)
+    {
+        configVector[i].erase(remove(configVector[i].begin(), configVector[i].end(), ';'), configVector[i].end()); 
+    }
 }
 
 Config::~Config()
@@ -52,8 +59,6 @@ void Config::readConfig(std::string configFile)
     std::ifstream file(configFile.c_str());
     std::string line;
     std::string newLine;
-    std::string key;
-    std::string value;
 
     if (file.is_open())
     {
@@ -61,30 +66,43 @@ void Config::readConfig(std::string configFile)
         {
             if (line.empty())
                 continue;
-            newLine = removeLeadingSpaces(line);
-            configVector.push_back(newLine);
+            if (line.find("server") != std::string::npos)
+            {
+                size_t i = 0;
+                while (line[i])
+                {
+                    if (line[i] == '{' || line[i] == '}' || line[i] == ';')
+                    {
+                        line.insert(i + 1, 1, '\n');
+                        i++;
+                    }
+                    i++;
+                }
+            }
+            std::istringstream iss(line);
+            std::string splitLine;
+            while (std::getline(iss, splitLine, '\n'))
+            {
+                if (splitLine.empty())
+                    continue;
+                newLine = removeLeadingSpaces(splitLine);
+                if (newLine.empty())
+                    continue;
+                if (newLine.find("#") != std::string::npos)
+                {
+                    size_t pos = newLine.find("#");
+                    newLine = newLine.erase(pos);
+                    if (newLine.empty())
+                        continue;
+                }
+                configVector.push_back(newLine);
+            }
         }
         file.close();
     }
     else
     {
         throw std::runtime_error ("cannot open config file");
-    }
-}
-
-void Config::cleanComments()
-{
-    std::vector<std::string> temp = configVector;
-    configVector.clear();
-    size_t count = 0;
-    while (count < temp.size())
-    {
-        std::string line = temp[count];
-        if (line[0] == '#')
-            temp[count].erase();
-        if (!temp[count].empty())
-            configVector.push_back(temp[count]);
-        count++;
     }
 }
 
@@ -104,16 +122,24 @@ bool Config::validationCheck()
     i = 0;
     bool bracketFlag = false;
     bool checker = false;
+    int countOpen = 0;
+    int countClose = 0;
+
     while (i < temp.size())
     {
+        countOpen += std::count(temp[i].begin(), temp[i].end(), '{');
+        countClose += std::count(temp[i].begin(), temp[i].end(), '}');
+
         std::string line = temp[i];
-        if (line.find('{'))
+        if (line.find('{') != std::string::npos)
             checker = true;
-        if (checker && line.find('}'))
+        if (checker && line.find('}' ) != std::string::npos)
             bracketFlag = true;
         i++;
     }
     if (bracketFlag == false)
+        return (false);
+    if (countOpen != countClose)
         return (false);
     return (true);
 }
