@@ -19,18 +19,19 @@ GetMethod&	GetMethod::operator=(const GetMethod& other) {
 
 GetMethod::~GetMethod() {}
 
-void	GetMethod::executeMethod(int socketFd, Request& request) const {
+void	GetMethod::executeMethod(int socketFd, Request& request) {
 
 	std::string body;
-	std::string path = "./conf/webpageBP/"; //BP: should be from config file
+	std::string path = "./conf/webpageBP"; //BP: should be from config file
 
 	if (request.getMethodPath() == "/")
-		path += "index.html";
+		path += "/index.html";
 	else
 		path += request.getMethodPath();
 
+	this->setMimeType(path);
 	std::cout << path << std::endl;
-	std::ifstream file(path.c_str()); // BP: check for file extension to send right mime type
+	std::ifstream file(path.c_str());
 	if (!file.is_open()) {
 		Response::FallbackError(socketFd, request, "404");
 		return;

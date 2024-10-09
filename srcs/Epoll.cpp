@@ -163,16 +163,19 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 			}
 			std::cout << "exception: " << e.what() << std::endl;
 			writeFlag = true;
-			break;
+			return OK;
 		}
 	}
 	_buffer = buffer;
 	if (!writeFlag)
 	{
-		request.executeMethod(event_fd);
-		// std::string test = "this is a test";
-		// Response::headerAndBody(event_fd, request, test);
-		// write(_new_socket , hello.c_str() , hello.size());
+		try {
+			request.executeMethod(event_fd, serv.getServerConf());
+		}
+		catch (std::exception &e) {
+			Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
+		}
+
     	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
 	(void) count;

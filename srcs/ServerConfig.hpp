@@ -18,7 +18,7 @@ class ServerConfig : public LocationConfig
 {
     private:
         std::string listenPort;
-        std::string serverName;
+        std::string serverName; // BP: can't there be more than one servername (=Hosts)
         std::string errorPage;
         std::string cgiFile;
         std::vector<LocationConfig> locations;

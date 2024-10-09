@@ -4,6 +4,7 @@
 #include <map>
 
 #include "Method.hpp"
+#include "ServerConfig.hpp"
 
 class Request {
 	private:
@@ -25,13 +26,17 @@ class Request {
 		std::string getMethodName() const;
 		std::string getMethodPath() const;
 		std::string getMethodProtocol() const;
+		std::string getMethodMimeType() const;
 		bool		getFirstLineChecked() const;
 		bool		getReadingFinished() const;
 		std::map<std::string, std::string> getHeaderMap() const;
 
+		void	setMethodMimeType(std::string path);
+
 		void	checkFirstLine(std::vector<char>& line);
 		void	checkLine(std::vector<char>& line);
-		void	executeMethod(int socketFd);
+		void	checkHost(ServerConfig& config) const;
+		void	executeMethod(int socketFd, ServerConfig config);
 
 		void	requestReset();
 
