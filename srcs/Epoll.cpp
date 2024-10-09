@@ -1,5 +1,8 @@
 #include "Epoll.hpp"
+#include "HandleCgi.hpp"
 #include "Server.hpp"
+#include "Response.hpp"
+#include "main.hpp"
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
@@ -148,6 +151,15 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 		std::cerr << "Error:\taccept4 failed" << std::endl;
 		return (false);  // Skip to the next socket if accept fails
 	}
+
+	//--- Handle cgi
+	// std::string bufferRead(_buffer.begin(), _buffer.end());
+	// size_t pos = bufferRead.find("cgi-bin");
+	// if (pos != std::string::npos)
+	// 	HandleCgi cgi(bufferRead, _connSock, serv);
+
+	//-- End of cgi
+
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	Client	tmp(_connSock, &serv);
@@ -162,7 +174,7 @@ int	Epoll::EpollExistingClient(Client* client)
 	// Read data from the client
 	int		event_fd = client->getFd();
 	bool	writeFlag = false;
-	Request request;
+	Request request; // add to client?
 	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
 	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
@@ -177,26 +189,36 @@ int	Epoll::EpollExistingClient(Client* client)
 			else if (count == 0)
 				return (emptyRequest(client));
 			else
-				validRequest(buffer, count, request);
+				validRequest(client->_server, buffer, count, request);
 		}
 		catch (std::exception &e)
 		{
-			write(event_fd, e.what(), static_cast<std::string>(e.what()).size());
-			write(event_fd, "\n", 1);
+			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
+				Epoll::removeClient(client->_server, client->getFd());
+			} else {
+				Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
+			}
 			std::cout << "exception: " << e.what() << std::endl;
 			writeFlag = true;
-			break;
+			return OK;
 		}
 	}
 	if (!writeFlag)
 	{
-		std::string test = "this is a test";
-		Response::requestAndBody(event_fd, request, test);
-		// write(_new_socket , hello.c_str() , hello.size());
+		try {
+			request.executeMethod(event_fd, client->_server->_serverConfig);
+		}
+		catch (std::exception &e) {
+			Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
+		}
+
     	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
-	(void)count;
+	(void) count;
 	writeFlag = false;
+	std::map<std::string, std::string> testMap = request.getHeaderMap();
+	std::cout << request.getMethodName() << " " << request.getMethodPath() << " " << request.getMethodProtocol() << std::endl;
+	std::cout << "map size: " << testMap.size() << std::endl;
 	request.requestReset();
 	return (0);
 }
@@ -218,8 +240,10 @@ int	Epoll::emptyRequest(Client* client)
 	return (-1); // Move to the next event
 }
 
-void	Epoll::validRequest(std::vector<char> buffer, ssize_t count, Request& request)
+void	Epoll::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request)
 {
+	(void) serv;
+	// std::cout << "test1: " << request.getFirstLineChecked() << std::endl;
 	buffer.resize(count);
 	// if (_buffer.size() == 5)
 	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
@@ -228,6 +252,12 @@ void	Epoll::validRequest(std::vector<char> buffer, ssize_t count, Request& reque
 	} else {
 		request.checkFirstLine(buffer);
 	}
+	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
+	//--- This should be here
+	std::string bufferRead(buffer.begin(), buffer.end());
+	size_t pos = bufferRead.find("cgi-bin");
+	if (pos != std::string::npos)
+		HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
 void	Epoll:: removeClientEpoll(int fd)

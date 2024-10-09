@@ -18,11 +18,13 @@ class ServerConfig : public LocationConfig
 {
     private:
         std::string listenPort;
-        std::string serverName;
+        std::string serverName; // BP: can't there be more than one servername (=Hosts)
         std::string errorPage;
         std::string cgiFile;
         std::vector<LocationConfig> locations;
         std::vector<ServerConfig> servers;
+        std::vector<int> listenPorts;
+        std::string _configFile;
 
     public:
         ServerConfig();
@@ -38,6 +40,8 @@ class ServerConfig : public LocationConfig
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
 
+        void makePortVector();
+        std::vector<int> getListenPorts();
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
 };

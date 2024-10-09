@@ -1,7 +1,6 @@
 #include <csignal>
 
 #include "Server.hpp"
-#include "ServerConfig.hpp"
 #include "main.hpp"
 #include <exception>
 #include "ServerManager.hpp"
@@ -33,7 +32,7 @@ int main(int argc, char **argv)
 	{
 		serverManager.setUp(argc, argv);
 		serverManager.runRoutine();
-		
+
 	}
 	catch (std::exception& e)
 	{

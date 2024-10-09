@@ -4,6 +4,7 @@
 class Request;
 
 #include <string>
+#include <map>
 
 #define ARRAY_SIZE 5
 
@@ -12,9 +13,11 @@ class Method {
 		std::string	_name;
 		std::string _path;
 		std::string _protocol;
+		std::string _mimeType;
 
 	public:
-		static const std::string	_mArray[ARRAY_SIZE];
+		static const std::string	_methodArray[ARRAY_SIZE];
+		static const std::map<std::string, std::string> mimeTypes;
 
 		Method();
 		Method(const Method& other);
@@ -25,12 +28,14 @@ class Method {
 		std::string getName() const;
 		std::string getPath() const;
 		std::string getProtocol() const;
+		std::string getMimeType() const;
 
 		void	setName(std::string name);
 		void	setPath(std::string path);
 		void	setProtocol(std::string protocol);
+		void	setMimeType(std::string& path);
 
-		virtual void	executeMethod(int socketFd, Request& request) const = 0;
+		virtual void	executeMethod(int socketFd, Request& request) = 0;
 
 };
 

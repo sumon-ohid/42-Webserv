@@ -1,6 +1,8 @@
 //-- Written by : msumon
 
 #include "HandleCgi.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
 
 HandleCgi::HandleCgi()
 {
@@ -12,63 +14,46 @@ HandleCgi::HandleCgi()
 //-- then I will compare it with the path from the request
 //-- if it matches, I will return the path of the CGI file
 //-- else I will throw an exception and show 404 not found
-void HandleCgi::getCgiConfPath(std::string configFile)
-{
-    ServerConfig serverConfig(configFile);
-    std::vector<ServerConfig> servers = serverConfig.getServers();
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        ServerConfig server = servers[i];
-        std::string cgiFile = server.getCgiFile();
-        std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-        if (cgiFile == fullCgiPath)
-        {
-            this->cgiConf = cgiFile;
-        }
-    }
-}
+
 
 //-- Constructor to handle the CGI request
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::vector<char> requestBuffer, int nSocket, std::string configFile) : ServerConfig(configFile)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server)
 {
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
+
     size_t pos = clientMessage.find("/cgi-bin/");
     if (pos != std::string::npos)
     {
-        size_t endPos = clientMessage.find(' ', pos);
-        if (endPos == std::string::npos)
-            endPos = clientMessage.find('\r', pos); //--- Handle end of line
+        cgiPath = clientMessage.substr(pos + 9); //--- Extract path after "/cgi-bin/"
 
-        if (endPos != std::string::npos)
+        try
         {
-            cgiPath = clientMessage.substr(pos + 9, endPos - pos - 9); //--- Extract path after "/cgi-bin/"
+            std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
+            ServerConfig serverConf = server->_serverConfig;
+            serverConf.displayConfig();
 
-            try
+            cgiConf = serverConf.getCgiFile();
+            if (cgiConf != fullCgiPath)
+                throw std::runtime_error("404 Not Found !!");
+            proccessCGI(nSocket);
+        }
+        catch (std::exception &e)
+        {
+            std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
+            std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
+            char buffer[1024];
+            FILE *html_file = fopen("404.html", "r");
+            if (!html_file)
+                throw std::runtime_error("Failed to open 404.html file !!");
+            while (fgets(buffer, sizeof(buffer), html_file) != NULL)
             {
-                std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-                getCgiConfPath(configFile);
-                if (cgiConf != fullCgiPath)
-                    throw std::runtime_error("404 Not Found !!");
-                proccessCGI(nSocket);
+                error_response += buffer;
             }
-            catch (std::exception &e)
-            {
-                std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
-                std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
-                char buffer[1024];
-                FILE *html_file = fopen("404.html", "r");
-                if (!html_file)
-                    throw std::runtime_error("Failed to open 404.html file !!");
-                while (fgets(buffer, sizeof(buffer), html_file) != NULL)
-                {
-                    error_response += buffer;
-                }
-                fclose(html_file);
-                send(nSocket, error_response.c_str(), error_response.size(), 0);
-            }
+            fclose(html_file);
+            send(nSocket, error_response.c_str(), error_response.size(), 0);
         }
     }
 }

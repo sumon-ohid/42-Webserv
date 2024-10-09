@@ -1,8 +1,11 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Epoll.hpp"
+#include "ServerConfig.hpp"
+#include <cstddef>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 // ------------- Coplien's form -------------
 
@@ -35,12 +38,12 @@ bool Server::operator==(const Server& other) const
 
 void	Server::setUpLstnSockets()
 {
-	int numSockets = 3;
-	int ports[] = {3000, 4000, 5000};
-	for (int i = 0; i < numSockets; ++i)
+	std::vector<int> ports = this->_serverConfig.getListenPorts();
+	for (size_t i = 0; i < ports.size(); ++i)
 	{
+		int port = ports[i];
         // create a temporary socket instance which will listen to a specific port
-		Socket	tmp(ports[i]);
+		Socket	tmp(port);
 		std::cout << "Server - create Sockets\t" << i << std::endl;
 		tmp.setUpSocket();
         // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
@@ -143,3 +146,5 @@ const lstSocs& Server::getLstnSockets() const
 {
 	return (_listenSockets);
 }
+
+

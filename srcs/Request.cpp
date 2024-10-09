@@ -1,9 +1,11 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 
 #include "Request.hpp"
-#include "GetHeadMethod.hpp"
+#include "GetMethod.hpp"
+#include "main.hpp"
 
 Request::Request() {
 	this->_type = -1;
@@ -17,7 +19,7 @@ Request::Request(const Request& other) {
 	_readingFinished = other._readingFinished;
 	_type = other._type;
 	_method = other._method;
-	requestMap = other.requestMap;
+	_headerMap = other._headerMap;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -27,7 +29,7 @@ Request&	Request::operator=(const Request& other) {
 		_readingFinished = other._readingFinished;
 		_type = other._type;
 		_method = other._method;
-		requestMap = other.requestMap;
+		_headerMap = other._headerMap;
 	}
 	return *this;
 }
@@ -38,7 +40,7 @@ bool		Request::operator==(const Request& other) const
 			_readingFinished == other._readingFinished &&
 			_type == other._type &&
 			_method == other._method &&
-			requestMap == other.requestMap);
+			_headerMap == other._headerMap);
 }
 
 Request::~Request() {
@@ -46,30 +48,44 @@ Request::~Request() {
 		delete this->_method;
 }
 
-std::string Request::getMethodName() {
+std::string Request::getMethodName() const {
 	if (this->_method)
 		return this->_method->getName();
 	throw	std::runtime_error("Server error 101");
 }
 
-std::string Request::getMethodPath() {
+std::string Request::getMethodPath() const {
 	if (this->_method)
 		return this->_method->getPath();
 	throw	std::runtime_error("Server error 102");
 }
 
-std::string Request::getMethodProtocol() {
+std::string Request::getMethodProtocol() const {
 	if (this->_method)
 		return this->_method->getProtocol();
 	return "HTTP/1.1"; // to also return when method is wrong
 }
 
-bool	Request::getFirstLineChecked() {
+std::string Request::getMethodMimeType() const {
+	if (this->_method)
+		return this->_method->getMimeType();
+	return "text/plain"; // BP: or throw error
+}
+
+bool	Request::getFirstLineChecked() const {
 	return this->_firstLineChecked;
 }
 
-bool	Request::getReadingFinished() {
+bool	Request::getReadingFinished() const {
 	return this->_readingFinished;
+}
+
+std::map<std::string, std::string> Request::getHeaderMap() const {
+	return this->_headerMap;
+}
+
+void Request::setMethodMimeType(std::string path) {
+	this->_method->setMimeType(path);
 }
 
 #include <iostream>
@@ -81,7 +97,34 @@ static void	checkLineLastChars(std::string& line) {
 		line.resize(line.size() - 1);
 }
 
+
+static void	checkInterruption(std::vector<char>& line) {
+	char stopTelnet[] = {-1, -12, -1, -3, 6};
+
+	if (line.size() == 5 && std::equal(line.begin(), line.end(), stopTelnet)) {
+		throw std::runtime_error(TELNETSTOP);
+	}
+}
+
+void Request::checkOneLine(std::string oneLine) {
+	std::size_t pos = oneLine.find(":");
+	if (pos == std::string::npos)
+		return;
+	std::string	key = oneLine.substr(0, pos);
+	std::string value = oneLine.substr(pos + 1);
+	while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
+		value.erase(0, 1);
+	}
+	if (_headerMap.find(key) != _headerMap.end())
+		_headerMap[key] = value;
+	else
+		_headerMap[key] += value;
+	std::cout << "$" << key << "$" << value << "$" << std::endl;
+}
+
 void	Request::checkFirstLine(std::vector<char>& line) {
+	std::cout << "firstlineNotchecked" << std::endl;
+	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
@@ -90,48 +133,65 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	std::size_t spacePos = strLine.find(" ", 0);
 	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
-		throw std::runtime_error("400 Bad Request");
-	this->_method = new GetHeadMethod();
+		throw std::runtime_error("400");
+	this->_method = new GetMethod();
 	// check which method
 
 	this->_method->setName(methodName);
-	std::cout << "$" << _method->getName() << "$" << std::endl;
 
 	std::size_t spacePos2 = strLine.find(" ", spacePos + 1);
 	if (spacePos2 == std::string::npos)
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400");
 	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
-	std::cout << "$" << _method->getPath() << "$" << std::endl;
 
 	std::size_t spacePos3 = strLine.find("\r\n", spacePos2 + 1);
 	if (spacePos3 == std::string::npos)
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
-	else
+	else {
+		// multiline input
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1, spacePos3 - (spacePos2 + 1)));
-	std::cout << "$" << _method->getProtocol() << "$" << std::endl;
+		std::size_t pos = strLine.find("\r\n", spacePos3 + 1);
+		while (pos != std::string::npos) {
+			checkOneLine(strLine.substr(spacePos3 + 2, pos - (spacePos3 + 2)));
+			spacePos3 = pos;
+			pos = strLine.find("\r\n", spacePos3 + 1);
+		}
+		_readingFinished = true;
+	}
 	_firstLineChecked = true;
 }
 
 void	Request::checkLine(std::vector<char>& line) {
+	std::cout << "checkline_start" << std::endl;
+	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
 		this->_readingFinished = true;
 		return;
 	}
-
-	std::size_t pos = strLine.find(":");
-	if (pos == std::string::npos)
-		return;
-	std::string	key = strLine.substr(0, pos);
-	std::string value = strLine.substr(pos + 1);
-	while (!value.empty() && value[0] == ' ') {
-		value.erase(0, 1);
-	}
+	checkOneLine(strLine);
+	std::cout << "checkline_end" << std::endl;
 	// if (value.empty())
 	// 	throw std::runtime_error("empty value string");
+}
 
-	std::cout << "$" << key << "$" << value << "$" << std::endl;
+void	Request::checkHost(ServerConfig& config) const {
+	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
+	if (it == _headerMap.end())
+		throw std::runtime_error("400");
+	std::string host = it->second;
+	std::size_t pos = host.find(':');
+	host = host.substr(0, pos);
+	std::cout << "host: $" << host << "$, fromServer: $" << config.getServerName() << "$" << std::endl;
+	if (host != config.getServerName())
+		throw std::runtime_error("404"); // BP: to check if correct value
+}
+
+void	Request::executeMethod(int socketFd, ServerConfig config)  {
+	(void) config;
+	// this->checkHost(config); // BP: activate when reading of servername is corrected
+	this->_method->executeMethod(socketFd, *this);
 }
 
 
@@ -139,5 +199,7 @@ void	Request::requestReset() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
+	delete this->_method;
 	this->_method = NULL;
+	this->_headerMap.clear();
 }

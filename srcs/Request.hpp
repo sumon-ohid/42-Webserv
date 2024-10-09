@@ -4,9 +4,7 @@
 #include <map>
 
 #include "Method.hpp"
-
-#define CLIENT_REQUEST 1
-#define SERVER_RESPONSE 2
+#include "ServerConfig.hpp"
 
 class Request {
 	private:
@@ -14,7 +12,9 @@ class Request {
 		bool	_readingFinished;
 		int		_type; // request or response
 		Method*	_method;
-		std::map<std::string, std::string> requestMap;
+		std::map<std::string, std::string> _headerMap;
+
+		void	checkOneLine(std::string oneLine);
 
 	public:
 		Request();
@@ -24,14 +24,20 @@ class Request {
 		bool		operator==(const Request& other) const;
 		~Request();
 
-		std::string getMethodName();
-		std::string getMethodPath();
-		std::string getMethodProtocol();
-		bool		getFirstLineChecked();
-		bool		getReadingFinished();
+		std::string getMethodName() const;
+		std::string getMethodPath() const;
+		std::string getMethodProtocol() const;
+		std::string getMethodMimeType() const;
+		bool		getFirstLineChecked() const;
+		bool		getReadingFinished() const;
+		std::map<std::string, std::string> getHeaderMap() const;
+
+		void	setMethodMimeType(std::string path);
 
 		void	checkFirstLine(std::vector<char>& line);
 		void	checkLine(std::vector<char>& line);
+		void	checkHost(ServerConfig& config) const;
+		void	executeMethod(int socketFd, ServerConfig config);
 
 		void	requestReset();
 

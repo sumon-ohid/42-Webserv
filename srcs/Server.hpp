@@ -20,8 +20,8 @@ private:
 	// stores clients
 	mpCl			_clients;
 	// handles the event monitoring
-	std::string		_configFile;
 public:
+	std::string		_configFile;
 	ServerConfig	_serverConfig;
 
 	// Coplien's form
@@ -76,6 +76,4 @@ public:
 	const lstSocs&	getLstnSockets(void) const;
 	// returns a pointer to a client if the client is found connected to the server; otherwise NULL
 	Client*			getClient(int fd);
-
-
 };

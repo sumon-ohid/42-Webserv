@@ -79,6 +79,7 @@ public:
 	int		EpollExistingClient(Client*);
 
 	// DISCUSS: should be handled in Request
+	void	validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request);
 	void	validRequest(std::vector<char>, ssize_t, Request&);
 	int		invalidRequest(Client*);
 	int		emptyRequest(Client*);
