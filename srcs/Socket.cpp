@@ -58,7 +58,6 @@ void	Socket::setUpSocket()
 
 void	Socket::createSocket()
 {
-	std::cout << "Socket - create Socket" << std::endl;
     // Creates a file descriptor (fd) for a socket, specifying the address family (IPv4),
     // the socket type (SOCK_STREAM for TCP), and setting the socket to non-blocking mode
     // (SOCK_NONBLOCK) while using the default protocol (0).
@@ -71,7 +70,6 @@ void	Socket::createSocket()
 
 void	Socket::bindToSocketAndListen()
 {
-	std::cout << "Socket bind to socket\t" << std::endl;
 	int	opt = 1;
 		/// Enable SO_REUSEADDR (set opt = 1) to allow binding to a port in TIME_WAIT state,
 		// facilitating quick restarts of the server without waiting for the socket to be released.
@@ -84,12 +82,10 @@ void	Socket::bindToSocketAndListen()
     // allowing up to SOCKET_MAX_LISTEN connections to be queued.
     if (listen(_fd, SOCKET_MAX_LISTEN) < 0)
 		throw std::runtime_error("socket - listen failed");
-	std::cout << "End of socket bind to socket" << std::endl;
 }
 
 void	Socket::socketSetUpAddress()
 {
-	std::cout << "Socket - set up address" << std::endl;
     // total size of sockaddr_in structure; later indicates how many bytes
     // should be read/written
 	_addrlen = sizeof(_address);
