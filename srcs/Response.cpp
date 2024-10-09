@@ -86,14 +86,14 @@ void	Response::header(int socketFd, Request& request, std::string& body) {
 
 void	Response::headerAndBody(int socketFd, Request& request, std::string& body) {
 	std::string totalString = createRequestAndBodyString(request, body, "200");
-	std::cout << totalString << std::endl;
+	// std::cout << totalString << std::endl;
 	write(socketFd , totalString.c_str(), totalString.size());
 }
 
 void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
 	std::stringstream ss;
 	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
-	request.setMethodMimeType(".html");
+	request.setMethodMimeType("test.html");
 
 	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
 	ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";

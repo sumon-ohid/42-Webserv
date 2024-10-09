@@ -119,11 +119,11 @@ void Request::checkOneLine(std::string oneLine) {
 		_headerMap[key] = value;
 	else
 		_headerMap[key] += value;
-	std::cout << "$" << key << "$" << value << "$" << std::endl;
+	// std::cout << "$" << key << "$" << value << "$" << std::endl;
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
-	std::cout << "firstlineNotchecked" << std::endl;
+	this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
 	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
@@ -134,6 +134,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	std::string	methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
 		throw std::runtime_error("400");
+	delete this->_method;
 	this->_method = new GetMethod();
 	// check which method
 

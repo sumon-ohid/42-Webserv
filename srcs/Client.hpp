@@ -13,7 +13,7 @@ private:
 	unsigned		_numRequests;
 public:
 	Server*			_server;
-	Request			_request;
+	Request			_request; // BP: can there be one or multiple requests at the same time
 	// Coplien's form
 	Client();
 	Client(int, Server*);
