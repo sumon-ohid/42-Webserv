@@ -1,7 +1,8 @@
 //-- Written by : msumon
 
 #include "Config.hpp"
-#include <stdexcept>
+#include <cstddef>
+#include <string>
 
 // --> Config class
 // --> read the config file and store the values in the vector
@@ -52,8 +53,6 @@ void Config::readConfig(std::string configFile)
     std::ifstream file(configFile.c_str());
     std::string line;
     std::string newLine;
-    std::string key;
-    std::string value;
 
     if (file.is_open())
     {
@@ -62,6 +61,8 @@ void Config::readConfig(std::string configFile)
             if (line.empty())
                 continue;
             newLine = removeLeadingSpaces(line);
+            if (newLine.empty())
+                continue;
             configVector.push_back(newLine);
         }
         file.close();
@@ -75,13 +76,21 @@ void Config::readConfig(std::string configFile)
 void Config::cleanComments()
 {
     std::vector<std::string> temp = configVector;
-    configVector.clear();
     size_t count = 0;
+    configVector.clear();
     while (count < temp.size())
     {
         std::string line = temp[count];
-        if (line[0] == '#')
-            temp[count].erase();
+        if (line.find('#') != std::string::npos)
+        {
+            size_t pos = line.find('#');
+            temp[count].erase(pos);
+        }
+        else if (line.find("//") != std::string::npos)
+        {
+            size_t pos = line.find("//");
+            temp[count].erase(pos);
+        }
         if (!temp[count].empty())
             configVector.push_back(temp[count]);
         count++;
@@ -90,30 +99,34 @@ void Config::cleanComments()
 
 bool Config::validationCheck()
 {
-    size_t i = 0;
+    //size_t i = 0;
     std::vector<std::string> temp = configVector;
+    for (size_t i = 0; i < temp.size(); i++)
+    {
+        std::cout << temp[i] << std::endl;
+    }
 
-    while (i < temp.size())
-    {
-        std::string line = temp[i];
-        size_t pos = line.find_last_not_of(' ');
-        if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
-            throw std::runtime_error ("Missing ; or { } in the config file.");
-        i++;
-    }
-    i = 0;
-    bool bracketFlag = false;
-    bool checker = false;
-    while (i < temp.size())
-    {
-        std::string line = temp[i];
-        if (line.find('{'))
-            checker = true;
-        if (checker && line.find('}'))
-            bracketFlag = true;
-        i++;
-    }
-    if (bracketFlag == false)
-        return (false);
+    // while (i < temp.size())
+    // {
+    //     std::string line = temp[i];
+    //     size_t pos = line.find_last_not_of(' ');
+    //     if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
+    //         throw std::runtime_error ("Missing ; or { } in the config file.");
+    //     i++;
+    // }
+    // i = 0;
+    // bool bracketFlag = false;
+    // bool checker = false;
+    // while (i < temp.size())
+    // {
+    //     std::string line = temp[i];
+    //     if (line.find('{'))
+    //         checker = true;
+    //     if (checker && line.find('}'))
+    //         bracketFlag = true;
+    //     i++;
+    // }
+    // if (bracketFlag == false)
+    //     return (false);
     return (true);
 }
