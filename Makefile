@@ -9,7 +9,7 @@ SRCS_DIR	= ./srcs
 SRCS		= 	$(addprefix $(SRCS_DIR),\
 				main.cpp \
 				Socket.cpp \
-				Clients.cpp \
+				Client.cpp \
 				Server.cpp \
 				Epoll.cpp \
 				Request.cpp \
@@ -20,6 +20,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				LocationConfig.cpp \
 				ServerConfig.cpp \
 				HandleCgi.cpp \
+				ServerManager.cpp \
 				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)

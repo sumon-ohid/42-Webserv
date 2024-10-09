@@ -20,7 +20,8 @@ class Request {
 		Request();
 		Request(std::string method);
 		Request(const Request& other);
-		Request& operator=(const Request& other);
+		Request&	operator=(const Request& other);
+		bool		operator==(const Request& other) const;
 		~Request();
 
 		std::string getMethodName() const;

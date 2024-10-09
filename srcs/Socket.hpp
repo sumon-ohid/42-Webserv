@@ -18,16 +18,14 @@ private:
 	int					_fd;
 	int					_port;
 	socklen_t			_addrlen;
-	int					_newSocket;
-	long				_valread;
 	sockaddr_in			_address;
-	std::vector<char>	_buffer;
 public:
 	Socket();
 	Socket(int);
 	~Socket();
 	Socket(const Socket&);
 	Socket&	operator=(const Socket&);
+	bool	operator==(const Socket& other) const;
 
 	// sets up a socket to use at a specified port
 	void	setUpSocket(void);
@@ -58,7 +56,6 @@ public:
  	* - Logs the port number.
  	*/
 	void	socketSetUpAddress(void);
-	void	socketLoop(void);
 
 	const int&			getFdSocket(void) const;
 	int&				getFdSocket(void);

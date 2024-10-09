@@ -19,6 +19,7 @@ class LocationConfig : public Config
         LocationConfig();
         LocationConfig(std::string configFile);
         ~LocationConfig();
+        bool    operator==(const LocationConfig& other) const;
 
         void insertInMap(std::string key, std::string value);
         void setPath(std::string path);

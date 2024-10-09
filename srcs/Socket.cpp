@@ -2,11 +2,11 @@
 #include <exception>
 
 // Coplien
-Socket::Socket() : _port(-1), _buffer(0, 0){}
-Socket::Socket(int port) : _port(port), _buffer(SOCKET_BUFFER_SIZE, 0)
+Socket::Socket() : _port(-1) {}
+Socket::Socket(int port) : _port(port)
 {}
 Socket::~Socket(){}
-Socket::Socket(const Socket &orig) : _fd(orig._fd), _addrlen(orig._addrlen), _newSocket(orig._newSocket), _valread(orig._valread), _address(orig._address), _buffer(orig._buffer)
+Socket::Socket(const Socket &orig) : _fd(orig._fd), _port(orig._port), _addrlen(orig._addrlen), _address(orig._address)
 {}
 Socket&	Socket::operator=(const Socket &rhs)
 {
@@ -15,12 +15,24 @@ Socket&	Socket::operator=(const Socket &rhs)
 		_fd = rhs._fd;
 		_port = rhs._port;
 		_addrlen = rhs._addrlen;
-		_newSocket = rhs._newSocket;
 		_address = rhs._address;
-		_valread = rhs._valread;
-		_buffer = rhs._buffer;
 	}
 	return (*this);
+}
+
+bool	operator==(const sockaddr_in& lhs, const sockaddr_in& rhs)
+{
+	return (lhs.sin_family == rhs.sin_family &&
+            lhs.sin_port == rhs.sin_port &&
+            std::memcmp(&lhs.sin_addr, &rhs.sin_addr, sizeof(lhs.sin_addr)) == 0);
+}
+
+bool	Socket::operator==(const Socket& other) const
+{
+	return (_fd == other._fd &&
+			_port == other._port &&
+			_addrlen == other._addrlen &&
+			_address == other._address);
 }
 
 // Functions
@@ -68,7 +80,7 @@ void	Socket::bindToSocketAndListen()
     // binds the socket file descriptor to the specified port and IP address
 	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		throw std::runtime_error("socket - binding to socket failed");
-	// Instructs the socket to listen for incoming connection requests, 
+	// Instructs the socket to listen for incoming connection requests,
     // allowing up to SOCKET_MAX_LISTEN connections to be queued.
     if (listen(_fd, SOCKET_MAX_LISTEN) < 0)
 		throw std::runtime_error("socket - listen failed");
@@ -86,7 +98,7 @@ void	Socket::socketSetUpAddress()
     // specifies the IP address that the socket should listen to;
     // INADDR_ANY: binds the socket to all available interfaces
     // (is a constant equal to zero);
-    // to bind to specific IP address (e.g., localhost: 
+    // to bind to specific IP address (e.g., localhost:
     // _address.sin_addr.s_addr = inet_addr("127.0.0.1");)
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(_port); // sets the port number
@@ -97,23 +109,6 @@ void	Socket::socketSetUpAddress()
 	std::cout << "Address set up for port:\t" << _port << std::endl;
 }
 
-void	Socket::socketLoop()
-{
-	std::string hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
-	while (1)
-	{
-		if ((_newSocket = accept(_fd, (struct sockaddr *)&_address, (socklen_t *)&_addrlen)) < 0)
-			throw std::runtime_error("socket - accept failed");
-		_buffer.assign(_buffer.size(), 0);
-		_valread = read(_newSocket, &_buffer[0], _buffer.size());
-		if (_valread < 0)
-			throw std::runtime_error("read error");
-		std::cout << _buffer << "\n" << std::endl;
-		write(_newSocket , hello.c_str() , hello.size());
-        std::cout << "------------------Hello message sent-------------------" << std::endl;;
-        close(_newSocket);
-	}
-}
 
 const int&	Socket::getFdSocket() const
 {
@@ -122,7 +117,7 @@ const int&	Socket::getFdSocket() const
 
 int&	Socket::getFdSocket(void)
 {
-	return (_fd);	
+	return (_fd);
 }
 
 const int&	Socket::getPort() const

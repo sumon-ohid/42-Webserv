@@ -20,7 +20,7 @@ HandleCgi::HandleCgi()
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server& server)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server)
 {
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
 
@@ -32,7 +32,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server& server)
         try
         {
             std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-            ServerConfig serverConf = server.getServerConf();
+            ServerConfig serverConf = server->_serverConfig;
             serverConf.displayConfig();
 
             cgiConf = serverConf.getCgiFile();

@@ -34,6 +34,13 @@ Method& Method::operator=(const Method& other) {
 	return *this;
 }
 
+bool	Method::operator==(const Method& other) const
+{
+	return (_name == other._name &&
+			_path == other._path &&
+			_protocol == other._protocol);
+}
+
 Method::~Method() {}
 
 std::string Method::getName() const {
@@ -86,6 +93,7 @@ void	Method::setProtocol(std::string protocol) {
 }
 
 void	Method::setMimeType(std::string& path) {
+	initMimeMap();
 	size_t endPos = path.rfind('.');
 	if (endPos == std::string::npos)
 		return;

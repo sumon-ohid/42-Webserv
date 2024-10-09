@@ -21,7 +21,8 @@ class Method {
 
 		Method();
 		Method(const Method& other);
-		Method& operator=(const Method& other);
+		Method&	operator=(const Method& other);
+		bool	operator==(const Method& other) const;
 		virtual ~Method();
 
 		std::string getName() const;

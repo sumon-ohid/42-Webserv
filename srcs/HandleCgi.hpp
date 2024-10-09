@@ -22,7 +22,7 @@ class HandleCgi : public ServerConfig
 
     public:
         HandleCgi();
-        HandleCgi(std::string requestBuffer, int nSocket, Server&);
+        HandleCgi(std::string requestBuffer, int nSocket, Server*);
         ~HandleCgi();
 
         void proccessCGI(int nSocket);

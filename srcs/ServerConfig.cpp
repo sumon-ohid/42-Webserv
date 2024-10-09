@@ -8,6 +8,15 @@ ServerConfig::ServerConfig() : LocationConfig()
 {
 }
 
+bool    ServerConfig::operator==(const ServerConfig& other) const {
+    return listenPort == other.listenPort &&
+           serverName == other.serverName &&
+           errorPage == other.errorPage &&
+           cgiFile == other.cgiFile &&
+           locations == other.locations &&
+           servers == other.servers;
+}
+
 void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile)
 {
     LocationConfig locationConfig(configFile);
@@ -79,7 +88,7 @@ ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
     this->_configFile = configFile;
     std::vector<std::string> configVector = Config::getConfig();
     size_t i = 0;
-    
+
     while (i < configVector.size())
     {
         std::string line = configVector[i];
@@ -106,7 +115,8 @@ void ServerConfig::displayConfig()
         std::cout << "Error Page: " << server.errorPage << std::endl;
         std::cout << "CGI File: " << server.cgiFile << std::endl;
         std::cout << "Locations: " << std::endl;
-        
+
+
         for (size_t k = 0; k < server.getListenPorts().size(); k++)
         {
             std::cout << "Multiple Port " << server.getListenPorts()[k] << std::endl;

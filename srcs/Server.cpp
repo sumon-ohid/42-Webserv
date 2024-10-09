@@ -1,28 +1,39 @@
 #include "Server.hpp"
-#include "Clients.hpp"
+#include "Client.hpp"
 #include "Epoll.hpp"
 #include "ServerConfig.hpp"
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 // ------------- Coplien's form -------------
 
-Server::Server() { _configFile = "None";}
-Server::Server(ServerConfig server) : _serverConfig(server) {}
+Server::Server() : _configFile("none"), _epoll(NULL) {}
+Server::Server(ServerConfig conf) : _serverConfig(conf), _epoll(NULL) {}
 Server::~Server() {}
-Server::Server(const Server &orig) : _lstnSockets(orig._lstnSockets), _clnts(orig._clnts), _epoll(orig._epoll) {}
+Server::Server(const Server &orig) : _listenSockets(orig._listenSockets), _clients(orig._clients), _configFile(orig._configFile), _serverConfig(orig._serverConfig), _epoll((orig._epoll)) {}
 Server&	Server::operator=(const Server &rhs)
 {
 	if (this != &rhs)
 	{
-		_lstnSockets = rhs._lstnSockets;
-		_clnts = rhs._clnts;
+		_listenSockets = rhs._listenSockets;
+		_clients = rhs._clients;
+		_configFile = rhs._configFile;
+		_serverConfig = rhs._serverConfig;
 		_epoll = rhs._epoll;
 	}
 	return (*this);
 }
 
+bool Server::operator==(const Server& other) const
+{
+	return (_listenSockets == other._listenSockets &&
+			_clients == other._clients &&
+			_configFile == other._configFile &&
+			_serverConfig == other._serverConfig &&
+			_epoll == other._epoll);
+}
 // ------------- Sockets -------------
 
 void	Server::setUpLstnSockets()
@@ -37,42 +48,56 @@ void	Server::setUpLstnSockets()
 		tmp.setUpSocket();
         // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
 		if (tmp.getFdSocket() != -1)
-			_lstnSockets.push_back(tmp);
+			_listenSockets.push_back(tmp);
 	}
 	// check if there is at least one listening socket
-	if (_lstnSockets.empty())
+	if (_listenSockets.empty())
 		throw std::runtime_error("couldn't create any listen socket");
 }
 
-// ------------- Epoll ------------- 
+// ------------- Clients -------------
 
-void	Server::startEpollRoutine()
+void	Server::addClient(Client& cl)
 {
-	// call epoll to set up the monitoring and enable to have clients 
-    // connect to listening sockets
-    _epoll.EpollRoutine(*this);
+	_clients.insert(std::make_pair(cl.getFd(), cl));
 }
 
-// ------------- Clients ------------- 
-
-void	Server::addClientFd(int fd)
+void	Server::removeClient(int fd)
 {
-	_clnts.addClient(fd);
+	mpCl::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		_clients.erase(it);
 }
 
-void	Server::removeClientFd(int fd)
+Client*	Server::getClient(int fd)
 {
-	_clnts.removeClient(fd);
+	mpCl::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return (&it->second);
+	return (NULL);
 }
 
 void	Server::listClients() const
 {
-	_clnts.listClients();
+	std::cout << "Clients connected to server listening at ports (insert ports)" << std::endl;
+	for (mpCl::const_iterator it = _clients.begin(); it != _clients.end();)
+	{
+		std::cout << it->second.getFd();
+		if (++it != _clients.end())
+			std::cout << ", ";
+	}
+	if (_clients.empty())
+		std::cout << "No clients connected" << std::endl;
+	else
+		std::cout << std::endl;
 }
 
 bool	Server::isClientConnected(int fd) const
 {
-	return (_clnts.isClientConnected(fd));
+	mpCl::const_iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return (true);
+	return (false);
 }
 
 // ------------- Shutdown -------------
@@ -81,66 +106,45 @@ void	Server::shutdownServer()
 {
 	disconnectClients();
 	disconnectLstnSockets();
-	int	epollFd = _epoll.getFd();
-	if (epollFd != -1)
-		close(_epoll.getFd());
 }
 
 void	Server::disconnectClients(void)
 {
-	lstInt&	clientsFds = _clnts.getClientFds();
 	std::cout << "disconnectClients" << std::endl;
-	for (lstInt::iterator it = clientsFds.begin(); it != clientsFds.end();)
+	for (mpCl::iterator it = _clients.begin(); it != _clients.end();)
 	{
-		int	&fd = *(it++);
+		int	fd = (it++)->second.getFd();
 		if (fd != -1)
-			_epoll.removeFdEpoll(fd);
+			_epoll->removeClientEpoll(fd);
 	}
+	_clients.clear();
 }
 
 void	Server::disconnectLstnSockets(void)
 {
-	for (lstSocs::iterator it = _lstnSockets.begin(); it != _lstnSockets.end();)
+	for (lstSocs::iterator it = _listenSockets.begin(); it != _listenSockets.end();)
 	{
 		if (it->getFdSocket() != -1)
-			_epoll.removeFdEpoll(it->getFdSocket());
-		it = _lstnSockets.erase(it);
+			_epoll->removeClientEpoll(it->getFdSocket());
+		it = _listenSockets.erase(it);
 	}
 }
 
 // ------------- Getters -------------
 
-unsigned	Server::getLstnSocketsCount() const
+unsigned	Server::listenSocketsCount() const
 {
-	return (_lstnSockets.size());
+	return (_listenSockets.size());
 }
 
-unsigned	Server::getNumCnctSockets() const
+unsigned	Server::CnctSocketsCount() const
 {
-	return (_clnts.getClientCount());
+	return (_clients.size());
 }
 
 const lstSocs& Server::getLstnSockets() const
 {
-	return (_lstnSockets);
+	return (_listenSockets);
 }
 
-const lstInt& Server::getCnctFds() const
-{
-	return (_clnts.getClientFds());
-}
 
-void	Server::printLst()
-{
-	_clnts.listClients();
-}
-
-std::string Server::getConfigFile()
-{
-	return (_configFile);
-}
-
-ServerConfig Server::getServerConf()
-{
-	return (_serverConfig);
-}
