@@ -95,14 +95,12 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
 	request.setMethodMimeType(".html");
 
-	ss << "<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
+	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
 	ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";
 	ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
 	std::string body = ss.str();
 	std::string totalString = createRequestAndBodyString(request, body, statusCode);
 	write(socketFd, totalString.c_str(), totalString.size());
-
-	std::cout << "Fallback" << std::endl;
 }
 
 //hardcoding of internal server Error (check case stringsteam fails)

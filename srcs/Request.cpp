@@ -157,7 +157,21 @@ void	Request::checkLine(std::vector<char>& line) {
 	// 	throw std::runtime_error("empty value string");
 }
 
-void	Request::executeMethod(int socketFd)  {
+void	Request::checkHost(ServerConfig& config) const {
+	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
+	if (it == _headerMap.end())
+		throw std::runtime_error("400");
+	std::string host = it->second;
+	std::size_t pos = host.find(':');
+	host = host.substr(0, pos);
+	std::cout << "host: $" << host << "$, fromServer: $" << config.getServerName() << "$" << std::endl;
+	if (host != config.getServerName())
+		throw std::runtime_error("404"); // BP: to check if correct value
+}
+
+void	Request::executeMethod(int socketFd, ServerConfig config)  {
+	(void) config;
+	// this->checkHost(config); // BP: activate when reading of servername is corrected
 	this->_method->executeMethod(socketFd, *this);
 }
 
@@ -166,5 +180,7 @@ void	Request::requestReset() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
+	delete this->_method;
 	this->_method = NULL;
+	this->_headerMap.clear();
 }
