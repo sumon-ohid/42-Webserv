@@ -14,6 +14,6 @@ class GetMethod : public Method {
 		GetMethod& operator=(const GetMethod& other);
 		~GetMethod();
 
-		void	executeMethod(int socketFd, Request& request) const;
+		void	executeMethod(int socketFd, Request& request);
 
 };

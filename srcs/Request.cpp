@@ -47,6 +47,12 @@ std::string Request::getMethodProtocol() const {
 	return "HTTP/1.1"; // to also return when method is wrong
 }
 
+std::string Request::getMethodMimeType() const {
+	if (this->_method)
+		return this->_method->getMimeType();
+	return "text/plain"; // BP: or throw error
+}
+
 bool	Request::getFirstLineChecked() const {
 	return this->_firstLineChecked;
 }
@@ -57,6 +63,10 @@ bool	Request::getReadingFinished() const {
 
 std::map<std::string, std::string> Request::getHeaderMap() const {
 	return this->_headerMap;
+}
+
+void Request::setMethodMimeType(std::string path) {
+	this->_method->setMimeType(path);
 }
 
 #include <iostream>

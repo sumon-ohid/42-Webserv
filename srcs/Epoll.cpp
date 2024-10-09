@@ -163,7 +163,7 @@ int	Epoll::EpollExistingClient(Server& serv, const int &event_fd)
 			}
 			std::cout << "exception: " << e.what() << std::endl;
 			writeFlag = true;
-			break;
+			return OK;
 		}
 	}
 	_buffer = buffer;

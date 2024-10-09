@@ -19,7 +19,7 @@ GetMethod&	GetMethod::operator=(const GetMethod& other) {
 
 GetMethod::~GetMethod() {}
 
-void	GetMethod::executeMethod(int socketFd, Request& request) const {
+void	GetMethod::executeMethod(int socketFd, Request& request) {
 
 	std::string body;
 	std::string path = "./conf/webpageBP/"; //BP: should be from config file
@@ -29,6 +29,9 @@ void	GetMethod::executeMethod(int socketFd, Request& request) const {
 	else
 		path += request.getMethodPath();
 
+	this->setMimeType(path);
+	// const std::string test = this->checkAndGetMimeType(static_cast<const std::string>(path));
+	// std::cout << test << std::endl;
 	std::cout << path << std::endl;
 	std::ifstream file(path.c_str()); // BP: check for file extension to send right mime type
 	if (!file.is_open()) {
