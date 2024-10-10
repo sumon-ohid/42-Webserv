@@ -78,8 +78,6 @@ void	Method::setPath(std::string path) {
 	this->_path = path;
 }
 
-#include <iostream>
-
 void	Method::setProtocol(std::string protocol) {
 	if (protocol.empty()) {
 		this->_protocol = "HTTP/0.9"; // BP: to check what is different

@@ -1,8 +1,11 @@
 #pragma once
 
 class Request;
+class Client;
+class ServerConfig;
 
 #include "Method.hpp"
+#include "Client.hpp"
 
 class GetMethod : public Method {
 	private:
@@ -14,6 +17,5 @@ class GetMethod : public Method {
 		GetMethod& operator=(const GetMethod& other);
 		~GetMethod();
 
-		void	executeMethod(int socketFd, Request& request);
-
+		void	executeMethod(int socketFd, Client *client, Request &request);
 };

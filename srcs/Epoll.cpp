@@ -203,13 +203,13 @@ int	Epoll::EpollExistingClient(Client* client)
 	if (!writeFlag)
 	{
 		try {
-			request.executeMethod(event_fd, client->_server->_serverConfig);
+			request.executeMethod(event_fd, client);
 		}
 		catch (std::exception &e) {
 			Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
 		}
 
-    	std::cout << "------------------Hello message sent-------------------" << std::endl;
+    	std::cout << "-------------------------------------" << std::endl;
 	}
 	(void) count;
 	writeFlag = false;
@@ -251,10 +251,10 @@ void	Epoll::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, 
 	}
 	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
 	//--- This should be here
-	std::string bufferRead(buffer.begin(), buffer.end());
-	size_t pos = bufferRead.find("cgi-bin");
-	if (pos != std::string::npos)
-		HandleCgi cgi(request.getMethodPath(), _connSock, serv);
+	// std::string bufferRead(buffer.begin(), buffer.end());
+	// size_t pos = bufferRead.find("cgi-bin");
+	// if (pos != std::string::npos)
+	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
 void	Epoll:: removeClientEpoll(int fd)
