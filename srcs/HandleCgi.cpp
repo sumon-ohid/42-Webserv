@@ -10,18 +10,13 @@ HandleCgi::HandleCgi()
     cgiConf = "Default";
 }
 
-//-- Function to get the path of the CGI from configuration file
-//-- then I will compare it with the path from the request
-//-- if it matches, I will return the path of the CGI file
-//-- else I will throw an exception and show 404 not found
-
-
 //-- Constructor to handle the CGI request
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server, std::string locationPath)
 {
+    (void)server;
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
 
     size_t pos = clientMessage.find("/cgi-bin/");
@@ -29,33 +24,12 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server)
     {
         cgiPath = requestBuffer;
 
-        try
-        {
-            std::string locationPath = cgiPath;
-            ServerConfig serverConf = server->_serverConfig;
-            serverConf.displayConfig();
+        cgiConf = locationPath;
 
-            cgiConf = requestBuffer;
-            std::cout << "++++++ >> " << cgiConf << std::endl;
-            if (cgiConf != locationPath)
-                throw std::runtime_error("404 Not Found !!");
-            proccessCGI(nSocket);
-        }
-        catch (std::exception &e)
-        {
-            std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
-            std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
-            char buffer[1024];
-            FILE *html_file = fopen("404.html", "r");
-            if (!html_file)
-                throw std::runtime_error("Failed to open 404.html file !!");
-            while (fgets(buffer, sizeof(buffer), html_file) != NULL)
-            {
-                error_response += buffer;
-            }
-            fclose(html_file);
-            send(nSocket, error_response.c_str(), error_response.size(), 0);
-        }
+        std::cout << "++++++ >> " << cgiConf << std::endl;
+        if (cgiConf != requestBuffer)
+            throw std::runtime_error("404");
+        proccessCGI(nSocket);
     }
 }
 
