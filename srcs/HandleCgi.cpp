@@ -31,7 +31,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server)
 
         try
         {
-            std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
+            std::string fullCgiPath = "./cgi-bin/" + cgiPath;
             ServerConfig serverConf = server->_serverConfig;
             serverConf.displayConfig();
 

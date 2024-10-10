@@ -127,6 +127,7 @@ void ServerConfig::displayConfig()
 {
     for (size_t i = 0; i < servers.size(); i++)
     {
+        //--- Display server directives
         ServerConfig server = servers[i];
         std::cout << "Server: " << i + 1 << std::endl;
         std::cout << "Listen Port: " << server.listenPort << std::endl;
@@ -135,12 +136,13 @@ void ServerConfig::displayConfig()
         std::cout << "CGI File: " << server.cgiFile << std::endl;
         std::cout << "Locations: " << std::endl;
 
-
+        //--- Display multiple ports
         for (size_t k = 0; k < server.getListenPorts().size(); k++)
         {
             std::cout << "Multiple Port " << server.getListenPorts()[k] << std::endl;
         }
 
+        //-- Display locations
         for (size_t j = 0; j < server.locations.size(); j++)
         {
             LocationConfig location = server.locations[j];
@@ -165,7 +167,11 @@ void ServerConfig::makePortVector()
     {
         size_t pos = ports.find(" ");
         std::string temp = ports.substr(0, pos);
-        int port = atoi(temp.c_str());
+        std::stringstream ss(temp);
+        int port;
+        ss >> port;
+        if (port < 0 || port > 65535)
+            throw std::runtime_error("Invalid port number !!");
         tempPorts.push_back(port);
         if (pos == std::string::npos)
             break;

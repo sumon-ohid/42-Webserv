@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include "LocationConfig.hpp"
+#include <sstream>
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
