@@ -168,14 +168,14 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 
 int	Epoll::EpollExistingClient(Client* client)
 {
+
 	// Read data from the client
 	int		event_fd = client->getFd();
 	bool	writeFlag = false;
-	Request request; // add to client?
 	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
 	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
-	while (!request.getReadingFinished())
+	while (!client->_request.getReadingFinished())
 	{
 		try
 		{
@@ -186,14 +186,14 @@ int	Epoll::EpollExistingClient(Client* client)
 			else if (count == 0)
 				return (emptyRequest(client));
 			else
-				validRequest(client->_server, buffer, count, request);
+				validRequest(client->_server, buffer, count, client->_request);
 		}
 		catch (std::exception &e)
 		{
 			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
 				Epoll::removeClient(client->_server, client->getFd());
 			} else {
-				Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
+				Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
 			}
 			std::cout << "exception: " << e.what() << std::endl;
 			writeFlag = true;
@@ -203,20 +203,20 @@ int	Epoll::EpollExistingClient(Client* client)
 	if (!writeFlag)
 	{
 		try {
-			request.executeMethod(event_fd, client->_server->_serverConfig);
+			client->_request.executeMethod(event_fd, client->_server->_serverConfig);
 		}
 		catch (std::exception &e) {
-			Response::FallbackError(event_fd, request, static_cast<std::string>(e.what()));
+			Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
 		}
 
     	std::cout << "------------------Hello message sent-------------------" << std::endl;
 	}
 	(void) count;
 	writeFlag = false;
-	std::map<std::string, std::string> testMap = request.getHeaderMap();
-	std::cout << request.getMethodName() << " " << request.getMethodPath() << " " << request.getMethodProtocol() << std::endl;
+	std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
+	std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
 	std::cout << "map size: " << testMap.size() << std::endl;
-	request.requestReset();
+	client->_request.requestReset();
 	return (0);
 }
 
