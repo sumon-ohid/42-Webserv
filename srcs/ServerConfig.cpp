@@ -8,7 +8,8 @@ ServerConfig::ServerConfig() : LocationConfig()
 {
 }
 
-bool    ServerConfig::operator==(const ServerConfig& other) const {
+bool    ServerConfig::operator==(const ServerConfig& other) const
+{
     return listenPort == other.listenPort &&
            serverName == other.serverName &&
            errorPage == other.errorPage &&
@@ -63,7 +64,10 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         {
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
+            {
                 server.serverName = line.substr(pos + 1);
+                server.makeServerNameVector();
+            }
         }
         else if (line.find("error_page") == 0)
         {
@@ -127,6 +131,7 @@ void ServerConfig::displayConfig()
 {
     for (size_t i = 0; i < servers.size(); i++)
     {
+        std::cout << "-----------------------------------" << std::endl;
         //--- Display server directives
         ServerConfig server = servers[i];
         std::cout << "Server: " << i + 1 << std::endl;
@@ -134,15 +139,17 @@ void ServerConfig::displayConfig()
         std::cout << "Server Name: " << server.serverName << std::endl;
         std::cout << "Error Page: " << server.errorPage << std::endl;
         std::cout << "CGI File: " << server.cgiFile << std::endl;
-        std::cout << "Locations: " << std::endl;
 
         //--- Display multiple ports
         for (size_t k = 0; k < server.getListenPorts().size(); k++)
-        {
-            std::cout << "Multiple Port " << server.getListenPorts()[k] << std::endl;
-        }
+            std::cout << "Port Vector : " << server.getListenPorts()[k] << std::endl;
+
+        //--- Display multiple server names
+        for (size_t l = 0; l < server.getServerNames().size(); l++)
+            std::cout << "ServerName Vector : " << server.getServerNames()[l] << std::endl;
 
         //-- Display locations
+        std::cout << "Locations: " << std::endl;
         for (size_t j = 0; j < server.locations.size(); j++)
         {
             LocationConfig location = server.locations[j];
@@ -158,6 +165,7 @@ void ServerConfig::displayConfig()
     }
 }
 
+//--- > Make a vector of ports
 void ServerConfig::makePortVector()
 {
     std::vector<int> tempPorts;
@@ -178,6 +186,24 @@ void ServerConfig::makePortVector()
         ports.erase(0, pos + 1);
     }
     listenPorts = tempPorts;
+}
+
+//--- > Make a vector of server names
+void ServerConfig::makeServerNameVector()
+{
+    std::vector<std::string> tempServerNames;
+    std::string serverNamesStr = getServerName();
+
+    while (!serverNamesStr.empty())
+    {
+        size_t pos = serverNamesStr.find(" ");
+        std::string temp = serverNamesStr.substr(0, pos);
+        tempServerNames.push_back(temp);
+        if (pos == std::string::npos)
+            break;
+        serverNamesStr.erase(0, pos + 1);
+    }
+    serverNames = tempServerNames;
 }
 
 //--- > Get functions
@@ -214,6 +240,16 @@ std::vector<ServerConfig> ServerConfig::getServers()
 std::vector<int> ServerConfig::getListenPorts()
 {
     return (listenPorts);
+}
+
+std::string ServerConfig::getClientMaxBodySize()
+{
+    return (clientMaxBodySize);
+}
+
+std::vector<std::string> ServerConfig::getServerNames()
+{
+    return (serverNames);
 }
 
 ServerConfig::~ServerConfig()

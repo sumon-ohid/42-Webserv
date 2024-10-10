@@ -29,6 +29,7 @@ class ServerConfig : public LocationConfig
         std::vector<LocationConfig> locations;
         std::vector<ServerConfig> servers;
         std::vector<int> listenPorts;
+        std::vector<std::string> serverNames;
         std::string _configFile;
         std::string clientMaxBodySize;
 
@@ -43,11 +44,15 @@ class ServerConfig : public LocationConfig
         std::string getServerName();
         std::string getErrorPage();
         std::string getCgiFile();
+        std::string getClientMaxBodySize();
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
 
         void makePortVector();
+        void makeServerNameVector();
         std::vector<int> getListenPorts();
+        std::vector<std::string> getServerNames();
+
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
 };

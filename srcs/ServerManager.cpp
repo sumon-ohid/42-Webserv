@@ -24,6 +24,10 @@ void	ServerManager::setUp(int argc, char **argv)
 {
 	if (argc == 2)
 		_generalConfig = ServerConfig(argv[1]);
+
+	//-- Display the config for debugging
+	//_generalConfig.displayConfig();
+
 	setUpServers();
 }
 
