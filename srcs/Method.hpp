@@ -2,9 +2,11 @@
 #define METHOD_HPP
 
 class Request;
+class Client;
 
 #include <string>
 #include <map>
+
 
 #define ARRAY_SIZE 5
 
@@ -35,7 +37,7 @@ class Method {
 		void	setProtocol(std::string protocol);
 		void	setMimeType(std::string& path);
 
-		virtual void	executeMethod(int socketFd, Request& request) = 0;
+		virtual void	executeMethod(int socketFd, Client *client, Request &request) = 0;
 
 };
 

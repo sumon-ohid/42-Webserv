@@ -10,51 +10,26 @@ HandleCgi::HandleCgi()
     cgiConf = "Default";
 }
 
-//-- Function to get the path of the CGI from configuration file
-//-- then I will compare it with the path from the request
-//-- if it matches, I will return the path of the CGI file
-//-- else I will throw an exception and show 404 not found
-
-
 //-- Constructor to handle the CGI request
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server, std::string locationPath)
 {
+    (void)server;
     std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
 
     size_t pos = clientMessage.find("/cgi-bin/");
     if (pos != std::string::npos)
     {
-        cgiPath = clientMessage.substr(pos + 9); //--- Extract path after "/cgi-bin/"
+        cgiPath = requestBuffer;
 
-        try
-        {
-            std::string fullCgiPath = "./cgi-bin/" + cgiPath + ";";
-            ServerConfig serverConf = server->_serverConfig;
-            serverConf.displayConfig();
+        cgiConf = locationPath;
 
-            cgiConf = serverConf.getCgiFile();
-            if (cgiConf != fullCgiPath)
-                throw std::runtime_error("404 Not Found !!");
-            proccessCGI(nSocket);
-        }
-        catch (std::exception &e)
-        {
-            std::cerr << "RUNTIME ERROR :: " << e.what() << std::endl;
-            std::string error_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n";
-            char buffer[1024];
-            FILE *html_file = fopen("404.html", "r");
-            if (!html_file)
-                throw std::runtime_error("Failed to open 404.html file !!");
-            while (fgets(buffer, sizeof(buffer), html_file) != NULL)
-            {
-                error_response += buffer;
-            }
-            fclose(html_file);
-            send(nSocket, error_response.c_str(), error_response.size(), 0);
-        }
+        std::cout << "++++++ >> " << cgiConf << std::endl;
+        if (cgiConf != requestBuffer)
+            throw std::runtime_error("404");
+        proccessCGI(nSocket);
     }
 }
 
@@ -80,6 +55,7 @@ void HandleCgi::proccessCGI(int nSocket)
         std::string extension = cgiPath.substr(pos);
         std::string exe;
 
+        std::string fullPath = "." + cgiPath;
         if (extension == ".py")
             exe = "/usr/bin/python3";
         else if (extension == ".php")
@@ -89,10 +65,8 @@ void HandleCgi::proccessCGI(int nSocket)
         else
             throw std::runtime_error("This file extension is not supported !!");
 
-        std::string fullCgiPath = "./cgi-bin/" + cgiPath;
-
         //--- Prepare arguments for execve
-        char *const argv[] = { (char *)exe.c_str(), (char *)fullCgiPath.c_str(), NULL };
+        char *const argv[] = { (char *)exe.c_str(), (char *)fullPath.c_str(), NULL };
         char *const envp[] = { NULL };
 
         execve(exe.c_str(), argv, envp);

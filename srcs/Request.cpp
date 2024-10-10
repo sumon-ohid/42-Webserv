@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "Request.hpp"
+#include "Client.hpp"
 #include "GetMethod.hpp"
 #include "main.hpp"
 
@@ -189,10 +190,11 @@ void	Request::checkHost(ServerConfig& config) const {
 		throw std::runtime_error("404"); // BP: to check if correct value
 }
 
-void	Request::executeMethod(int socketFd, ServerConfig config)  {
-	(void) config;
+//-- SUMON: I am working on this function
+void	Request::executeMethod(int socketFd, Client *client)
+{
 	// this->checkHost(config); // BP: activate when reading of servername is corrected
-	this->_method->executeMethod(socketFd, *this);
+	this->_method->executeMethod(socketFd, client, *this);
 }
 
 
