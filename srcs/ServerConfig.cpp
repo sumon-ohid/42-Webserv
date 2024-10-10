@@ -46,6 +46,7 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
     while (i < configVector.size())
     {
         line = configVector[i];
+        //std::cout << "line: " << line << std::endl;
         if (line.find('}') != std::string::npos)
             break;
         // Process server directives
@@ -78,6 +79,19 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         }
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
+        else if (line.find("client_max_body_size") == 0)
+        {
+            size_t pos = line.find(" ");
+            if (pos != std::string::npos)
+                server.clientMaxBodySize = line.substr(pos + 1);
+        }
+        else if (line.empty())
+            continue;
+        else
+        {
+            std::cerr << RED << "Line: " << line << "  [ NOT VALID ]" << RESET << std::endl;
+            throw std::runtime_error("Invalid server config !!");
+        }
         i++;
     }
 }
@@ -98,6 +112,11 @@ ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
             i++;
             serverBlock(line, i, configVector, server, configFile);
             servers.push_back(server);
+        }
+        else  
+        {
+            std::cerr << RED << "Line: " << line << "  [ NOT VALID ]" << RESET << std::endl;
+            throw std::runtime_error("Invalid server config !!");
         }
         i++;
     }

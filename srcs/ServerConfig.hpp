@@ -10,6 +10,10 @@
 #include <algorithm>
 #include "LocationConfig.hpp"
 
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define RESET "\033[0m"
+
 // --> If you want to access the config values, initialize the ServerConfig class
 // --> The ServerConfig class will have the server directives
 // --> use the get functions to access the values
@@ -25,6 +29,7 @@ class ServerConfig : public LocationConfig
         std::vector<ServerConfig> servers;
         std::vector<int> listenPorts;
         std::string _configFile;
+        std::string clientMaxBodySize;
 
     public:
         ServerConfig();
