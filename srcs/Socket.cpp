@@ -1,5 +1,6 @@
 #include "Socket.hpp"
 #include <exception>
+#include <netinet/in.h>
 
 // Coplien
 Socket::Socket() : _port(-1) {}
@@ -106,32 +107,27 @@ void	Socket::socketSetUpAddress()
 }
 
 
-const int&	Socket::getFdSocket() const
+int	Socket::getFdSocket() const
 {
 	return (_fd);
 }
 
-int&	Socket::getFdSocket(void)
-{
-	return (_fd);
-}
-
-const int&	Socket::getPort() const
+int	Socket::getPort() const
 {
 	return (_port);
 }
 
-socklen_t&			Socket::getAddressLen(void)
+socklen_t	Socket::getAddressLen(void) const
 {
 	return (_addrlen);
 }
 
-const socklen_t&	Socket::getAddressLen(void) const
+sockaddr_in	Socket::getAddress(void) const
 {
-	return (_addrlen);
+	return (_address);
 }
 
-const sockaddr_in&	Socket::getAddress(void) const
+sockaddr_in&	Socket::getAddress()
 {
 	return (_address);
 }

@@ -37,7 +37,7 @@ class Request {
 		void	checkFirstLine(std::vector<char>& line);
 		void	checkLine(std::vector<char>& line);
 		void	checkHost(ServerConfig& config) const;
-		void	executeMethod(int socketFd, ServerConfig config);
+		void	executeMethod(int socketFd, Client *client);
 
 		void	requestReset();
 

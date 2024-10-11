@@ -20,6 +20,11 @@ private:
 	// stores clients
 	mpCl			_clients;
 	// handles the event monitoring
+	// removes all client fds from epoll and _clnts and closes the fds
+	void	disconnectClients(void);
+	// removes all listen sockets from epoll and closes the fds
+	void	disconnectLstnSockets(void);
+	// DISCUSS: not sure if the shutdown should be specific to a certain address:port combination to be able to shut down a specific server
 public:
 	std::string		_configFile;
 	ServerConfig	_serverConfig;
@@ -33,19 +38,11 @@ public:
 	Server&	operator=(const Server&);
 	bool operator==(const Server& other) const;
 
-	// listen sockets
-
+	// ------------- Listen Sockets -------------
 	// creates a socket to listen on for all the IP, port combinations requested
 	void	setUpLstnSockets();
 
-	void	startServer();
-
-	// epoll
-	// initializes the epoll routine
-	void	startEpollRoutine();
-
-	// client handling
-
+	// ------------- Client handling -------------
 	// adds a client's fd to _clnts
 	void	addClient(Client&);
 	// removes a client's fd from _clnts
@@ -55,25 +52,19 @@ public:
 	// returns true if client is connected and false if not
 	bool	isClientConnected(int fd) const;
 
-	void	printLst();
-
-	// server shutdown
+	// ------------- Server shutdown -------------
 	// removes all current fds from epoll and, if it is a connection socekt, from _clnts and closes the fds
 	void	shutdownServer(void);
-	// removes all client fds from epoll and _clnts and closes the fds
-	void	disconnectClients(void);
-	// removes all listen sockets from epoll and closes the fds
-	void	disconnectLstnSockets(void);
-	// DISCUSS: not sure if the shutdown should be specific to a certain address:port combination to be able to shut down a specific server
 
-	// Getters
-
-
+	// Counts
+	// get the number of connected listen sockets
 	unsigned		listenSocketsCount() const;
 	// Get the number of connected client sockets
 	unsigned		CnctSocketsCount(void) const;
+
+	// ------------- Getters -------------
 	// Get a const reference to the list of listening sockets
-	const lstSocs&	getLstnSockets(void) const;
+	lstSocs&		getLstnSockets(void);
 	// returns a pointer to a client if the client is found connected to the server; otherwise NULL
 	Client*			getClient(int fd);
 };

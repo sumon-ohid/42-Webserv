@@ -1,15 +1,16 @@
 #include "Client.hpp"
 
 // ------------- Coplien's Form -------------
-Client::Client() : _lastActive(0), _numRequests(0), _server(NULL) {};
-Client::Client(int fd, Server *serv) : _fd(fd), _lastActive(0), _numRequests(0), _server(serv) {}
-Client::Client(const Client& orig) : _fd(orig._fd), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _server(orig._server), _request(orig._request) {}
+Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _server(NULL) {};
+Client::Client(int fd, int port, Server *serv) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _server(serv) {}
+Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _server(orig._server), _request(orig._request) {}
 Client::~Client() {}
 Client&	Client::operator=(const Client& rhs)
 {
 	if (this != &rhs)
 	{
 		_fd = rhs._fd;
+		_port = rhs._port;
 		_request = rhs._request;
 		_lastActive = rhs._lastActive;
 		_numRequests = rhs._numRequests;
@@ -20,6 +21,7 @@ Client&	Client::operator=(const Client& rhs)
 bool	Client::operator==(const Client& other) const
 {
 	return (_fd == other._fd &&
+			_port == other._port &&
 			_lastActive == other._lastActive &&
 			_numRequests == other._lastActive &&
 			_server == other._server &&
@@ -30,6 +32,11 @@ bool	Client::operator==(const Client& other) const
 void		Client::setFD(int fd)
 {
 	_fd = fd;
+}
+
+void		Client::setPort(int port)
+{
+	_port = port;
 }
 
 void		Client::setLastActive(time_t time)
@@ -47,6 +54,11 @@ void		Client::numRequestAdd1()
 int			Client::getFd() const
 {
 	return (_fd);
+}
+
+int			Client::getPort() const
+{
+	return (_port);
 }
 
 time_t		Client::getLastActive() const

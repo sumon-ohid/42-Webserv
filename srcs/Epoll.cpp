@@ -32,11 +32,11 @@ Epoll&	Epoll::operator=(const Epoll &rhs)
 	return (*this);
 }
 
-void	Epoll::EpollRoutine(std::vector<Server> &servers)
+void	Epoll::Routine(std::vector<Server> &servers)
 {
 	createEpoll();
 	registerLstnSockets(servers);
-	EpollMonitoring(servers);
+	Monitoring(servers);
 }
 
 void	Epoll::createEpoll()
@@ -74,7 +74,7 @@ bool	Epoll::registerSocket(int fd)
 	return (true);
 }
 
-void Epoll::EpollMonitoring(vSrv& servers)
+void Epoll::Monitoring(vSrv& servers)
 {
 	// Infinite loop to process events
 	while (1)
@@ -92,12 +92,12 @@ void Epoll::EpollMonitoring(vSrv& servers)
 		{
 			int event_fd = _events[i].data.fd;  // File descriptor for this event
 			// Check if the event corresponds to one of the listening sockets
-			bool newClient = EpollNewClient(servers, event_fd);
+			bool newClient = NewClient(servers, event_fd);
 			// Handle events on existing client connections
 			if (!newClient && _events[i].events & EPOLLIN)  // Check if the event is for reading
 			{
 				Client* client = retrieveClient(servers, event_fd);
-				EpollExistingClient(client);
+				ExistingClient(client);
 			}
 		}
 	}
@@ -114,20 +114,20 @@ Client*	Epoll::retrieveClient(vSrv& servers, int event_fd)
 	return (NULL);
 }
 
-bool	Epoll::EpollNewClient(vSrv &servers, const int &event_fd) // possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
+bool	Epoll::NewClient(vSrv &servers, int event_fd) // possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
 {
 	for (vSrv::iterator servIt = servers.begin();servIt != servers.end(); ++servIt)
 	{
 		// retrieve listening sockets
-		const lstSocs& sockets = servIt->getLstnSockets();
+		lstSocs& sockets = servIt->getLstnSockets();
 		// iterate over listening sockets
-		for (lstSocs::const_iterator sockIt = sockets.begin(); sockIt != sockets.end(); ++sockIt)
+		for (lstSocs::iterator sockIt = sockets.begin(); sockIt != sockets.end(); ++sockIt)
 		{
 			// Compare event_fd with the listening socket's file descriptor
 			if (event_fd == sockIt->getFdSocket())
 			{
 				// This is a listening socket, accept new client connection
-				if (!EpollAcceptNewClient(*servIt, sockIt))
+				if (!AcceptNewClient(*servIt, sockIt))
 					return (true);
 				if (!registerSocket(_connSock))
 					servIt->removeClient(event_fd);
@@ -138,12 +138,12 @@ bool	Epoll::EpollNewClient(vSrv &servers, const int &event_fd) // possible chang
 	return (false);
 }
 
-bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it)
+bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 {
 	// Get the length of the address associated with the current listening socket
-	socklen_t _addrlen = it->getAddressLen();
+	socklen_t _addrlen = sockIt->getAddressLen();
 	// Accept a new client connection on the listening socket
-	_connSock = accept4(it->getFdSocket(), (struct sockaddr *) &it->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	_connSock = accept4(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if (_connSock < 0)
 	{
 		std::cerr << "Error:\taccept4 failed" << std::endl;
@@ -160,13 +160,13 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
-	Client	tmp(_connSock, &serv);
+	Client	tmp(_connSock, sockIt->getPort(), &serv);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);
 }
 
-int	Epoll::EpollExistingClient(Client* client)
+int	Epoll::ExistingClient(Client* client)
 {
 
 	// Read data from the client
@@ -203,13 +203,13 @@ int	Epoll::EpollExistingClient(Client* client)
 	if (!writeFlag)
 	{
 		try {
-			client->_request.executeMethod(event_fd, client->_server->_serverConfig);
+			client->_request.executeMethod(event_fd, client);
 		}
 		catch (std::exception &e) {
 			Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
 		}
 
-    	std::cout << "------------------Hello message sent-------------------" << std::endl;
+    	std::cout << "-------------------------------------" << std::endl;
 	}
 	(void) count;
 	writeFlag = false;
@@ -251,10 +251,10 @@ void	Epoll::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, 
 	}
 	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
 	//--- This should be here
-	std::string bufferRead(buffer.begin(), buffer.end());
-	size_t pos = bufferRead.find("cgi-bin");
-	if (pos != std::string::npos)
-		HandleCgi cgi(request.getMethodPath(), _connSock, serv);
+	// std::string bufferRead(buffer.begin(), buffer.end());
+	// size_t pos = bufferRead.find("cgi-bin");
+	// if (pos != std::string::npos)
+	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
 void	Epoll:: removeClientEpoll(int fd)
