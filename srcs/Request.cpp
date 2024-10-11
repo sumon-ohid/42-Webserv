@@ -107,7 +107,7 @@ static void	checkLineLastChars(std::string& line) {
 
 
 static void	checkInterruption(std::vector<char>& line) {
-	char stopTelnet[] = {-1, -12, -1, -3, 6};
+	signed char stopTelnet[] = {-1, -12, -1, -3, 6};
 
 	if (line.size() == 5 && std::equal(line.begin(), line.end(), stopTelnet)) {
 		throw std::runtime_error(TELNETSTOP);
