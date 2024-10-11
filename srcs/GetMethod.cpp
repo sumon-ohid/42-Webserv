@@ -1,10 +1,12 @@
 #include "GetMethod.hpp"
+#include "Method.hpp"
+// #include "main.hpp"
 #include "HandleCgi.hpp"
 #include "LocationConfig.hpp"
-#include "main.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Server.hpp"
+
 #include <iostream>
 #include <cstddef>
 #include <fstream>
@@ -98,4 +100,8 @@ void	GetMethod::executeMethod(int socketFd, Client *client, Request &request)
 	}
 
 	// 	Response::header(socketFd, client->_request, body);
+}
+
+Method*	GetMethod::clone() {
+	return new GetMethod(*this);
 }

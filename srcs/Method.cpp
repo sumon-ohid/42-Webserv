@@ -22,7 +22,7 @@ Method::Method() {
 	this->_mimeType = "";
 }
 
-Method::Method(const Method& other) : _name(other._name), _path(other._path), _protocol(other._protocol) {}
+Method::Method(const Method& other) : _name(other._name), _path(other._path), _protocol(other._protocol), _mimeType(other._mimeType) {}
 
 Method& Method::operator=(const Method& other) {
 	if (this == &other)
