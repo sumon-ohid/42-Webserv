@@ -68,13 +68,6 @@ void	Server::removeClient(int fd)
 		_clients.erase(it);
 }
 
-Client*	Server::getClient(int fd)
-{
-	mpCl::iterator it = _clients.find(fd);
-	if (it != _clients.end())
-		return (&it->second);
-	return (NULL);
-}
 
 void	Server::listClients() const
 {
@@ -128,7 +121,7 @@ void	Server::disconnectLstnSockets(void)
 	}
 }
 
-// ------------- Getters -------------
+// ------------- Counts -------------
 
 unsigned	Server::listenSocketsCount() const
 {
@@ -138,9 +131,20 @@ unsigned	Server::listenSocketsCount() const
 unsigned	Server::CnctSocketsCount() const
 {
 	return (_clients.size());
+
+// ------------- Getters -------------
+
 }
 
-const lstSocs& Server::getLstnSockets() const
+lstSocs& Server::getLstnSockets()
 {
 	return (_listenSockets);
+}
+
+Client*	Server::getClient(int fd)
+{
+	mpCl::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return (&it->second);
+	return (NULL);
 }

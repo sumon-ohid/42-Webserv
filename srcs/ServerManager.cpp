@@ -4,6 +4,7 @@
 #include "ServerConfig.hpp"
 #include <exception>
 #include <stdexcept>
+#include <variant>
 #include <vector>
 
 ServerManager::ServerManager() {}
@@ -20,11 +21,18 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs)
 	return (*this);
 }
 
+void	ServerManager::runWebservs(int argc, char **argv)
+{
+	setUp(argc, argv);
+	_epoll.Routine(_servers);
+}
+
 void	ServerManager::setUp(int argc, char **argv)
 {
 	if (argc == 2)
 		_generalConfig = ServerConfig(argv[1]);
-
+	else
+	 	_generalConfig = ServerConfig(LOCATION_CONFIG_FILE);
 	//-- Display the config for debugging
 	//_generalConfig.displayConfig();
 
@@ -51,35 +59,23 @@ void	ServerManager::setUpServers()
 		throw std::runtime_error("couldn't create any servers");
 }
 
-void	ServerManager::runRoutine()
+void	ServerManager::shutdownAndEraseServer(vSrv::iterator &servIt)
 {
-	_epoll.EpollRoutine(_servers);
-}
-
-void	ServerManager::shutdownAndEraseServer(Server& serv)
-{
-	vSrv::iterator it = std::find(_servers.begin(), _servers.end(), serv);
-	if (it != _servers.end())
-	{
-		it->shutdownServer();
-		it = _servers.erase(it);
-	}
+	servIt->shutdownServer();
+	_servers.erase(servIt);
 }
 
 void	ServerManager::shutdownServer(Server& serv)
 {
-	vSrv::iterator it = std::find(_servers.begin(), _servers.end(), serv);
-	if (it != _servers.end())
-		it->shutdownServer();
+	vSrv::iterator servIt = std::find(_servers.begin(), _servers.end(), serv);
+	if (servIt != _servers.end())
+		shutdownAndEraseServer(servIt);
 }
 
 void	ServerManager::shutdownAllServers()
 {
-	for (vSrv::iterator it = _servers.begin(); it != _servers.end();)
-	{
-		shutdownServer(*it);
-		it = _servers.erase(it);
-	}
+	for (vSrv::iterator servIt = _servers.begin(); servIt != _servers.end();)
+		shutdownAndEraseServer(servIt);
 }
 
 void	ServerManager::closeEpoll()
@@ -91,7 +87,7 @@ void	ServerManager::closeEpoll()
 
 void	ServerManager::shutdown()
 {
-	std::cout << "Got to shutdown" << std::endl;
 	shutdownAllServers();
 	closeEpoll();
+	std::cout << "\nAll servers shut down" << std::endl;
 }
