@@ -15,20 +15,12 @@
 class Socket
 {
 private:
-	int					_fd;
-	int					_port;
-	socklen_t			_addrlen;
-	sockaddr_in			_address;
-public:
-	Socket();
-	Socket(int);
-	~Socket();
-	Socket(const Socket&);
-	Socket&	operator=(const Socket&);
-	bool	operator==(const Socket& other) const;
-
-	// sets up a socket to use at a specified port
-	void	setUpSocket(void);
+	int				_fd;
+	int				_port;
+	socklen_t		_addrlen;
+	sockaddr_in		_address;
+	
+	// ------------- Socket Setup -------------
 	/**
 	* Creates a socket file descriptor for TCP communication.
 	*
@@ -38,13 +30,13 @@ public:
 	* - Mode: Non-blocking (SOCK_NONBLOCK)
 	* - Protocol: Default (0)
 	*/
-	void	createSocket(void);
+	void			createSocket(void);
 	/**
  	* Binds the socket to a specific port and IP address.
  	*
  	* Instructs the socket to listen for incoming connection requests.
  	*/
-	void	bindToSocketAndListen(void);
+	void			bindToSocketAndListen(void);
 	/**
  	* Sets up the socket address for binding.
  	*
@@ -55,14 +47,30 @@ public:
  	* - Clears the padding field.
  	* - Logs the port number.
  	*/
-	void	socketSetUpAddress(void);
+	void			socketSetUpAddress(void);
+public:
+	Socket();
+	Socket(int);
+	~Socket();
+	Socket(const Socket&);
+	Socket&			operator=(const Socket&);
+	bool			operator==(const Socket& other) const;
 
-	const int&			getFdSocket(void) const;
-	int&				getFdSocket(void);
-	const int&			getPort(void) const;
-	socklen_t&			getAddressLen(void);
-	const socklen_t& 	getAddressLen() const;
-	const sockaddr_in&	getAddress(void) const;
+	// ------------- Socket setup -------------
+	// sets up a socket to use at a specified port
+	void			setUpSocket(void);
+
+	// ------------- Getters -------------
+	// returns the fd of the socket
+	int				getFdSocket(void) const;
+	// returns the port the socket is listening to
+	int				getPort(void) const;
+	// returns the addressLen
+	socklen_t		getAddressLen(void) const;
+	// returns the address
+	sockaddr_in		getAddress(void) const;
+	// returns the a reference to the address
+	sockaddr_in&	getAddress(void);
 };
 
 std::ostream&	operator<<(std::ostream &os, const std::vector<char> &vc);

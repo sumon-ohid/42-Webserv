@@ -27,17 +27,8 @@ private:
 	int						_nfds;
 	struct epoll_event 		_ev;
 	struct epoll_event		_events[MAX_EVENTS];
-public:
-	Epoll();
-	~Epoll();
-	Epoll(const Epoll &);
-	Epoll&	operator=(const Epoll&);
 
-	/**
-	 * Initializes the epoll instance, registers listening sockets,
-	 * and enters the monitoring loop to handle incoming events.
-	 */
-	void	EpollRoutine(vSrv&);
+	// ------------- Epoll setup -------------
     // Initializes the epoll file descriptor with EPOLL_CLOEXEC.
 	void	createEpoll(void);
 	/**
@@ -56,19 +47,22 @@ public:
 	 *
 	 * @throws std::runtime_error If epoll_wait fails.
 	 */
-	void	EpollMonitoring(vSrv&);
+	// ------------- Monitoring -------------
+	void	Monitoring(vSrv&);
 	/**
  	* Checks if the given file descriptor corresponds to a listening socket
  	* and attempts to accept a new client connection if so.
  	* Returns true if a new client connection was accepted, otherwise false.
  	*/
-	bool	EpollNewClient(vSrv&, const int&); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
+	// ------------- Client Handling -------------
+	bool	NewClient(vSrv&, int); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
 	/**
 	 * Accepts a new client connection on the specified listening socket.
 	 * Returns true if the new client was successfully accepted, otherwise false.
 	 */
-	bool	EpollAcceptNewClient(Server&, const lstSocs::const_iterator&);
+	bool	AcceptNewClient(Server&, lstSocs::iterator&);
 
+	// returns the client corresponding to the fd passed
 	Client*	retrieveClient(vSrv&, int);
 	/**
 	 * Handles communication with an existing client by reading data from the
@@ -76,7 +70,7 @@ public:
 	 * and manages socket state on errors or disconnections.
 	 * Returns 0 on success, -1 on errors or client disconnection.
 	 */
-	int		EpollExistingClient(Client*);
+	int		ExistingClient(Client*);
 
 	// DISCUSS: should be handled in Request
 	void	validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request);
@@ -84,13 +78,29 @@ public:
 	int		invalidRequest(Client*);
 	int		emptyRequest(Client*);
 
-
-	// removes the fd from epoll and closes the fd
-	void	removeClientEpoll(int);
+	// ------------- Cleanup -------------
 	// removes the fd from the clients
 	void	removeClientFromServer(Server*, int);
 	// removes fd from clients and from epoll and closes it
 	void	removeClient(Server*, int);
+public:
+	Epoll();
+	~Epoll();
+	Epoll(const Epoll &);
+	Epoll&	operator=(const Epoll&);
 
+	// ------------- Routine -------------
+	/**
+	 * Initializes the epoll instance, registers listening sockets,
+	 * and enters the monitoring loop to handle incoming events.
+	 */
+	void	Routine(vSrv&);
+	
+	// ------------- Cleanup -------------
+	// removes the fd from epoll and closes the fd
+	void	removeClientEpoll(int);
+
+	// ------------- Getters -------------
+	// returns the epoll fd
 	int		getFd(void) const;
 };
