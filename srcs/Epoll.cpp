@@ -138,12 +138,12 @@ bool	Epoll::EpollNewClient(vSrv &servers, const int &event_fd) // possible chang
 	return (false);
 }
 
-bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it)
+bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& sockIt)
 {
 	// Get the length of the address associated with the current listening socket
-	socklen_t _addrlen = it->getAddressLen();
+	socklen_t _addrlen = sockIt->getAddressLen();
 	// Accept a new client connection on the listening socket
-	_connSock = accept4(it->getFdSocket(), (struct sockaddr *) &it->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	_connSock = accept4(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if (_connSock < 0)
 	{
 		std::cerr << "Error:\taccept4 failed" << std::endl;
@@ -160,7 +160,7 @@ bool	Epoll::EpollAcceptNewClient(Server &serv, const lstSocs::const_iterator& it
 
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
-	Client	tmp(_connSock, &serv);
+	Client	tmp(_connSock, sockIt->getPort(), &serv);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);
