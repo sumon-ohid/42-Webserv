@@ -47,7 +47,5 @@ void	GetMethod::executeMethod(int socketFd, Request& request) {
 }
 
 Method*	GetMethod::clone() {
-	Method* temp = new GetMethod();
-	temp = this;
-	return temp;
+	return new GetMethod(*this);
 }

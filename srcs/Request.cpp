@@ -18,7 +18,10 @@ Request::Request(const Request& other) {
 	_firstLineChecked = other._firstLineChecked;
 	_readingFinished = other._readingFinished;
 	_type = other._type;
-	_method = other._method;
+	if (other._method)
+		_method = other._method->clone();
+	else
+	 	_method = NULL;
 	_headerMap = other._headerMap;
 }
 
@@ -28,7 +31,11 @@ Request&	Request::operator=(const Request& other) {
 		_firstLineChecked = other._firstLineChecked;
 		_readingFinished = other._readingFinished;
 		_type = other._type;
-		_method = other._method;
+		delete _method;
+		if (other._method)
+			_method = other._method->clone();
+		else
+		 	_method = NULL;
 		_headerMap = other._headerMap;
 	}
 	return *this;

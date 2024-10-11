@@ -22,7 +22,7 @@ Method::Method() {
 	this->_mimeType = "";
 }
 
-Method::Method(const Method& other) : _name(other._name), _path(other._path), _protocol(other._protocol) {}
+Method::Method(const Method& other) : _name(other._name), _path(other._path), _protocol(other._protocol), _mimeType(other._mimeType) {}
 
 Method& Method::operator=(const Method& other) {
 	if (this == &other)
@@ -77,8 +77,6 @@ void	Method::setPath(std::string path) {
 		throw std::runtime_error("400");
 	this->_path = path;
 }
-
-#include <iostream>
 
 void	Method::setProtocol(std::string protocol) {
 	if (protocol.empty()) {
