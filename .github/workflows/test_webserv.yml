@@ -1,9 +1,6 @@
 name: test webserv
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
