@@ -1,5 +1,6 @@
 #include "GetMethod.hpp"
-#include "main.hpp"
+#include "Method.hpp"
+// #include "main.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 // #include <iostream>
@@ -43,4 +44,10 @@ void	GetMethod::executeMethod(int socketFd, Request& request) {
 	Response::headerAndBody(socketFd, request, body);
 	// 	Response::header(socketFd, request, body);
 
+}
+
+Method*	GetMethod::clone() {
+	Method* temp = new GetMethod();
+	temp = this;
+	return temp;
 }

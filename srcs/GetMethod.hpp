@@ -15,5 +15,6 @@ class GetMethod : public Method {
 		~GetMethod();
 
 		void	executeMethod(int socketFd, Request& request);
+		Method*	clone();
 
 };

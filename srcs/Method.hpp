@@ -36,7 +36,7 @@ class Method {
 		void	setMimeType(std::string& path);
 
 		virtual void	executeMethod(int socketFd, Request& request) = 0;
-
+		virtual Method*	clone() = 0;
 };
 
 #endif
