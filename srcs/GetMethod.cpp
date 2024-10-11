@@ -10,7 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <algorithm> 
+#include <algorithm>
 #include <string>
 
 GetMethod::GetMethod() : Method() {}
@@ -30,7 +30,7 @@ GetMethod::~GetMethod() {}
 //-- Store the request path,
 //-- compare it with location path.
 //-- if match get root and index and other values.
-void	GetMethod::executeMethod(int socketFd, Client *client, Request &request) 
+void	GetMethod::executeMethod(int socketFd, Client *client, Request &request)
 {
 	// std::string bufferRead(buffer.begin(), buffer.end());
 	// size_t pos = bufferRead.find("cgi-bin");
@@ -52,7 +52,7 @@ void	GetMethod::executeMethod(int socketFd, Client *client, Request &request)
 		std::string tempPath = locationConfig[i].getPath();
 		tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
 		tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
-		
+
 		if (requestPath.find(tempPath) != std::string::npos)
 		{
 			//-- Get the locationMap and concatinate root+index in locationPath
@@ -68,14 +68,14 @@ void	GetMethod::executeMethod(int socketFd, Client *client, Request &request)
 			}
 			if (requestPath == "/")
 				locationPath = root + index;
-			else  
+			else
 				locationPath = root + requestPath;
 			std::cout << request.getMethodName() << " & " << locationPath << std::endl;
 
 				path = locationPath;
 
 			//--- Check if the file exists or not
-			std::cout << "Config Path : " << path << std::endl;
+			std::cout << "Config Path : $" << path << "$" << std::endl;
 			this->setMimeType(path);
 			std::ifstream file(path.c_str());
 			if (!file.is_open())
@@ -91,8 +91,10 @@ void	GetMethod::executeMethod(int socketFd, Client *client, Request &request)
 			file.close();
 			Response::headerAndBody(socketFd, request, body);
 		}
-		else  
-			Response::FallbackError(socketFd, request, "404");
+		// else {
+		// 	std::cout << "test1" << std::endl;
+		// 	Response::FallbackError(socketFd, request, "404");
+		// }
 	}
 
 	// 	Response::header(socketFd, client->_request, body);
