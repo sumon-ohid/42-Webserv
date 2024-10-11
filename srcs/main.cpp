@@ -30,7 +30,6 @@ int main(int argc, char **argv)
 	{
 		serverManager.setUp(argc, argv);
 		serverManager.runRoutine();
-
 	}
 	catch (std::exception& e)
 	{

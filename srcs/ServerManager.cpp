@@ -47,7 +47,8 @@ void	ServerManager::setUpServers()
 			std::cout << "Error:\t" << e.what() << std::endl;
 		}
 	}
-	std::runtime_error("couldn't create any servers");
+	if (_servers.empty())
+		throw std::runtime_error("couldn't create any servers");
 }
 
 void	ServerManager::runRoutine()
@@ -61,7 +62,7 @@ void	ServerManager::shutdownAndEraseServer(Server& serv)
 	if (it != _servers.end())
 	{
 		it->shutdownServer();
-		_servers.erase(it);
+		it = _servers.erase(it);
 	}
 }
 
@@ -77,7 +78,7 @@ void	ServerManager::shutdownAllServers()
 	for (vSrv::iterator it = _servers.begin(); it != _servers.end();)
 	{
 		shutdownServer(*it);
-		_servers.erase(it);
+		it = _servers.erase(it);
 	}
 }
 
