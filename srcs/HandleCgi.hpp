@@ -25,8 +25,10 @@ class HandleCgi : public ServerConfig
         ~HandleCgi();
 
         void proccessCGI(int nSocket);
-        void getCgiConfPath(std::string configFile);
-
+        void handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid);
+        void handleChildProcess(int pipe_fd[2], const std::string &locationPath);
+        std::string getExecutable(const std::string &locationPath);
+        
         // Function template to convert various types to string
         template <typename T>
         std::string xto_string(const T& value)
