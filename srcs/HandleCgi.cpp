@@ -19,8 +19,8 @@ HandleCgi::HandleCgi()
 //-- and send the output to the client
 HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request)
 {
-    //NOTE: cgiConf should have root in the beginning
-    // parse location config to get the root here
+    //--NOTE: cgiConf should have root in the beginning
+    //-- parse location config to get the root here
 
     (void)request;
     std::string rootFolder;
@@ -62,6 +62,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
         throw std::runtime_error("404");
 }
 
+//--- Main function to process CGI
 void HandleCgi::proccessCGI(int nSocket)
 {
     int pipe_fd[2];
@@ -72,63 +73,73 @@ void HandleCgi::proccessCGI(int nSocket)
     if (pid < 0)
         throw std::runtime_error("Fork failed !!");
     else if (pid == 0)
-    {
-        //--- Child process
-        //--- Redirect stdout to the pipe's write end
-        dup2(pipe_fd[1], STDOUT_FILENO);
-        close(pipe_fd[0]); //--- Close unused read end
-        close(pipe_fd[1]); //--- Close write end after redirection
-
-        //--- Determine the executable based on the file extension
-        size_t pos = locationPath.rfind(".");
-        std::string extension;
-        if (pos != std::string::npos)
-            extension = locationPath.substr(pos);
-        else
-            throw std::runtime_error("Invalid file extension !!");
-
-        std::string executable;        
-        if (access(locationPath.c_str(), F_OK) == -1)
-            throw std::runtime_error("404");
-
-        //-- NOTE : Hardcode is not a good way to do this
-        if (extension == ".py")
-            executable = "/usr/bin/python3";
-        else if (extension == ".php")
-            executable = "/usr/bin/php";
-        else if (extension == ".sh")
-            executable = "/usr/bin/bash";
-        else
-            throw std::runtime_error("This file extension is not supported !!");
-
-        //--- Prepare arguments for execve
-        char *const argv[] = { (char *)executable.c_str(), (char *)locationPath.c_str(), NULL };
-        char *const envp[] = { NULL };
-
-        execve(executable.c_str(), argv, envp);
-        throw std::runtime_error("Execve failed !!");
-    }
+        handleChildProcess(pipe_fd, locationPath);
     else
-    {
-        //--- Parent process
-        close(pipe_fd[1]); //--- Close unused write end
-        //--- Read CGI output from the pipe
-        std::vector<char> cgiOutput(1024);
-        ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
-        if (n < 0)
-            throw std::runtime_error("Read failed !!");
+        handleParentProcess(nSocket, pipe_fd, pid);
+}
 
-        //--- Resize the vector to the actual size of the read data
-        cgiOutput.resize(n);
-        //--- Prepare HTTP response request
-        std::string httpRequest = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + xto_string(n) + "\n\n";
-        //--- Send the HTTP request
-        send(nSocket, httpRequest.c_str(), httpRequest.size(), 0);
-        //--- Send the CGI output
-        send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
-        close(pipe_fd[0]); //--- Close read end
-        waitpid(pid, NULL, 0); //--- Wait for the child process to finish
-    }
+//-- Function to determine the executable based on the file extension
+std::string HandleCgi::getExecutable(const std::string &locationPath)
+{
+    size_t pos = locationPath.rfind(".");
+    std::string extension;
+    if (pos != std::string::npos)
+        extension = locationPath.substr(pos);
+    else
+        throw std::runtime_error("Invalid file extension !!");
+
+    std::string executable;
+    if (extension == ".py")
+        executable = "/usr/bin/python3";
+    else if (extension == ".php")
+        executable = "/usr/bin/php";
+    else if (extension == ".sh")
+        executable = "/usr/bin/bash";
+    else
+        throw std::runtime_error("This file extension is not supported !!");
+
+    return executable;
+}
+
+//-- Function to handle the child process
+void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPath)
+{
+    //--- Redirect stdout to the pipe's write end
+    dup2(pipe_fd[1], STDOUT_FILENO);
+    close(pipe_fd[0]); //--- Close unused read end
+    close(pipe_fd[1]); //--- Close write end after redirection
+
+    std::string executable = getExecutable(locationPath);
+
+    //--- Prepare arguments for execve
+    char *const argv[] = { (char *)executable.c_str(), (char *)locationPath.c_str(), NULL };
+    char *const envp[] = { NULL };
+
+    execve(executable.c_str(), argv, envp);
+    throw std::runtime_error("Execve failed !!");
+}
+
+//----- Function to handle the parent process
+void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
+{
+    close(pipe_fd[1]); //--- Close unused write end
+
+    //--- Read CGI output from the pipe
+    std::vector<char> cgiOutput(1024);
+    ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
+    if (n < 0)
+        throw std::runtime_error("Read failed !!");
+    cgiOutput.resize(n);
+    std::ostringstream httpRequest;
+    httpRequest << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << n << "\n\n";
+
+    //--- Send the HTTP request
+    send(nSocket, httpRequest.str().c_str(), httpRequest.str().size(), 0);
+    //--- Send the CGI output
+    send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
+
+    close(pipe_fd[0]); //--- Close read end
+    waitpid(pid, NULL, 0); //--- Wait for the child process to finish
 }
 
 HandleCgi::~HandleCgi()
