@@ -112,7 +112,7 @@ void GetMethod::serveStaticFile(std::string &path, Request &request)
     std::ifstream file(path.c_str());
     if (!file.is_open())
     {
-        std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
+        //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
         Response::FallbackError(socketFd, request, "404");
         return;
     }
