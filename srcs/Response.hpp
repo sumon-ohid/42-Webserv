@@ -5,6 +5,7 @@
 
 #include "Request.hpp"
 #include "Socket.hpp"
+#include "ErrorHandle.hpp"
 
 class Response {
 	private:
@@ -21,4 +22,6 @@ class Response {
 		static void header(int socketFd, Request& request, std::string& body);
 		static void	headerAndBody(int socketFd, Request& request, std::string& body);
 		static void FallbackError(int socketFd, Request& request, std::string statusCode);
+
+		static void FallbackError(int socketFd, Request& request, std::string statusCode, Client *client);
 };

@@ -21,6 +21,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				ServerConfig.cpp \
 				HandleCgi.cpp \
 				ServerManager.cpp \
+				ErrorHandle.cpp \
 				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)

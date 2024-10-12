@@ -1,4 +1,5 @@
 #include "GetMethod.hpp"
+#include "Method.hpp"
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -34,7 +35,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
         if (cgiFound)
             executeCgiScript(requestPath, client, request);
         else
-            serveStaticFile(locationPath, request);
+            serveStaticFile(locationPath, request, client);
     }
     else
     {
@@ -46,7 +47,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
                 root = it->second;
             std::string path = root + request.getMethodPath();
 
-            serveStaticFile(path, request);
+            serveStaticFile(path, request, client);
         }
     }
 }
@@ -106,14 +107,14 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
         std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
 }
 
-void GetMethod::serveStaticFile(std::string &path, Request &request)
+void GetMethod::serveStaticFile(std::string &path, Request &request, Client *client)
 {
     this->setMimeType(path);
     std::ifstream file(path.c_str());
     if (!file.is_open())
     {
         //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
-        Response::FallbackError(socketFd, request, "404");
+        Response::FallbackError(socketFd, request, "404", client);
         return;
     }
 
@@ -136,7 +137,7 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
     catch (std::runtime_error &e)
     {
         std::cerr << BOLD RED << "Error: " << e.what() << RESET << std::endl;
-        Response::FallbackError(socketFd, request, "404");
+        Response::FallbackError(socketFd, request, "404", client);
     }
 }
 

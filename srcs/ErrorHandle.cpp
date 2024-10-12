@@ -1,74 +1,77 @@
 //-- Written by : msumon
 
 #include "ErrorHandle.hpp"
+#include "Client.hpp"
+#include "Request.hpp"
 #include "ServerConfig.hpp"
+#include <cstddef>
+#include <iostream>
 
 ErrorHandle::ErrorHandle()
 {
     errorFile = "";
-    errorStatusCode = 0;
+    errorStatusCode = "";
     errorMessage = "";
+    pageTitle = "Error Page";
 }
 
-void ErrorHandle::modifyErrorPage()
+std::string ErrorHandle::modifyErrorPage()
 {
-    // Modify the error page
-    std::vector<ErrorHandle> errorVector = getErrorVector();
-    for (size_t i = 0; i < errorVector.size(); i++)
+    size_t pos = errorFile.rfind("/");
+    std::string fileDirectory = errorFile.substr(0, pos + 1);
+    
+    //-- open the default error file
+    std::ifstream defaultErrorFile(errorFile.c_str());
+
+    //-- create a new error file, error code will be the file name
+    std::string tempFileName = fileDirectory + errorStatusCode + ".html";
+    newErrorFile = tempFileName;
+    std::ofstream newErrorFile(tempFileName.c_str());
+
+    if (defaultErrorFile.is_open() && newErrorFile.is_open())
     {
-        ErrorHandle& error = errorVector[i];
-        std::string errorFile = error.getErrorFile();
-        std::string errorStatusCode = to_string(error.getErrorStatusCode());
-        std::string errorMessage = error.getErrorMessage();
-        std::ifstream file(errorFile.c_str());
-        std::string tempFileName = errorStatusCode + ".html";
-        std::ofstream tempFile(tempFileName.c_str());
-        if (file.is_open() && tempFile.is_open())
+        std::string line;
+        while (std::getline(defaultErrorFile, line))
         {
-            std::string line;
-            while (std::getline(file, line))
-            {
-                if (line.find("status_code") != std::string::npos)
-                {
-                    line.replace(line.find("status_code"), 11, errorStatusCode);
-                }
-                if (line.find("message") != std::string::npos)
-                {
-                    line.replace(line.find("message"), 7, errorMessage);
-                }
-                tempFile << line << std::endl;
-            }
+            if (line.find("status_code") != std::string::npos)
+                line.replace(line.find("status_code"), 11, errorStatusCode);
+            if (line.find("message") != std::string::npos)
+                line.replace(line.find("message"), 7, errorMessage);
+            if (line.find("page_title") != std::string::npos)
+                line.replace(line.find("page_title"), 10, pageTitle);
+            newErrorFile << line << std::endl;
         }
-        else  
-        {
-            throw std::runtime_error("Error opening errorPage file");
-        }
-        file.close();
-        tempFile.close();
-
-        // -- Remove the files before quiting the program
-
-        //std::remove(errorFile.c_str());
-        //std::rename(tempFileName.c_str(), errorFile.c_str());
-        //std::remove(fileName.c_str());
     }
-}   
+    else  
+        throw std::runtime_error("No error file found in Config!!");
 
-ErrorHandle::ErrorHandle(std::string configFile) : ServerConfig(configFile)
+    newErrorFile.close();
+    defaultErrorFile.close();
+    
+    // Re-open the new error file to read its contents
+    std::ifstream readNewErrorFile(tempFileName.c_str());
+    std::ostringstream buffer;
+    buffer << readNewErrorFile.rdbuf();
+    std::string body = buffer.str();
+    readNewErrorFile.close();
+    
+    errorBody = body;
+    return body;
+
+    // -- Remove the files before quiting the program
+
+    //std::remove(tempFileName.c_str());
+}
+
+void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
 {
-    std::vector<ServerConfig> servers = getServers();
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        ServerConfig server = servers[i];
-        ErrorHandle newError;
-        std::string errorPage = server.getErrorPage();
-        if (!errorPage.empty())
-            newError.setErrorFile(server.getErrorPage());
-        newError.setErrorStatusCode(400);
-        newError.setErrorMessage("Bad Request");
-        errorVector.push_back(newError);
-    }
-    modifyErrorPage();
+    std::string errorPage = client->_server->_serverConfig.getErrorPage();
+    std::string message = Response::statusCodes.find(statusCode)->second;
+
+    errorFile = errorPage;
+    errorStatusCode = statusCode;
+    errorMessage = message;
+    pageTitle = statusCode + " " + message;
 }
 
 std::vector<ErrorHandle> ErrorHandle::getErrorVector()
@@ -89,6 +92,8 @@ void ErrorHandle::displayError()
 
 ErrorHandle::~ErrorHandle()
 {
+    // -- Remove the error file
+    std::remove(newErrorFile.c_str());
 }
 
 void ErrorHandle::setErrorFile(std::string errorFile)
@@ -96,7 +101,7 @@ void ErrorHandle::setErrorFile(std::string errorFile)
     this->errorFile = errorFile;
 }
 
-void ErrorHandle::setErrorStatusCode(size_t errorStatusCode)
+void ErrorHandle::setErrorStatusCode(std::string errorStatusCode)
 {
     this->errorStatusCode = errorStatusCode;
 }
@@ -113,7 +118,7 @@ std::string ErrorHandle::getErrorFile()
     return errorFile;
 }
 
-size_t ErrorHandle::getErrorStatusCode()
+std::string ErrorHandle::getErrorStatusCode()
 {
     return errorStatusCode;
 }
@@ -121,4 +126,9 @@ size_t ErrorHandle::getErrorStatusCode()
 std::string ErrorHandle::getErrorMessage()
 {
     return errorMessage;
+}
+
+std::string ErrorHandle::getNewErrorFile()
+{
+    return newErrorFile;
 }

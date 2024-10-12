@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Response.hpp"
+#include "ErrorHandle.hpp"
 
 static std::map<std::string, std::string> initMap() {
 	std::map<std::string, std::string> codes;
@@ -91,6 +92,7 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 }
 
 void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
+
 	std::stringstream ss;
 	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
 	request.setMethodMimeType("test.html");
@@ -109,3 +111,42 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 // what happens in case of a write error?
 // try again mechanism?
 // how to decide implement if we keep a connection open or closing?
+
+//-- SUMON: Trying to make it work with ErrorHandle class
+// what if we have a write error?
+void	Response::FallbackError(int socketFd, Request& request, std::string statusCode, Client *client)
+{
+	ssize_t writeReturn = 0;
+	try  
+	{
+		ErrorHandle errorHandle;
+		errorHandle.prepareErrorPage(client, statusCode);
+		request.setMethodMimeType(errorHandle.getNewErrorFile());
+		
+		//-- this will create a new error file, error code will be the file name
+		//-- this will modify the error page replacing the status code, message and page title
+		//-- this will return the modified error page as a string
+		std::string errorBody = errorHandle.modifyErrorPage();
+		std::string totalString = createRequestAndBodyString(request, errorBody, statusCode);
+		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
+		if (writeReturn == -1)
+			throw std::runtime_error("Error writing to socket in Response::FallbackError!!");
+		// NOTE: sometimes write fails, subject says errno is forbidden for read and write
+		// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
+	}
+	catch (std::exception &e)
+	{
+		std::stringstream ss;
+		std::string statusMessage = Response::statusCodes.find(statusCode)->second;
+		request.setMethodMimeType("test.html");
+
+		ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
+		ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";
+		ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
+		std::string body = ss.str();
+		std::string totalString = createRequestAndBodyString(request, body, statusCode);
+		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
+		if (writeReturn == -1)
+			throw std::runtime_error("Error writing to socket in Response::FallbackError!!");
+	}
+}
