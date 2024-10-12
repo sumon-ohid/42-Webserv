@@ -6,6 +6,7 @@
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Server.hpp"
+#include "ServerConfig.hpp"
 
 #include <iostream>
 #include <cstddef>
@@ -32,74 +33,138 @@ GetMethod::~GetMethod() {}
 //-- Store the request path,
 //-- compare it with location path.
 //-- if match get root and index and other values.
-void	GetMethod::executeMethod(int socketFd, Client *client, Request &request)
+
+//-- NOTE: This function is too long. It should be broken down into smaller functions.
+
+void GetMethod::executeMethod(int socketFd, Client *client, Request &request)
 {
-	// std::string bufferRead(buffer.begin(), buffer.end());
-	// size_t pos = bufferRead.find("cgi-bin");
-	// if (pos != std::string::npos)
-	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
+    std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
+    std::string requestPath = request.getMethodPath();
+    std::string locationPath;
+    std::string index;
+    std::string root;
+    std::string body;
+    std::string path;
+    bool locationMatched = false;
+    bool cgiFound = false;
 
-	std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
-	std::string requestPath = request.getMethodPath();
-	std::string locationPath;
-	std::string root;
-	std::string index;
-	std::string body;
-	std::string path;
+    //--- Loop through the locationConfig vector
+    for (size_t i = 0; i < locationConfig.size(); i++)
+    {
+        std::string tempPath = locationConfig[i].getPath();
+        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
+        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
 
+        //-- Match only if the request path exactly matches the location path or
+		//-- starts with the location path followed by a '/'
+        if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
+        {
+            locationMatched = true;
+            if (requestPath.find("cgi-bin") != std::string::npos)
+            {
+                cgiFound = true;
+                break;
+            }
+        
+            //-- Get the locationMap and concatenate root+index in locationPath
+            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
+            std::multimap<std::string, std::string>::iterator it;
 
-	//--- Loop through the locationConfig vector
-	for(size_t i = 0; i < locationConfig.size(); i++)
-	{
-		std::string tempPath = locationConfig[i].getPath();
-		tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
-		tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
+            for (it = locationMap.begin(); it != locationMap.end(); it++)
+            {
+                //--- Handle other keys as well.
+                if (it->first == "root")
+                    root = it->second;
+                if (it->first == "index")
+                    index = it->second;
+                if (it->first == "return")
+                {
+                    //-- Send HTTP 301 response for redirection
+                    std::string redirectUrl = it->second;
+                    std::cout << BOLD YELLOW << "Redirecting to: " << redirectUrl << RESET << std::endl;
+                    std::ostringstream redirectHeader;
+                    redirectHeader << "HTTP/1.1 301 Moved Permanently\r\n"
+                        << "Location: " << redirectUrl << "\r\n"
+                        << "Content-Length: 0\r\n"
+                        << "Connection: close\r\n\r\n";
+                    std::string response = redirectHeader.str();
+                    ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
+                    if (bytes_written == -1)
+                        throw std::runtime_error("Error writing to socket in GetMethod::executeMethod!!");
+                    else
+                        std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
+                    return;
+                }
+            }
+            if (requestPath == "/")
+                locationPath = root + index;
+            else
+                locationPath = root + requestPath;
+            path = locationPath;
 
-		if (requestPath.find(tempPath) != std::string::npos)
-		{
-			//-- Get the locationMap and concatinate root+index in locationPath
-			std::multimap<std::string, std::string > locationMap = locationConfig[i].getLocationMap();
-			std::multimap<std::string, std::string >::iterator it;
-			for (it = locationMap.begin(); it != locationMap.end(); it++)
-			{
-				//--- TODO: need to handle other keys aslo.
-				if (it->first == "root")
-					root = it->second;
-				if (it->first == "index")
-					index = it->second;
-			}
-			if (requestPath == "/")
-				locationPath = root + index;
-			else
-				locationPath = root + requestPath;
-			std::cout << request.getMethodName() << " & " << locationPath << std::endl;
+			// std::cout << BOLD BLUE << requestPath << RESET << std::endl;
+			// std::cout << BOLD BLUE << tempPath << RESET << std::endl;
 
-				path = locationPath;
+			//--- Set the MIME type of the file
+            this->setMimeType(path);
+            //--- Check if the file exists or not
+            std::ifstream file(path.c_str());
+            if (!file.is_open())
+            {
+                Response::FallbackError(socketFd, request, "404");
+                return;
+            }
 
-			//--- Check if the file exists or not
-			std::cout << "Config Path : $" << path << "$" << std::endl;
-			this->setMimeType(path);
-			std::ifstream file(path.c_str());
-			if (!file.is_open())
-			{
-				Response::FallbackError(socketFd, request, "404");
-				return;
-			}
+            //--- Read the file and send it to the client
+            std::ostringstream buffer;
+            buffer << file.rdbuf();
+            body = buffer.str();
+            file.close();
+            Response::headerAndBody(socketFd, request, body);
+            return;
+        }
+    }
 
-			//--- Read the file and send it to the client
-			std::ostringstream buffer;
-			buffer << file.rdbuf();
-			body = buffer.str();
-			file.close();
-			Response::headerAndBody(socketFd, request, body);
-		}
-		// else {
-		// 	std::cout << "test1" << std::endl;
-		// 	Response::FallbackError(socketFd, request, "404");
-		// }
-	}
+    //-- If no matching location is found, eg: css, js, etc.
+    if (!locationMatched)
+    {
+        for (size_t i = 0; i < locationConfig.size(); i++)
+        {
+            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
+            std::multimap<std::string, std::string>::iterator it = locationMap.find("root");
+            if (it != locationMap.end())
+                root = it->second;
+            path = root + request.getMethodPath();
 
-	// 	Response::header(socketFd, client->_request, body);
+            this->setMimeType(path);
+            std::ifstream file(path.c_str());
+            if (!file.is_open())
+            {
+                Response::FallbackError(socketFd, request, "404");
+                return;
+            }
+            std::ostringstream buffer;
+            buffer << file.rdbuf();
+            body = buffer.str();
+            file.close();
+            Response::headerAndBody(socketFd, request, body);
+        }
+    }
+
+    //-- If CGI is found, execute the CGI script
+    if (cgiFound && locationMatched)
+    {
+        try 
+        {
+            HandleCgi cgi(requestPath, socketFd, *client, request);
+            std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
+        }
+        catch (std::runtime_error &e)
+        {
+            std::cerr << BOLD RED << "Error: " << e.what() << RESET << std::endl;
+            Response::FallbackError(socketFd, request, "404");
+        }
+    }
 }
 
 Method*	GetMethod::clone() {
