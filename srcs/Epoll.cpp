@@ -1,5 +1,4 @@
 #include "Epoll.hpp"
-#include "HandleCgi.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
 #include "main.hpp"
@@ -54,7 +53,7 @@ void	Epoll::registerLstnSockets(vSrv& servers)
 		it->_epoll = this;
 		// Retrieve the list of listening sockets from the server
 		const lstSocs&	sockets = it->getLstnSockets();
-    	// Iterate over each listening socket
+		// Iterate over each listening socket
 		for (lstSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
 			registerSocket(it->getFdSocket());
 	}
@@ -69,6 +68,7 @@ bool	Epoll::registerSocket(int fd)
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev) == -1)
 	{
 		close(fd);
+		std::cerr << "socket couldn't be added to epoll" << std::endl;
 		return (false);
 	}
 	return (true);
@@ -80,27 +80,26 @@ void Epoll::Monitoring(vSrv& servers)
 	while (1)
 	{
 		// Wait for events on the epoll instance
-		_nfds = epoll_wait(_epollFd, _events, MAX_EVENTS, -1);
-		if (_nfds == -1)
-		{
-			if (errno == EINTR)
-				break;
-			else
-				throw std::runtime_error("epoll_wait failed");
-		}
+		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1)
+			break;
 		for (int i = 0; i < _nfds; ++i)
-		{
-			int event_fd = _events[i].data.fd;  // File descriptor for this event
-			// Check if the event corresponds to one of the listening sockets
-			bool newClient = NewClient(servers, event_fd);
 			// Handle events on existing client connections
-			if (!newClient && _events[i].events & EPOLLIN)  // Check if the event is for reading
-			{
-				Client* client = retrieveClient(servers, event_fd);
-				ExistingClient(client);
-			}
-		}
+			if (!NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
+				existingClient(servers, _events[i].events, _events[i].data.fd);
 	}
+}
+
+int	Epoll::checkEpollWait(int epollWaitReturn)
+{
+	_nfds = epollWaitReturn;
+	if (_nfds == -1)
+	{
+		if (errno == EINTR)
+			return (-1);
+		else
+			throw std::runtime_error("epoll_wait failed");
+	}
+	return (_nfds);
 }
 
 Client*	Epoll::retrieveClient(vSrv& servers, int event_fd)
@@ -122,18 +121,10 @@ bool	Epoll::NewClient(vSrv &servers, int event_fd) // possible change: implement
 		lstSocs& sockets = servIt->getLstnSockets();
 		// iterate over listening sockets
 		for (lstSocs::iterator sockIt = sockets.begin(); sockIt != sockets.end(); ++sockIt)
-		{
 			// Compare event_fd with the listening socket's file descriptor
 			if (event_fd == sockIt->getFdSocket())
-			{
 				// This is a listening socket, accept new client connection
-				if (!AcceptNewClient(*servIt, sockIt))
-					return (true);
-				if (!registerSocket(_connSock))
-					servIt->removeClient(event_fd);
-				return (true);  // Mark that we've handled a listening socket
-			}
-		}
+				return (AcceptNewClient(*servIt, sockIt));
 	}
 	return (false);
 }
@@ -149,24 +140,45 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 		std::cerr << "Error:\taccept4 failed" << std::endl;
 		return (false);  // Skip to the next socket if accept fails
 	}
-
-	//--- Handle cgi
-	// std::string bufferRead(_buffer.begin(), _buffer.end());
-	// size_t pos = bufferRead.find("cgi-bin");
-	// if (pos != std::string::npos)
-	// 	HandleCgi cgi(bufferRead, _connSock, serv);
-
-	//-- End of cgi
-
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
+	if (!registerSocket(_connSock))
+		return (false);
 	Client	tmp(_connSock, sockIt->getPort(), &serv);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);
 }
 
-int	Epoll::ExistingClient(Client* client)
+void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
+{
+	Client* client = retrieveClient(servers, event_fd);
+	if (!client)
+		return (clientRetrievalError(event_fd));
+	if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+		return (clientErrorOrHungUp(client));
+	if (events & EPOLLIN)  // Check if the event is for reading
+		clientRequest(client);
+		// should handle read events
+	if (events & EPOLLOUT) // Check if the event is for writing
+		// should handle write events
+		clientResponse(client);
+}
+
+void	Epoll::clientRetrievalError(int event_fd)
+{
+	std::cerr << "Error:\tretrieving client" << std::endl;
+	removeClientEpoll(event_fd);
+}
+
+void	Epoll::clientErrorOrHungUp(Client* client)
+{
+	// Handle error or hung up situation
+	std::cerr << "Error or client hung up on fd: " << client->getFd() << std::endl;
+	removeClient(client); // Remove the client from epoll and close the connection
+}
+
+int	Epoll::clientRequest(Client* client)
 {
 
 	// Read data from the client
@@ -191,7 +203,7 @@ int	Epoll::ExistingClient(Client* client)
 		catch (std::exception &e)
 		{
 			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
-				Epoll::removeClient(client->_server, client->getFd());
+				Epoll::removeClient(client);
 			} else {
 				Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
 			}
@@ -209,7 +221,7 @@ int	Epoll::ExistingClient(Client* client)
 			Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
 		}
 
-    	std::cout << "-------------------------------------" << std::endl;
+		std::cout << "-------------------------------------" << std::endl;
 	}
 	(void) count;
 	writeFlag = false;
@@ -226,14 +238,14 @@ int	Epoll::invalidRequest(Client* client)
 		return (-1);
 	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
 	if (errno != EAGAIN && errno != EWOULDBLOCK)
-		removeClient(client->_server, client->getFd());  // Close the socket on other read errors
+		removeClient(client);  // Close the socket on other read errors
 	return (-1); // Move to the next event
 }
 
 int	Epoll::emptyRequest(Client* client)
 {
 	std::cout << "Client disconnected: FD " << client->getFd() << std::endl;
-	removeClient(client->_server, client->getFd());
+	removeClient(client);
 	return (-1); // Move to the next event
 }
 
@@ -257,12 +269,17 @@ void	Epoll::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, 
 	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
+void	Epoll::clientResponse(Client* client)
+{
+	(void)client;
+}
+
 void	Epoll:: removeClientEpoll(int fd)
 {
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1)
-        std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
-    // Close the client socket
-    close(fd);
+		std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
+	// Close the client socket
+	close(fd);
 }
 
 void	Epoll::removeClientFromServer(Server* serv, int fd)
@@ -270,10 +287,12 @@ void	Epoll::removeClientFromServer(Server* serv, int fd)
 	serv->removeClient(fd);
 }
 
-void	Epoll::removeClient(Server* serv, int fd)
+void	Epoll::removeClient(Client* client)
 {
-	removeClientEpoll(fd);
-	removeClientFromServer(serv, fd);
+	if (!client || !client->_server)
+		return;
+	removeClientEpoll(client->getFd());
+	removeClientFromServer(client->_server, client->getFd());
 }
 
 int	Epoll::getFd() const
