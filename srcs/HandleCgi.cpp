@@ -1,36 +1,65 @@
 //-- Written by : msumon
 
 #include "HandleCgi.hpp"
+#include "Client.hpp"
+#include "Request.hpp"
 #include "Server.hpp"
 #include "ServerConfig.hpp"
+#include <cstddef>
+#include <string>
 
 HandleCgi::HandleCgi()
 {
-    cgiPath = "./cgi-bin/";
-    cgiConf = "Default";
+    locationPath = "";
 }
 
 //-- Constructor to handle the CGI request
 //-- I will parse the request to get the path of the CGI file
 //-- then I will call the proccessCGI function to execute the CGI script
 //-- and send the output to the client
-HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Server* server, std::string locationPath)
+HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request)
 {
-    (void)server;
-    std::string clientMessage(requestBuffer.begin(), requestBuffer.end());
+    //NOTE: cgiConf should have root in the beginning
+    // parse location config to get the root here
 
-    size_t pos = clientMessage.find("/cgi-bin/");
-    if (pos != std::string::npos)
+    (void)request;
+    std::string rootFolder;
+    std::string root;
+    std::string index;
+
+    std::vector<LocationConfig> locationConfig = client._server->_serverConfig.getLocations();
+    for (size_t i = 0; i < locationConfig.size(); i++)
     {
-        cgiPath = requestBuffer;
-
-        cgiConf = locationPath;
-
-        std::cout << "++++++ >> " << cgiConf << std::endl;
-        if (cgiConf != requestBuffer)
-            throw std::runtime_error("404");
-        proccessCGI(nSocket);
+        std::string tempPath = locationConfig[i].getPath();
+        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
+        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
+    
+        if (tempPath == "/")
+        {
+            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
+            std::multimap<std::string, std::string>::iterator it = locationMap.find("root");
+            if (it != locationMap.end())
+                rootFolder = it->second;
+            i++;
+        }
+        if (tempPath == "/cgi-bin")
+        {
+            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
+            for (std::multimap<std::string, std::string>::iterator it = locationMap.begin(); it != locationMap.end(); ++it)
+            {
+                if (it->first == "index")
+                    index = it->second;
+                if (it->first == "root")
+                    root = it->second;
+            }
+            locationPath = rootFolder + root + index;
+        }
     }
+
+    if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == root + index)
+        proccessCGI(nSocket);
+    else
+        throw std::runtime_error("404");
 }
 
 void HandleCgi::proccessCGI(int nSocket)
@@ -51,32 +80,38 @@ void HandleCgi::proccessCGI(int nSocket)
         close(pipe_fd[1]); //--- Close write end after redirection
 
         //--- Determine the executable based on the file extension
-        size_t pos = cgiPath.find(".");
-        std::string extension = cgiPath.substr(pos);
-        std::string exe;
+        size_t pos = locationPath.rfind(".");
+        std::string extension;
+        if (pos != std::string::npos)
+            extension = locationPath.substr(pos);
+        else
+            throw std::runtime_error("Invalid file extension !!");
 
-        std::string fullPath = "." + cgiPath;
+        std::string executable;        
+        if (access(locationPath.c_str(), F_OK) == -1)
+            throw std::runtime_error("404");
+
+        //-- NOTE : Hardcode is not a good way to do this
         if (extension == ".py")
-            exe = "/usr/bin/python3";
+            executable = "/usr/bin/python3";
         else if (extension == ".php")
-            exe = "/usr/bin/php";
+            executable = "/usr/bin/php";
         else if (extension == ".sh")
-            exe = "/usr/bin/bash";
+            executable = "/usr/bin/bash";
         else
             throw std::runtime_error("This file extension is not supported !!");
 
         //--- Prepare arguments for execve
-        char *const argv[] = { (char *)exe.c_str(), (char *)fullPath.c_str(), NULL };
+        char *const argv[] = { (char *)executable.c_str(), (char *)locationPath.c_str(), NULL };
         char *const envp[] = { NULL };
 
-        execve(exe.c_str(), argv, envp);
+        execve(executable.c_str(), argv, envp);
         throw std::runtime_error("Execve failed !!");
     }
     else
     {
         //--- Parent process
         close(pipe_fd[1]); //--- Close unused write end
-
         //--- Read CGI output from the pipe
         std::vector<char> cgiOutput(1024);
         ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
@@ -85,16 +120,12 @@ void HandleCgi::proccessCGI(int nSocket)
 
         //--- Resize the vector to the actual size of the read data
         cgiOutput.resize(n);
-
         //--- Prepare HTTP response request
-        std::string httpRequest = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + to_string(n) + "\n\n";
-
+        std::string httpRequest = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + xto_string(n) + "\n\n";
         //--- Send the HTTP request
         send(nSocket, httpRequest.c_str(), httpRequest.size(), 0);
-
         //--- Send the CGI output
         send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
-
         close(pipe_fd[0]); //--- Close read end
         waitpid(pid, NULL, 0); //--- Wait for the child process to finish
     }

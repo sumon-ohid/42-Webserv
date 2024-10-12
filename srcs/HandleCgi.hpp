@@ -17,12 +17,11 @@
 class HandleCgi : public ServerConfig
 {
     private:
-        std::string cgiPath;
-        std::string cgiConf;
+        std::string locationPath;
 
     public:
         HandleCgi();
-        HandleCgi(std::string requestBuffer, int nSocket, Server*, std::string locationPath);
+        HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request);
         ~HandleCgi();
 
         void proccessCGI(int nSocket);
@@ -30,7 +29,7 @@ class HandleCgi : public ServerConfig
 
         // Function template to convert various types to string
         template <typename T>
-        std::string to_string(const T& value)
+        std::string xto_string(const T& value)
         {
             std::stringstream ss;
             ss << value;

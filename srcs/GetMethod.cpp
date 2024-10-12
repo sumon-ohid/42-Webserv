@@ -41,11 +41,12 @@ void GetMethod::executeMethod(int socketFd, Client *client, Request &request)
     std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
     std::string requestPath = request.getMethodPath();
     std::string locationPath;
-    std::string root;
     std::string index;
+    std::string root;
     std::string body;
     std::string path;
     bool locationMatched = false;
+    bool cgiFound = false;
 
     //--- Loop through the locationConfig vector
     for (size_t i = 0; i < locationConfig.size(); i++)
@@ -59,6 +60,12 @@ void GetMethod::executeMethod(int socketFd, Client *client, Request &request)
         if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
         {
             locationMatched = true;
+            if (requestPath.find("cgi-bin") != std::string::npos)
+            {
+                cgiFound = true;
+                break;
+            }
+        
             //-- Get the locationMap and concatenate root+index in locationPath
             std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
             std::multimap<std::string, std::string>::iterator it;
@@ -141,7 +148,21 @@ void GetMethod::executeMethod(int socketFd, Client *client, Request &request)
             body = buffer.str();
             file.close();
             Response::headerAndBody(socketFd, request, body);
+        }
+    }
 
+    //-- If CGI is found, execute the CGI script
+    if (cgiFound && locationMatched)
+    {
+        try 
+        {
+            HandleCgi cgi(requestPath, socketFd, *client, request);
+            std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
+        }
+        catch (std::runtime_error &e)
+        {
+            std::cerr << BOLD RED << "Error: " << e.what() << RESET << std::endl;
+            Response::FallbackError(socketFd, request, "404");
         }
     }
 }
