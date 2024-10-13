@@ -89,13 +89,6 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             if (pos != std::string::npos)
                 server.clientMaxBodySize = line.substr(pos + 1);
         }
-        else if (line.empty())
-            continue;
-        else
-        {
-            std::cerr << RED << "Line: " << line << "  [ NOT VALID ]" << RESET << std::endl;
-            throw std::runtime_error("Invalid server config !!");
-        }
         i++;
     }
 }
