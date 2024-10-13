@@ -2,6 +2,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <signal.h>
 
 #include "Response.hpp"
 #include "ErrorHandle.hpp"
@@ -116,6 +117,7 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 // what if we have a write error?
 void	Response::FallbackError(int socketFd, Request& request, std::string statusCode, Client *client)
 {
+	signal(SIGPIPE, SIG_IGN);
 	ssize_t writeReturn = 0;
 	try  
 	{

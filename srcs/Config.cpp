@@ -1,8 +1,11 @@
 //-- Written by : msumon
 
 #include "Config.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
 #include <cstddef>
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -19,13 +22,15 @@ Config::Config()
 Config::Config(std::string configFile) : configFile(configFile)
 {
     readConfig(configFile);
-    if (validationCheck() == false)
-        throw std::runtime_error ("The config file is invalid.");
+    if (validationCheck() == false || syntaxCheck() == false)
+        throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
+    
     //-- removing ; from line after validation
     for (size_t i = 0; i < configVector.size(); i++)
     {
         configVector[i].erase(remove(configVector[i].begin(), configVector[i].end(), ';'), configVector[i].end()); 
     }
+    //std::cout << BOLD << configFile << GREEN << " [ OK ] " << RESET << std::endl;
 }
 
 Config::~Config()
@@ -111,15 +116,6 @@ bool Config::validationCheck()
     size_t i = 0;
     std::vector<std::string> temp = configVector;
 
-    while (i < temp.size())
-    {
-        std::string line = temp[i];
-        size_t pos = line.find_last_not_of(' ');
-        if (line[pos] != ';' && line[pos] != '{' && line[pos] != '}')
-            throw std::runtime_error ("Missing ; or { } in the config file.");
-        i++;
-    }
-    i = 0;
     bool bracketFlag = false;
     bool checker = false;
     int countOpen = 0;
@@ -141,5 +137,150 @@ bool Config::validationCheck()
         return (false);
     if (countOpen != countClose)
         return (false);
+    return (true);
+}
+
+static bool semiColonCheck(std::string line, std::string keyword)
+{
+    if (line.find(keyword) == std::string::npos)
+    {
+        std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
+        return (false);
+    }
+    std::string temp;
+    size_t pos = line.find(" ");
+    if (pos != std::string::npos)
+        temp = line.substr(0, pos);
+    if (temp != keyword)
+    {
+        std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
+        return (false);
+    }
+
+    pos = line.find_first_of(" ;}");
+    if (pos == std::string::npos)
+    {
+        std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
+        return (false);
+    }
+    pos = std::count(line.begin(), line.end(), ';');
+    if (pos != 1)
+    {
+        std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
+        return (false);
+    }
+    return (true);
+}
+
+//-- SORRY for ugly code but it works !!
+bool Config::syntaxCheck()
+{
+    size_t i = 0;
+    std::string keyword;
+    std::vector<std::string> temp = configVector;
+
+    while (i < temp.size())
+    {
+        std::string line = temp[i];
+        if (line.find("server") != std::string::npos)
+        {
+            if (line.find("server_name") != std::string::npos)
+            {
+                if (semiColonCheck(line, "server_name") == false)
+                    return (false);
+            }
+            else  
+            {
+                line.erase(remove(line.begin(), line.end(), '{'), line.end());
+                line.erase(remove(line.begin(), line.end(), ' '), line.end());
+                if (line != "server")
+                {
+                    std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
+                    return false;
+                }
+            }
+        }
+        else if (line.find("listen") != std::string::npos)
+        {
+            if (semiColonCheck(line, "listen") == false)
+                return (false);
+        }
+        else if (line.find("error_page") != std::string::npos)
+        {
+            if (semiColonCheck(line, "error_page") == false)
+                return (false);
+        }
+        else if (line.find("client_max_body_size") != std::string::npos)
+        {
+            if (semiColonCheck(line, "client_max_body_size") == false)
+                return (false);
+        }
+        else if (line.find("location") != std::string::npos)
+        {
+            std::string temp;
+            size_t pos = line.find(" ");
+            if (pos != std::string::npos)
+                temp = line.substr(0, pos);
+            if (temp != "location")
+                return (false);
+
+            line.erase(remove(line.begin(), line.end(), '{'), line.end());
+            pos = line.find(" ");
+            if (pos != std::string::npos)
+                temp = line.substr(pos + 1);
+            //-- check if the location path not empty
+            if (temp.empty())
+                return (false);
+            pos = line.find("/");
+            if (pos != std::string::npos)
+                temp = line.substr(0, pos);
+            temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());
+            if (temp != "location")
+                return (false);
+        }
+        else if (line.find("try_files") != std::string::npos)
+        {
+            if (semiColonCheck(line, "try_files") == false)
+                return (false);
+        }
+        else if (line.find("allowed_methods") != std::string::npos)
+        {
+            if (semiColonCheck(line, "allowed_methods") == false)
+                return (false);
+        }
+        else if (line.find("root") != std::string::npos)
+        {
+            if (semiColonCheck(line, "root") == false)
+                return (false);
+        }
+        else if (line.find("autoindex") != std::string::npos)
+        {
+            if (semiColonCheck(line, "autoindex") == false)
+                return (false);
+        }
+        else if (line.find("index") != std::string::npos)
+        {
+            if (semiColonCheck(line, "index") == false)
+                return (false);
+        }
+        else if (line.find("cgi_bin") != std::string::npos)
+        {
+            if (semiColonCheck(line, "cgi_bin") == false)
+                return (false);
+        }
+        else if (line.find("return") != std::string::npos)
+        {
+            if (semiColonCheck(line, "return") == false)
+                return (false);
+        }
+        else if (line == "}" || line == "{")
+            i++;
+        else  
+        {
+            std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
+            return (false);
+        }
+        i++;
+    }
     return (true);
 }
