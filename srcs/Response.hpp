@@ -7,6 +7,8 @@
 // #include "Socket.hpp"
 #include "ErrorHandle.hpp"
 
+#define CHUNK_SIZE 100000
+
 class Response {
 	private:
 		Response();
@@ -25,5 +27,6 @@ class Response {
 
 		static void FallbackError(int socketFd, Request& request, std::string statusCode, Client *client);
 
-		void	sendChunks(int socketFd, std::string& chunkString);
+		static void	sendChunks(int socketFd, std::string chunkString);
+		static void	sendWithChunkEncoding(int socketFd, Request& request, std::string& body);
 };

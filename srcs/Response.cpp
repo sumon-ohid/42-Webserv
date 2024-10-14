@@ -1,8 +1,12 @@
+#include <ios>
+#include <ostream>
 #include <sstream>
+#include <sys/socket.h>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <signal.h>
+#include <sys/socket.h>
 
 #include "Response.hpp"
 #include "ErrorHandle.hpp"
@@ -87,9 +91,13 @@ void	Response::header(int socketFd, Request& request, std::string& body) {
 }
 
 void	Response::headerAndBody(int socketFd, Request& request, std::string& body) {
-	std::string totalString = createRequestAndBodyString(request, body, "200");
-	// std::cout << totalString << std::endl;
-	write(socketFd , totalString.c_str(), totalString.size());
+	if (body.size() > CHUNK_SIZE) {
+		sendWithChunkEncoding(socketFd, request, body);
+	} else {
+		std::string totalString = createRequestAndBodyString(request, body, "200");
+		// std::cout << totalString << std::endl;
+		write(socketFd , totalString.c_str(), totalString.size());
+	}
 }
 
 void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
@@ -153,7 +161,29 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 	}
 }
 
+#include <unistd.h>
 
-void	Response::sendChunks(int socketFd, std::string& chunkString) {
+void	Response::sendChunks(int socketFd, std::string chunkString) {
+	std::ostringstream ss;
+	ss << std::hex << chunkString.size() << "\r\n";
+	send(socketFd, ss.str().c_str(), ss.str().size(), 0);
+	send(socketFd, chunkString.c_str(), chunkString.size(), 0);
+	send(socketFd, "\r\n", 2, 0);
 
+	usleep(100000); // change to
+
+}
+
+void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string& body) {
+	(void) request;
+	std::string headers = "HTTP/1.1 200 OK\r\n"
+                          "Content-Type: video/mp4\r\n"
+                          "Transfer-Encoding: chunked\r\n"
+                          "\r\n";
+	//HeaderSent false? then:
+	send(socketFd, headers.c_str(), headers.size(), 0);
+	for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent
+		sendChunks(socketFd, body.substr(i, CHUNK_SIZE));
+	}
+	send(socketFd, "0\r\n\r\n", 5, 0);
 }
