@@ -33,12 +33,12 @@ std::string ErrorHandle::modifyErrorPage()
         std::string line;
         while (std::getline(defaultErrorFile, line))
         {
-            if (line.find("status_code") != std::string::npos)
-                line.replace(line.find("status_code"), 11, errorStatusCode);
-            if (line.find("message") != std::string::npos)
-                line.replace(line.find("message"), 7, errorMessage);
-            if (line.find("page_title") != std::string::npos)
-                line.replace(line.find("page_title"), 10, pageTitle);
+            if (line.find("0xvcqtr") != std::string::npos)
+                line.replace(line.find("0xvcqtr"), 7, errorStatusCode);
+            if (line.find("1xlssld") != std::string::npos)
+                line.replace(line.find("1xlssld"), 7, errorMessage);
+            if (line.find("2xpoqwq") != std::string::npos)
+                line.replace(line.find("2xpoqwq"), 7, pageTitle);
             newErrorFile << line << std::endl;
         }
     }

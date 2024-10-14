@@ -1,5 +1,9 @@
 #include "GetMethod.hpp"
 #include "Method.hpp"
+#include "Response.hpp"
+#include <fstream>
+#include <sstream>
+#include <dirent.h>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -29,7 +33,8 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
     bool locationMatched = false;
     bool cgiFound = false;
 
-    locationMatched = findMatchingLocation(locationConfig, requestPath, locationPath, root, index, cgiFound);
+    locationMatched = findMatchingLocation(locationConfig, requestPath, 
+                        locationPath, root, index, cgiFound, request, client);
     if (locationMatched)
     {
         if (cgiFound)
@@ -53,8 +58,12 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
 }
 
 bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
-     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound)
+     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, Request &request, Client *client)
 {
+    (void)client;
+    (void)request;
+    bool autoIndex = false;
+
     for (size_t i = 0; i < locationConfig.size(); i++)
     {
         std::string tempPath = locationConfig[i].getPath();
@@ -83,12 +92,71 @@ bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig
                     handleRedirection(it->second);
                     return false;
                 }
+                if (it->first == "autoindex")
+                {
+                    if (it->second == "on")
+                        autoIndex = true;
+                }
             }
-            locationPath = (requestPath == "/") ? root + index : root + requestPath;
+            if (requestPath == "/")
+                locationPath = root + index;
+            else
+                locationPath = root + requestPath;
+            //-- Check if the path is a directory and autoindex is on
+            if (requestPath[requestPath.length() - 1] == '/')
+            {
+                std::ifstream file(locationPath.c_str());
+                if (!file.is_open() && autoIndex)
+                {
+                    std::string fullPath = root + requestPath;
+                    handleAutoIndex(fullPath, request, client);
+                    return false;
+                }
+                else if (!file.is_open() && !autoIndex)
+                {
+                    locationPath = "./conf/webpage/home.html";
+                    return true;
+                }
+                file.close();
+                return true;
+            }
             return true;
         }
     }
     return false;
+}
+
+void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
+{
+    DIR *dir;
+    struct dirent *ent;
+    std::ostringstream body;
+
+    if ((dir = opendir(path.c_str())) != NULL)
+    {
+        body << "<html><head><title>Index of "
+        << path << "</title></head><body><h1>Index of "
+        << path << "</h1><hr><pre>";
+        
+        while ((ent = readdir(dir)) != NULL)
+        {
+            body << "<a href=\""
+                << request.getMethodPath()
+                << "/" << ent->d_name
+                << "\">" << ent->d_name
+                << "</a><br>";
+        }
+        body << "</pre><hr></body></html>";
+        closedir(dir);
+    }
+    else
+    {
+        Response::FallbackError(socketFd, request, "403", client);
+        return;
+    }
+    std::string bodyStr = body.str();
+    Response::headerAndBody(socketFd, request, bodyStr);
+    std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
 
 void GetMethod::handleRedirection(std::string &redirectUrl)
