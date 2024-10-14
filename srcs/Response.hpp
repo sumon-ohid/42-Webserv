@@ -4,7 +4,7 @@
 #include <map>
 
 #include "Request.hpp"
-#include "Socket.hpp"
+// #include "Socket.hpp"
 #include "ErrorHandle.hpp"
 
 class Response {
@@ -24,4 +24,6 @@ class Response {
 		static void FallbackError(int socketFd, Request& request, std::string statusCode);
 
 		static void FallbackError(int socketFd, Request& request, std::string statusCode, Client *client);
+
+		void	sendChunks(int socketFd, std::string& chunkString);
 };

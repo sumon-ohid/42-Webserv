@@ -119,12 +119,12 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 {
 	signal(SIGPIPE, SIG_IGN);
 	ssize_t writeReturn = 0;
-	try  
+	try
 	{
 		ErrorHandle errorHandle;
 		errorHandle.prepareErrorPage(client, statusCode);
 		request.setMethodMimeType(errorHandle.getNewErrorFile());
-		
+
 		//-- this will create a new error file, error code will be the file name
 		//-- this will modify the error page replacing the status code, message and page title
 		//-- this will return the modified error page as a string
@@ -151,4 +151,9 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 		if (writeReturn == -1)
 			throw std::runtime_error("Error writing to socket in Response::FallbackError!!");
 	}
+}
+
+
+void	Response::sendChunks(int socketFd, std::string& chunkString) {
+
 }
