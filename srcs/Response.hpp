@@ -11,6 +11,14 @@
 
 class Response {
 	private:
+		int socketFd;
+		std::string message;
+		// std::string chunk;
+		unsigned long bytesSent;
+		bool isChunk;
+		std::string mimeType;
+
+
 		Response();
 		Response(const Response& other);
 		Response& operator=(const Response& other);

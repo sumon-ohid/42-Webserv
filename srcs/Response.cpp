@@ -7,6 +7,7 @@
 #include <iostream>
 #include <signal.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 #include "Response.hpp"
 #include "ErrorHandle.hpp"
@@ -166,8 +167,14 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 void	Response::sendChunks(int socketFd, std::string chunkString) {
 	std::ostringstream ss;
 	ss << std::hex << chunkString.size() << "\r\n";
+	unsigned long int hexSize = ss.str().size();
 	ss << chunkString << "\r\n";
-	send(socketFd, ss.str().c_str(), ss.str().size(), 0);
+	ssize_t bytesSent = send(socketFd, ss.str().c_str(), ss.str().size(), 0);
+	// check if -1 or 0 => error
+	bytesSent -= hexSize;
+	// move message
+	// if (message.empty())
+		//send(socketFd, "0\r\n\r\n", 5, 0);
 
 	usleep(100000); // change to
 
@@ -182,9 +189,10 @@ void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string
 	//ChunkStartHeaderSent false? then:
 	send(socketFd, ChunkStartHeader.c_str(), ChunkStartHeader.size(), 0);
 
-	
+
 	for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent
 		sendChunks(socketFd, body.substr(i, CHUNK_SIZE));
+		// check whats better chunk loop or always go back to epoll loop
 	}
 	send(socketFd, "0\r\n\r\n", 5, 0);
 }
