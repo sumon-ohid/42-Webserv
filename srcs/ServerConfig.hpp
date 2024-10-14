@@ -55,6 +55,7 @@ class ServerConfig : public LocationConfig
         void makeServerNameVector();
         std::vector<int> getListenPorts();
         std::vector<std::string> getServerNames();
+        bool checkLocations();
 
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);

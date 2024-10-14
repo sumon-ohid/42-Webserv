@@ -1,8 +1,11 @@
 //-- Written by : msumon
 
 #include "ServerConfig.hpp"
+#include "LocationConfig.hpp"
 #include <cstddef>
+#include <string>
 #include <vector>
+#include <set>
 
 ServerConfig::ServerConfig() : LocationConfig()
 {
@@ -47,6 +50,8 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
     while (i < configVector.size())
     {
         line = configVector[i];
+        size_t pos = line.find_last_not_of(" ");
+        line = line.substr(0, pos + 1);
         //std::cout << "line: " << line << std::endl;
         if (line.find('}') != std::string::npos)
             break;
@@ -89,6 +94,16 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             if (pos != std::string::npos)
                 server.clientMaxBodySize = line.substr(pos + 1);
         }
+        else if (line == "{" || line.empty())
+        {
+            i++;
+            continue;
+        }
+        else  
+        {
+            std::cerr << BOLD RED << "Line: " << line << "  [ NOT VALID ]" << RESET << std::endl;
+            throw std::runtime_error("Invalid server config !!");
+        }
         i++;
     }
 }
@@ -113,10 +128,68 @@ ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
         else  
         {
             std::cerr << RED << "Line: " << line << "  [ NOT VALID ]" << RESET << std::endl;
-            throw std::runtime_error("Invalid server config !!");
+            throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
         }
         i++;
     }
+    if (checkLocations() == false)
+            throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
+}
+
+//-- Double checking locationBlock
+//--- Check if the location block has valid directives
+//--- can not have duplicate directives
+bool ServerConfig::checkLocations()
+{
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        ServerConfig server = servers[i];
+
+        std::set<std::string> locationPaths;
+        for (size_t j = 0; j < server.locations.size(); j++)
+        {
+            LocationConfig location = server.locations[j];
+            std::string locationPath = location.getPath();
+            locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), ' '), locationPath.end());
+            locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), '{'), locationPath.end());
+            if (locationPaths.find(locationPath) != locationPaths.end())
+            {
+                std::cerr << BOLD RED << "LINE : " << locationPath << "  [ DUPLICATE ]" << RESET << std::endl;
+                return false;
+            }
+
+            locationPaths.insert(locationPath);
+            
+            //-- Check inside location block
+            //--- Check if the location block has valid directives
+            //--- can not have duplicate directives
+            std::multimap<std::string, std::string > locationMap = location.getLocationMap();
+            std::multimap<std::string, std::string >::iterator it;
+            locationPaths.clear();
+            for ( it = locationMap.begin(); it != locationMap.end(); ++it)
+            {
+                locationPath = it->first;
+                if (locationPath == "root" || locationPath == "index" ||
+                    locationPath == "autoindex" || locationPath == "cgi-bin" ||
+                    locationPath == "allowed_methods" || locationPath == "try_files" ||
+                    locationPath == "return" || locationPath == "client_max_body_size")
+                {
+                    if (locationPaths.find(locationPath) != locationPaths.end())
+                    {
+                        std::cerr << BOLD RED << "LINE : " << locationPath << "  [ DUPLICATE ]" << RESET << std::endl;
+                        return false;
+                    }
+                    locationPaths.insert(locationPath);
+                }
+                else
+                {
+                    std::cerr << BOLD RED << "LINE : " << locationPath << "  [ NOT VALID ]" << RESET << std::endl;
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 //--- > To Print the config after parsing

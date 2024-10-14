@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
@@ -182,6 +183,8 @@ bool Config::syntaxCheck()
     while (i < temp.size())
     {
         std::string line = temp[i];
+        size_t pos = line.find_last_not_of(" ");
+        line = line.substr(0, pos + 1);
         if (line.find("server") != std::string::npos)
         {
             if (line.find("server_name") != std::string::npos)
