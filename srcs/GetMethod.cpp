@@ -47,17 +47,19 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
             std::ifstream file(locationPath.c_str());
             if (!file.is_open() && autoIndex)
             {
-                std::cout << BOLD YELLOW << "Fine not opened, Autoindex ON " << RESET << std::endl;
+                std::cout << BOLD YELLOW << "File not opened, Autoindex ON " << RESET << std::endl;
                 std::string fullPath = root + requestPath;
                 handleAutoIndex(fullPath, request, client);
             }
             else if (!file.is_open() && !autoIndex)
             {
-                std::cout << BOLD YELLOW << "Fine not opened, Autoindex OFF " << RESET << std::endl;
+                std::cout << BOLD YELLOW << "File not opened, Autoindex OFF " << RESET << std::endl;
                 locationPath = "./conf/webpage/home.html";
+                serveStaticFile(locationPath, request, client);
             }
             else
             {
+                std::cout << BOLD YELLOW << "File opened, Autoindex OFF/ON " << RESET << std::endl;
                 locationPath = root + requestPath + "/" + index;
                 serveStaticFile(locationPath, request, client);
             }
@@ -87,9 +89,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
             if (it != locationMap.end())
                 root = it->second;
             std::string path = root + request.getMethodPath();
-            if (path.find("/GET") != std::string::npos)
-                path.erase(path.find("/GET"), 4);
-            
+    
             serveStaticFile(path, request, client);
         }
     }
@@ -161,7 +161,6 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         while ((ent = readdir(dir)) != NULL)
         {
             body << "<a href=\""
-                << request.getMethodName()
                 << "/" << ent->d_name
                 << "\">" << ent->d_name
                 << "</a><br>";
