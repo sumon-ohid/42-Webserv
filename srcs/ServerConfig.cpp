@@ -17,6 +17,7 @@ bool    ServerConfig::operator==(const ServerConfig& other) const
            serverName == other.serverName &&
            errorPage == other.errorPage &&
            cgiFile == other.cgiFile &&
+           tryFiles == other.tryFiles &&
            locations == other.locations &&
            servers == other.servers;
 }
@@ -99,6 +100,14 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
                 server.cgiFile = line.substr(pos + 1);
             server.cgiFile.erase(std::remove(server.cgiFile.begin(), server.cgiFile.end(), ' '), server.cgiFile.end());
             if (server.cgiFile.empty())
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+        }
+        else if (line.find("try_files") == 0)
+        {
+            size_t pos = line.find(" ");
+            if (pos != std::string::npos)
+                server.tryFiles = line.substr(pos + 1);
+            if (server.tryFiles.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
         else if (line.find("location") == 0)
@@ -333,6 +342,11 @@ std::string ServerConfig::getClientMaxBodySize()
 std::vector<std::string> ServerConfig::getServerNames()
 {
     return (serverNames);
+}
+
+std::string ServerConfig::getTryFiles()
+{
+    return (tryFiles);
 }
 
 ServerConfig::~ServerConfig()

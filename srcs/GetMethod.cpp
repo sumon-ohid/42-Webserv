@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 #include <dirent.h>
+#include <string>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -40,12 +41,13 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
     std::string locationPath;
     std::string root;
     std::string index;
+    std::string tryFiles;
     bool locationMatched = false;
     bool cgiFound = false;
     bool autoIndex = false;
 
-    locationMatched = findMatchingLocation(locationConfig, requestPath,
-                        locationPath, root, index, cgiFound, autoIndex);
+    locationMatched = findMatchingLocation(locationConfig, requestPath, 
+                        locationPath, root, index, cgiFound, autoIndex, tryFiles);
     if (locationMatched)
     {
         if (cgiFound)
@@ -68,7 +70,25 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
             else
             {
                 std::cout << BOLD YELLOW << "File opened, Autoindex OFF/ON " << RESET << std::endl;
-                locationPath = root + requestPath + "/" + index;
+                if (!tryFiles.empty() && (index.empty() || root.empty()))
+                {
+                    size_t found = tryFiles.find("./");
+                    if (found == std::string::npos)
+                        Response::FallbackError(socketFd, request, "404", client);
+                    std::string tryFilesPath = tryFiles.substr(found);
+                    std::ifstream tryFilesFile(tryFilesPath.c_str());
+                    if (tryFilesFile.is_open())
+                    {
+                        locationPath = tryFilesPath;
+                        serveStaticFile(locationPath, request, client);
+                        return;
+                    }
+                    else  
+                        Response::FallbackError(socketFd, request, "404", client);
+                }
+                // else
+                //    locationPath = root + requestPath + "/" + index;
+                
                 serveStaticFile(locationPath, request, client);
             }
             file.close();
@@ -104,7 +124,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
 }
 
 bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
-     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex)
+     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex, std::string &tryFiles)
 {
     for (size_t i = 0; i < locationConfig.size(); i++)
     {
@@ -141,6 +161,8 @@ bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig
                     if (it->second == "on")
                         autoIndex = true;
                 }
+                if (it->first == "try_files")
+                    tryFiles = it->second;
             }
             if (requestPath == "/")
                 locationPath = root + index;
