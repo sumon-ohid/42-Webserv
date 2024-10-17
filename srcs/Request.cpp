@@ -8,6 +8,8 @@
 #include "GetMethod.hpp"
 #include "main.hpp"
 #include "Response.hpp"
+#include "Epoll.hpp"
+#include "Server.hpp"
 
 Request::Request() {
 	this->_type = -1;
@@ -206,6 +208,97 @@ void	Request::executeMethod(int socketFd, Client *client)
 {
 	// this->checkHost(config); // BP: activate when reading of servername is corrected
 	this->_method->executeMethod(socketFd, client, *this);
+}
+
+int	Request::invalidRequest(Client* client)
+{
+	if (errno == EINTR)
+		return (-1);
+	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
+	if (errno != EAGAIN && errno != EWOULDBLOCK)
+		client->_server->_epoll->removeClient(client);  // Close the socket on other read errors
+	return (-1); // Move to the next event
+}
+
+int	Request::emptyRequest(Client* client)
+{
+	std::cout << "Client disconnected: FD " << client->getFd() << std::endl;
+	client->_server->_epoll->removeClient(client);
+	return (-1); // Move to the next event
+}
+
+void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request)
+{
+	(void) serv;
+	// std::cout << "test1: " << request.getFirstLineChecked() << std::endl;
+	buffer.resize(count);
+	// if (_buffer.size() == 5)
+	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
+	if(request.getFirstLineChecked()) {
+		request.checkLine(buffer);
+	} else {
+		request.checkFirstLine(buffer);
+	}
+	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
+	//--- This should be here
+	// std::string bufferRead(buffer.begin(), buffer.end());
+	// size_t pos = bufferRead.find("cgi-bin");
+	// if (pos != std::string::npos)
+	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
+}
+
+int	Request::clientRequest(Client* client)
+{
+
+	// Read data from the client
+	int		event_fd = client->getFd();
+	bool	writeFlag = false;
+	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
+	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
+
+	while (!client->_request.getReadingFinished())
+	{
+		try
+		{
+			buffer.resize(SOCKET_BUFFER_SIZE);
+			ssize_t count = read(event_fd, &buffer[0], buffer.size());
+			if (count == -1)
+				return (invalidRequest(client));
+			else if (count == 0)
+				return (emptyRequest(client));
+			else
+				validRequest(client->_server, buffer, count, client->_request);
+		}
+		catch (std::exception &e)
+		{
+			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
+				client->_server->_epoll->removeClient(client);
+			} else {
+				Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
+			}
+			std::cout << "exception: " << e.what() << std::endl;
+			writeFlag = true;
+			return OK;
+		}
+	}
+	if (!writeFlag)
+	{
+		try {
+			client->_request.executeMethod(event_fd, client);
+		}
+		catch (std::exception &e) {
+			Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
+		}
+
+		std::cout << "-------------------------------------" << std::endl;
+	}
+	(void) count;
+	writeFlag = false;
+	std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
+	std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
+	std::cout << "map size: " << testMap.size() << std::endl;
+	client->_request.requestReset();
+	return (0);
 }
 
 

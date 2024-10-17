@@ -51,4 +51,7 @@ re:	fclean all
 
 -include $(DEPS)
 
+valgrind:
+	valgrind ./$(NAME)
+
 .PHONY: all clean fclean re

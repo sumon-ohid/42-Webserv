@@ -1,11 +1,11 @@
 #include "Epoll.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
-#include "main.hpp"
+// #include "main.hpp"
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
-#include <exception>
+// #include <exception>
 #include <sys/types.h>
 #include <vector>
 #include "Response.hpp"
@@ -158,7 +158,7 @@ void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
 	if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
 		return (clientErrorOrHungUp(client));
 	if (events & EPOLLIN)  // Check if the event is for reading
-		clientRequest(client);
+		client->_request.clientRequest(client);
 		// should handle read events
 	if (events & EPOLLOUT) // Check if the event is for writing
 		// should handle write events
@@ -176,97 +176,6 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 	// Handle error or hung up situation
 	std::cerr << "Error or client hung up on fd: " << client->getFd() << std::endl;
 	removeClient(client); // Remove the client from epoll and close the connection
-}
-
-int	Epoll::clientRequest(Client* client)
-{
-
-	// Read data from the client
-	int		event_fd = client->getFd();
-	bool	writeFlag = false;
-	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
-	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
-
-	while (!client->_request.getReadingFinished())
-	{
-		try
-		{
-			buffer.resize(SOCKET_BUFFER_SIZE);
-			ssize_t count = read(event_fd, &buffer[0], buffer.size());
-			if (count == -1)
-				return (invalidRequest(client));
-			else if (count == 0)
-				return (emptyRequest(client));
-			else
-				validRequest(client->_server, buffer, count, client->_request);
-		}
-		catch (std::exception &e)
-		{
-			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
-				Epoll::removeClient(client);
-			} else {
-				Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
-			}
-			std::cout << "exception: " << e.what() << std::endl;
-			writeFlag = true;
-			return OK;
-		}
-	}
-	if (!writeFlag)
-	{
-		try {
-			client->_request.executeMethod(event_fd, client);
-		}
-		catch (std::exception &e) {
-			Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
-		}
-
-		std::cout << "-------------------------------------" << std::endl;
-	}
-	(void) count;
-	writeFlag = false;
-	std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
-	std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
-	std::cout << "map size: " << testMap.size() << std::endl;
-	client->_request.requestReset();
-	return (0);
-}
-
-int	Epoll::invalidRequest(Client* client)
-{
-	if (errno == EINTR)
-		return (-1);
-	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
-	if (errno != EAGAIN && errno != EWOULDBLOCK)
-		removeClient(client);  // Close the socket on other read errors
-	return (-1); // Move to the next event
-}
-
-int	Epoll::emptyRequest(Client* client)
-{
-	std::cout << "Client disconnected: FD " << client->getFd() << std::endl;
-	removeClient(client);
-	return (-1); // Move to the next event
-}
-
-void	Epoll::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request)
-{
-	(void) serv;
-	// std::cout << "test1: " << request.getFirstLineChecked() << std::endl;
-	buffer.resize(count);
-	// if (_buffer.size() == 5)
-	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
-	if(request.getFirstLineChecked()) {
-		request.checkLine(buffer);
-	} else {
-		request.checkFirstLine(buffer);
-	}
-	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
-	//--- This should be here
-	// std::string bufferRead(buffer.begin(), buffer.end());
-	// size_t pos = bufferRead.find("cgi-bin");
-	// if (pos != std::string::npos)
-	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
 void	Epoll::clientResponse(Client* client)

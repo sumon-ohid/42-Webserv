@@ -2,7 +2,6 @@
 #include "Method.hpp"
 #include "HandleCgi.hpp"
 #include "ServerConfig.hpp"
-#include "ServerConfig.hpp"
 #include "Response.hpp"
 
 #include <iostream>
