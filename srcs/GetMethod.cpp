@@ -1,8 +1,15 @@
 #include "GetMethod.hpp"
 #include "Method.hpp"
-#include "Response.hpp"
+#include "HandleCgi.hpp"
 #include "ServerConfig.hpp"
+#include "ServerConfig.hpp"
+#include "Response.hpp"
+
+#include <iostream>
 #include <cstddef>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -110,7 +117,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
             if (it != locationMap.end())
                 root = it->second;
             std::string path = root + request.getMethodPath();
-    
+
             serveStaticFile(path, request, client);
         }
     }
@@ -126,7 +133,7 @@ bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig
         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
         // if (!tempPath.empty() && tempPath[tempPath.length() - 1] != '/')
         //     tempPath += '/';
-    
+
         if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
         {
             if (requestPath.find("cgi-bin") != std::string::npos)
@@ -180,7 +187,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         body << "<html><head><title>Index of "
         << path << "</title></head><body><h1>Index of "
         << path << "</h1><hr><pre>";
-        
+
         while ((ent = readdir(dir)) != NULL)
         {
             body << "<a href=\""

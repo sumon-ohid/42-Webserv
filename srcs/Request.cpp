@@ -7,12 +7,14 @@
 #include "Client.hpp"
 #include "GetMethod.hpp"
 #include "main.hpp"
+#include "Response.hpp"
 
 Request::Request() {
 	this->_type = -1;
 	this->_firstLineChecked = false;
 	this->_readingFinished = false;
 	this->_method = NULL;
+	this->_response = new Response();
 }
 
 Request::Request(const Request& other) {
@@ -23,22 +25,24 @@ Request::Request(const Request& other) {
 		_method = other._method->clone();
 	else
 	 	_method = NULL;
+	this->_response = other._response->clone();
 	_headerMap = other._headerMap;
 }
 
 Request&	Request::operator=(const Request& other) {
-	if (this != &other)
-	{
-		_firstLineChecked = other._firstLineChecked;
-		_readingFinished = other._readingFinished;
-		_type = other._type;
-		delete _method;
-		if (other._method)
-			_method = other._method->clone();
-		else
-		 	_method = NULL;
-		_headerMap = other._headerMap;
-	}
+	if (this == &other)
+		return *this;
+
+	_firstLineChecked = other._firstLineChecked;
+	_readingFinished = other._readingFinished;
+	_type = other._type;
+	delete _method;
+	_method = NULL;
+	if (other._method)
+		_method = other._method->clone();
+	delete _response;
+	_response = other._response->clone();
+	_headerMap = other._headerMap;
 	return *this;
 }
 
@@ -52,8 +56,8 @@ bool		Request::operator==(const Request& other) const
 }
 
 Request::~Request() {
-	if (_method)
-		delete this->_method;
+	delete this->_method;
+	delete this->_response;
 }
 
 std::string Request::getMethodName() const {
@@ -171,7 +175,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 }
 
 void	Request::checkLine(std::vector<char>& line) {
-	std::cout << "checkline_start" << std::endl;
+	// std::cout << "checkline_start" << std::endl;
 	checkInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
@@ -180,7 +184,7 @@ void	Request::checkLine(std::vector<char>& line) {
 		return;
 	}
 	checkOneLine(strLine);
-	std::cout << "checkline_end" << std::endl;
+	// std::cout << "checkline_end" << std::endl;
 	// if (value.empty())
 	// 	throw std::runtime_error("empty value string");
 }

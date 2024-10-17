@@ -2,7 +2,8 @@
 
 #include "ErrorHandle.hpp"
 #include "Client.hpp"
-#include "Request.hpp"
+#include "Helper.hpp"
+
 #include "ServerConfig.hpp"
 #include <cstddef>
 #include <iostream>
@@ -19,7 +20,7 @@ std::string ErrorHandle::modifyErrorPage()
 {
     size_t pos = errorFile.rfind("/");
     std::string fileDirectory = errorFile.substr(0, pos + 1);
-    
+
     //-- open the default error file
     std::ifstream defaultErrorFile(errorFile.c_str());
 
@@ -42,19 +43,19 @@ std::string ErrorHandle::modifyErrorPage()
             newErrorFile << line << std::endl;
         }
     }
-    else  
+    else
         throw std::runtime_error("No error file found in Config!!");
 
     newErrorFile.close();
     defaultErrorFile.close();
-    
+
     // Re-open the new error file to read its contents
     std::ifstream readNewErrorFile(tempFileName.c_str());
     std::ostringstream buffer;
     buffer << readNewErrorFile.rdbuf();
     std::string body = buffer.str();
     readNewErrorFile.close();
-    
+
     errorBody = body;
     return body;
 
@@ -66,7 +67,7 @@ std::string ErrorHandle::modifyErrorPage()
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
 {
     std::string errorPage = client->_server->_serverConfig.getErrorPage();
-    std::string message = Response::statusCodes.find(statusCode)->second;
+    std::string message = Helper::statusCodes.find(statusCode)->second;
 
     errorFile = errorPage;
     errorStatusCode = statusCode;
