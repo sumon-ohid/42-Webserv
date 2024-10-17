@@ -5,6 +5,8 @@
 #include "Request.hpp"
 #include "Server.hpp"
 #include "ServerConfig.hpp"
+#include "Helper.hpp"
+
 #include <cstddef>
 #include <string>
 
@@ -89,13 +91,8 @@ std::string HandleCgi::getExecutable(const std::string &locationPath)
         throw std::runtime_error("Invalid file extension !!");
 
     std::string executable;
-    if (extension == ".py")
-        executable = "/usr/bin/python3";
-    else if (extension == ".php")
-        executable = "/usr/bin/php";
-    else if (extension == ".sh")
-        executable = "/usr/bin/bash";
-    else
+    executable = Helper::executableMap.find(extension)->second;
+    if (executable.empty())
         throw std::runtime_error("This file extension is not supported !!");
 
     return executable;
@@ -126,6 +123,7 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
 
     //--- Read CGI output from the pipe
     std::vector<char> cgiOutput(1024);
+    waitpid(pid, NULL, 0); //--- Wait for the child process to finish
     ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
     if (n < 0)
         throw std::runtime_error("Read failed !!"); // BP: close fd[0]
@@ -139,7 +137,6 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
     send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
 
     close(pipe_fd[0]); //--- Close read end
-    waitpid(pid, NULL, 0); //--- Wait for the child process to finish
 }
 
 HandleCgi::~HandleCgi()
