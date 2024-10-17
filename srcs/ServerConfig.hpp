@@ -29,6 +29,7 @@ class ServerConfig : public LocationConfig
         std::string serverName; // BP: can't there be more than one servername (=Hosts)
         std::string errorPage;
         std::string cgiFile;
+        std::string tryFiles;
         std::vector<LocationConfig> locations;
         std::vector<ServerConfig> servers;
         std::vector<int> listenPorts;
@@ -47,6 +48,7 @@ class ServerConfig : public LocationConfig
         std::string getServerName();
         std::string getErrorPage();
         std::string getCgiFile();
+        std::string getTryFiles();
         std::string getClientMaxBodySize();
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
