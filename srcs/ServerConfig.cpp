@@ -1,8 +1,11 @@
 //-- Written by : msumon
 
 #include "ServerConfig.hpp"
+#include "LocationConfig.hpp"
 #include <cstddef>
+#include <string>
 #include <vector>
+#include <set>
 
 ServerConfig::ServerConfig() : LocationConfig()
 {
@@ -35,6 +38,10 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
         {
             std::string key = line.substr(0, pos);
             std::string value = line.substr(pos + 1);
+            if (key != "allowed_methods" && key != "try_files")
+                value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
+            if (key.empty() || value.empty())
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
             locationConfig.insertInMap(key, value);
         }
         i++;
@@ -47,16 +54,21 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
     while (i < configVector.size())
     {
         line = configVector[i];
+        size_t pos = line.find_last_not_of(" ");
+        line = line.substr(0, pos + 1);
         //std::cout << "line: " << line << std::endl;
         if (line.find('}') != std::string::npos)
             break;
         // Process server directives
+        //-- Nginx does not run if listen and server_name directives are not present
         if (line.find("listen") == 0)
         {
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
             {
                 server.listenPort = line.substr(pos + 1);
+                if (server.listenPort.empty())
+                    throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
                 server.makePortVector();
             }
         }
@@ -66,6 +78,8 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             if (pos != std::string::npos)
             {
                 server.serverName = line.substr(pos + 1);
+                if (server.serverName.empty())
+                    throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
                 server.makeServerNameVector();
             }
         }
@@ -74,12 +88,18 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
                 server.errorPage = line.substr(pos + 1);
+            server.errorPage.erase(std::remove(server.errorPage.begin(), server.errorPage.end(), ' '), server.errorPage.end());
+            if (server.errorPage.empty())
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
         else if (line.find("cgi-bin") == 0)
         {
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
                 server.cgiFile = line.substr(pos + 1);
+            server.cgiFile.erase(std::remove(server.cgiFile.begin(), server.cgiFile.end(), ' '), server.cgiFile.end());
+            if (server.cgiFile.empty())
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
@@ -88,7 +108,17 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
                 server.clientMaxBodySize = line.substr(pos + 1);
+            server.clientMaxBodySize.erase(std::remove(server.clientMaxBodySize.begin(), server.clientMaxBodySize.end(), ' '), server.clientMaxBodySize.end());
+            if (server.clientMaxBodySize.empty())
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
+        else if (line == "{" || line.empty())
+        {
+            i++;
+            continue;
+        }
+        else  
+            throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         i++;
     }
 }
@@ -110,13 +140,73 @@ ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
             serverBlock(line, i, configVector, server, configFile);
             servers.push_back(server);
         }
-        else  
+        else
         {
             std::cerr << RED << "Line: " << line << "  [ NOT VALID ]" << RESET << std::endl;
-            throw std::runtime_error("Invalid server config !!");
+            throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
         }
         i++;
     }
+    if (checkLocations() == false)
+        throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
+}
+
+//-- Double checking locationBlock
+//--- Check if the location block has valid directives
+//--- can not have duplicate directives
+bool ServerConfig::checkLocations()
+{
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        ServerConfig server = servers[i];
+
+        std::set<std::string> locationPaths;
+        for (size_t j = 0; j < server.locations.size(); j++)
+        {
+            LocationConfig location = server.locations[j];
+            std::string locationPath = location.getPath();
+            locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), ' '), locationPath.end());
+            locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), '{'), locationPath.end());
+            if (locationPaths.find(locationPath) != locationPaths.end())
+            {
+                std::cerr << BOLD RED << "LINE : " << locationPath << "  [ DUPLICATE ]" << RESET << std::endl;
+                return false;
+            }
+
+            locationPaths.insert(locationPath);
+            
+            //-- Check inside location block
+            //--- Check if the location block has valid directives
+            //--- can not have duplicate directives
+            std::multimap<std::string, std::string > locationMap = location.getLocationMap();
+            std::multimap<std::string, std::string >::iterator it;
+            
+            std::set<std::string> locationSet;
+            //locationPaths.clear();
+            for ( it = locationMap.begin(); it != locationMap.end(); ++it)
+            {
+                locationPath = it->first;
+                if (locationPath == "root" || locationPath == "index" ||
+                    locationPath == "autoindex" || locationPath == "cgi-bin" ||
+                    locationPath == "allowed_methods" || locationPath == "try_files" ||
+                    locationPath == "return" || locationPath == "client_max_body_size")
+                {
+                    if (locationSet.find(locationPath) != locationSet.end())
+                    {
+                        std::cerr << BOLD RED << "LINE : " << locationPath << "  [ DUPLICATE ]" << RESET << std::endl;
+                        return false;
+                    }
+                    locationSet.insert(locationPath);
+                }
+                else
+                {
+                    std::cerr << BOLD RED << "LINE : " << locationPath << "  [ NOT VALID ]" << RESET << std::endl;
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 //--- > To Print the config after parsing

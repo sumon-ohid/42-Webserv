@@ -26,8 +26,10 @@ class GetMethod : public Method
 		~GetMethod();
 
 		void executeMethod(int socketFd, Client *client, Request &request);
-		bool findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath, std::string &locationPath, std::string &root, std::string &index, bool &cgiFound);
+		bool findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
+				std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex);
 		void handleRedirection(std::string &redirectUrl);
+		void handleAutoIndex(std::string &path, Request &request, Client *client);
 		void serveStaticFile(std::string &path, Request &request, Client *client);
 		void executeCgiScript(std::string &requestPath, Client *client, Request &request);
 

@@ -2,12 +2,18 @@
 #include "Method.hpp"
 #include "HandleCgi.hpp"
 #include "ServerConfig.hpp"
+#include "ServerConfig.hpp"
+#include "Response.hpp"
 
 #include <iostream>
 #include <cstddef>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <dirent.h>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -36,14 +42,51 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
     std::string index;
     bool locationMatched = false;
     bool cgiFound = false;
+    bool autoIndex = false;
 
-    locationMatched = findMatchingLocation(locationConfig, requestPath, locationPath, root, index, cgiFound);
+    locationMatched = findMatchingLocation(locationConfig, requestPath,
+                        locationPath, root, index, cgiFound, autoIndex);
     if (locationMatched)
     {
         if (cgiFound)
             executeCgiScript(requestPath, client, request);
-        else
+        else if (requestPath[requestPath.length() - 1] == '/')
+        {
+            std::ifstream file(locationPath.c_str());
+            if (!file.is_open() && autoIndex)
+            {
+                std::cout << BOLD YELLOW << "File not opened, Autoindex ON " << RESET << std::endl;
+                std::string fullPath = root + requestPath;
+                handleAutoIndex(fullPath, request, client);
+            }
+            else if (!file.is_open() && !autoIndex)
+            {
+                std::cout << BOLD YELLOW << "File not opened, Autoindex OFF " << RESET << std::endl;
+                locationPath = "./conf/webpage/home.html";
+                serveStaticFile(locationPath, request, client);
+            }
+            else
+            {
+                std::cout << BOLD YELLOW << "File opened, Autoindex OFF/ON " << RESET << std::endl;
+                locationPath = root + requestPath + "/" + index;
+                serveStaticFile(locationPath, request, client);
+            }
+            file.close();
+        }
+        else if (locationPath.find(".html") != std::string::npos)
+        {
+            if (requestPath.find(".css") != std::string::npos || requestPath.find(".js") != std::string::npos)
+                locationPath = root + requestPath;
+            else
+                locationPath = root + requestPath + "/" + index;
+
             serveStaticFile(locationPath, request, client);
+        }
+        else
+        {
+            locationPath = root + requestPath + index;
+            serveStaticFile(locationPath, request, client);
+        }
     }
     else
     {
@@ -61,13 +104,15 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
 }
 
 bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
-     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound)
+     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex)
 {
     for (size_t i = 0; i < locationConfig.size(); i++)
     {
         std::string tempPath = locationConfig[i].getPath();
         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
+        // if (!tempPath.empty() && tempPath[tempPath.length() - 1] != '/')
+        //     tempPath += '/';
 
         if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
         {
@@ -91,12 +136,54 @@ bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig
                     handleRedirection(it->second);
                     return false;
                 }
+                if (it->first == "autoindex")
+                {
+                    if (it->second == "on")
+                        autoIndex = true;
+                }
             }
-            locationPath = (requestPath == "/") ? root + index : root + requestPath;
+            if (requestPath == "/")
+                locationPath = root + index;
+            else if (autoIndex)
+                locationPath = root + requestPath + index;
+            else
+                locationPath = root + requestPath;
             return true;
         }
     }
     return false;
+}
+
+void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
+{
+    DIR *dir;
+    struct dirent *ent;
+    std::ostringstream body;
+
+    if ((dir = opendir(path.c_str())) != NULL)
+    {
+        body << "<html><head><title>Index of "
+        << path << "</title></head><body><h1>Index of "
+        << path << "</h1><hr><pre>";
+
+        while ((ent = readdir(dir)) != NULL)
+        {
+            body << "<a href=\""
+                << "/" << ent->d_name
+                << "\">" << ent->d_name
+                << "</a><br>";
+        }
+        body << "</pre><hr></body></html>";
+        closedir(dir);
+    }
+    else
+    {
+        Response::FallbackError(socketFd, request, "403", client);
+        return;
+    }
+    std::string bodyStr = body.str();
+    Response::headerAndBody(socketFd, request, bodyStr);
+    std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
 
 void GetMethod::handleRedirection(std::string &redirectUrl)
@@ -117,6 +204,8 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
 
 void GetMethod::serveStaticFile(std::string &path, Request &request, Client *client)
 {
+    signal (SIGPIPE, SIG_IGN);
+
     this->setMimeType(path);
     std::ifstream file(path.c_str());
     if (!file.is_open())
