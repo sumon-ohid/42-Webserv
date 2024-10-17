@@ -12,6 +12,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				Client.cpp \
 				Server.cpp \
 				Epoll.cpp \
+				Helper.cpp \
 				Request.cpp \
 				Method.cpp \
      			GetMethod.cpp \

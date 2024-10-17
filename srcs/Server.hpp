@@ -28,9 +28,9 @@ private:
 public:
 	std::string		_configFile;
 	ServerConfig	_serverConfig;
+	Epoll*			_epoll;
 
 	// Coplien's form
-	Epoll*			_epoll;
 	Server();
 	Server(ServerConfig server);
 	~Server();
