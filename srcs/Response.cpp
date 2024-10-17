@@ -1,16 +1,16 @@
 #include <ios>
 #include <ostream>
-#include <sstream>
-#include <sys/socket.h>
-#include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <ctime>
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
 #include "Response.hpp"
 #include "ErrorHandle.hpp"
+#include "Request.hpp"
 
 static std::map<std::string, std::string> initMap() {
 	std::map<std::string, std::string> codes;
@@ -33,18 +33,29 @@ static std::map<std::string, std::string> initMap() {
 
 const std::map<std::string, std::string> Response::statusCodes = initMap();
 
-Response::Response() {}
+Response::Response() : _socketFd(-1), _isChunk(false), _bytesSent(0), _message(""), _mimeType("") {}
 
-Response::Response(const Response& other) {
+Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk), _bytesSent(other._bytesSent), _message(other._message), _mimeType(other._mimeType) {
 	(void) other;
 }
 
 Response& Response::operator=(const Response& other) {
-	(void) other;
+	if (this == &other)
+		return *this;
+
+	this->_socketFd = other._socketFd;
+	this->_isChunk = other._isChunk;
+	this->_bytesSent = other._bytesSent;
+	this->_message = other._message;
+	this->_mimeType = other._mimeType;
 	return *this;
 }
 
 Response::~Response() {}
+
+Response*	Response::clone() const {
+	return new Response(*this);
+}
 
 std::string Response::getActualTimeString() {
 	std::string weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};

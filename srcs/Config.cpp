@@ -1,7 +1,7 @@
 //-- Written by : msumon
 
 #include "Config.hpp"
-#include "Server.hpp"
+// #include "Server.hpp"
 #include "ServerConfig.hpp"
 #include <cstddef>
 #include <algorithm>
@@ -24,11 +24,11 @@ Config::Config(std::string configFile) : configFile(configFile)
     readConfig(configFile);
     if (validationCheck() == false || syntaxCheck() == false)
         throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
-    
+
     //-- removing ; from line after validation
     for (size_t i = 0; i < configVector.size(); i++)
     {
-        configVector[i].erase(remove(configVector[i].begin(), configVector[i].end(), ';'), configVector[i].end()); 
+        configVector[i].erase(remove(configVector[i].begin(), configVector[i].end(), ';'), configVector[i].end());
     }
     //std::cout << BOLD << configFile << GREEN << " [ OK ] " << RESET << std::endl;
 }
@@ -189,7 +189,7 @@ bool Config::syntaxCheck()
                 if (semiColonCheck(line, "server_name") == false)
                     return (false);
             }
-            else  
+            else
             {
                 line.erase(remove(line.begin(), line.end(), '{'), line.end());
                 line.erase(remove(line.begin(), line.end(), ' '), line.end());
@@ -275,7 +275,7 @@ bool Config::syntaxCheck()
         }
         else if (line == "}" || line == "{")
             i++;
-        else  
+        else
         {
             std::cerr << std::endl << BOLD RED << "LINE : " << line << "  [ NOT VALID ]" << RESET << std::endl;
             return (false);

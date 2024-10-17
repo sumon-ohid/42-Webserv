@@ -1,5 +1,13 @@
 #include "GetMethod.hpp"
 #include "Method.hpp"
+#include "HandleCgi.hpp"
+#include "ServerConfig.hpp"
+
+#include <iostream>
+#include <cstddef>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 

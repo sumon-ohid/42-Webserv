@@ -7,7 +7,6 @@ class Client;
 #include <string>
 #include <map>
 
-
 #define ARRAY_SIZE 5
 
 class Method {

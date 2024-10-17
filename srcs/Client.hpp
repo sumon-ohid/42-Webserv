@@ -12,9 +12,11 @@ private:
 	int				_port;
 	time_t			_lastActive;
 	unsigned		_numRequests;
+
 public:
 	Server*			_server;
 	Request			_request; // BP: can there be one or multiple requests at the same time
+	
 	// Coplien's form
 	Client();
 	Client(int, int, Server*);
@@ -30,7 +32,7 @@ public:
 	void		setPort(int);
 	// sets lastActove of the client to the value passed
 	void		setLastActive(time_t);
-	// will add 1 to numRequests of the client 
+	// will add 1 to numRequests of the client
 	void		numRequestAdd1();
 
 	// getters

@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include "ServerConfig.hpp"
+// #include "ServerConfig.hpp"
 #include "Client.hpp"
-#include "Response.hpp"
 #include "Server.hpp"
 
-#include <iostream>
+// #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
+// #include <fstream>
 #include <sstream>
 
 class Client;
@@ -42,11 +41,11 @@ class ErrorHandle
         std::string getErrorMessage();
         std::vector<ErrorHandle> getErrorVector();
         std::string getNewErrorFile();
-        
+
         void displayError();
         void prepareErrorPage(Client *client, std::string statusCode);
         std::string modifyErrorPage();
-        
+
         template <typename T>
         std::string to_string(const T& value)
         {

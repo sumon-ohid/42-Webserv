@@ -1,33 +1,36 @@
 #pragma once
 
+// #include "Request.hpp"
 #include <string>
 #include <map>
 
-#include "Request.hpp"
-// #include "Socket.hpp"
 #include "ErrorHandle.hpp"
+class Request;
 
 #define CHUNK_SIZE 100000
 
 class Response {
 	private:
-		int socketFd;
-		std::string message;
+		int 			_socketFd;
+		bool			_isChunk;
+		unsigned long	_bytesSent;
+		std::string		_message;
 		// std::string chunk;
-		unsigned long bytesSent;
-		bool isChunk;
-		std::string mimeType;
+		std::string		_mimeType;
 
 
+	public:
 		Response();
 		Response(const Response& other);
 		Response& operator=(const Response& other);
 		~Response();
 
-	public:
-		static const std::map<std::string, std::string> statusCodes;
+		static const std::map<std::string, std::string> statusCodes; //BP maybe move from here?
 
 		static std::string getActualTimeString();
+
+		Response* clone() const;
+
 
 		static void header(int socketFd, Request& request, std::string& body);
 		static void	headerAndBody(int socketFd, Request& request, std::string& body);

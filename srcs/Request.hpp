@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vector>
 #include <map>
+#include <vector>
 
 #include "Method.hpp"
 #include "ServerConfig.hpp"
+
+class Response;
 
 class Request {
 	private:
@@ -14,9 +16,12 @@ class Request {
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
 
+
 		void	checkOneLine(std::string oneLine);
 
 	public:
+		Response*	_response;
+	
 		Request();
 		Request(std::string method);
 		Request(const Request& other);
