@@ -42,7 +42,7 @@ static std::string createHeaderString(Request& request, std::string& body, std::
 
 	ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
-	ss << "Date: " << Helper::getActualTimeString() << "\n";
+	ss << "Date: " << Helper::getActualTimeStringGMT() << "\n";
 	ss << "Content-Type: " << request.getMethodMimeType() << "\n";
 	ss << "Content-Length: " << (body.size() + 1) << "\n"; // + 1 plus additional \n at the end?
 	ss << "Connection: " << "connectionClosedOrNot" << "\n";

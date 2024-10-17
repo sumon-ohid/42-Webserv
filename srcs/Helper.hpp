@@ -10,9 +10,10 @@ class Helper {
 		Helper& operator=(const Helper& other);
 		~Helper();
 
-
 	public:
-		static const std::map<std::string, std::string> statusCodes; //BP maybe move from here?
+		// std::string statusCode, std::string statusMessage
+		static const std::map<std::string, std::string> statusCodes;
+		static const std::map<std::string, std::string> executableMap;
 
-		static std::string getActualTimeString();
+		static std::string getActualTimeStringGMT();
 };

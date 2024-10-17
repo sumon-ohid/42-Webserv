@@ -1,11 +1,15 @@
 #include "Helper.hpp"
 
 #include <iomanip>
+#include <sstream>
+#include <ctime>
 
 
 Helper::Helper() {}
 
-Helper::Helper(const Helper& other) {}
+Helper::Helper(const Helper& other) {
+	(void) other;
+}
 
 Helper& Helper::operator=(const Helper& other) {
 	if (this == &other)
@@ -16,7 +20,7 @@ Helper& Helper::operator=(const Helper& other) {
 
 Helper::~Helper() {}
 
-static std::map<std::string, std::string> initMap() {
+static std::map<std::string, std::string> initStatusCodesMap() {
 	std::map<std::string, std::string> codes;
 	codes["200"] = "OK";
 	codes["201"] = "Created";
@@ -35,9 +39,18 @@ static std::map<std::string, std::string> initMap() {
 	return codes;
 }
 
-const std::map<std::string, std::string> Helper::statusCodes = initMap();
+static std::map<std::string, std::string> initExecMap() {
+	std::map<std::string, std::string> execs;
+	execs[".py"] = "/usr/bin/python3";
+	execs[".php"] = "/usr/bin/php";
+	execs[".sh"] = "/usr/bin/bash";
+	return execs;
+}
 
-std::string Helper::getActualTimeString() {
+const std::map<std::string, std::string> Helper::statusCodes = initStatusCodesMap();
+const std::map<std::string, std::string> Helper::executableMap = initExecMap();
+
+std::string Helper::getActualTimeStringGMT() {
 	std::string weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 	std::string months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 	std::stringstream ss;
