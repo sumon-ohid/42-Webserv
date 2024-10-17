@@ -1,6 +1,5 @@
 #include <ios>
 #include <ostream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <ctime>
@@ -11,27 +10,7 @@
 #include "Response.hpp"
 #include "ErrorHandle.hpp"
 #include "Request.hpp"
-
-static std::map<std::string, std::string> initMap() {
-	std::map<std::string, std::string> codes;
-	codes["200"] = "OK";
-	codes["201"] = "Created";
-	codes["204"] = "No Content";
-	codes["301"] = "Moved Permanently";
-	codes["302"] = "Found";
-	codes["400"] = "Bad Request";
-	codes["401"] = "Unauthorized";
-	codes["403"] = "Forbidden";
-	codes["404"] = "Not Found";
-	codes["405"] = "Not Allowed";
-	codes["413"] = "Request Entity Too Large";
-	codes["500"] = "Internal Server Error";
-	codes["503"] = "Service Unavailable";
-	codes["505"] = "HTTP Version Not Supported";
-	return codes;
-}
-
-const std::map<std::string, std::string> Response::statusCodes = initMap();
+#include "Helper.hpp"
 
 Response::Response() : _socketFd(-1), _isChunk(false), _bytesSent(0), _message(""), _mimeType("") {}
 
@@ -57,31 +36,13 @@ Response*	Response::clone() const {
 	return new Response(*this);
 }
 
-std::string Response::getActualTimeString() {
-	std::string weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-	std::string months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-	std::stringstream ss;
-	std::time_t now = std::time(0);
-    std::tm* localNow = std::gmtime(&now);
-	std::string weekday = weekdays[localNow->tm_wday];
-	std::string month = months[localNow->tm_mon];
-
-	ss << weekday << ", ";
-	ss << std::setfill('0') << std::setw(2) << localNow->tm_mday << " " << month << " ";
-	ss << (localNow->tm_year + 1900) << " ";
-	ss << std::setfill('0') << std::setw(2) << localNow->tm_hour << ":";
-	ss << std::setfill('0') << std::setw(2) << localNow->tm_min << ":";
-	ss << std::setfill('0') << std::setw(2) << localNow->tm_sec << " GMT";
-	return ss.str();
-}
-
 static std::string createHeaderString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
-	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
+	std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
 
 	ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
-	ss << "Date: " << Response::getActualTimeString() << "\n";
+	ss << "Date: " << Helper::getActualTimeString() << "\n";
 	ss << "Content-Type: " << request.getMethodMimeType() << "\n";
 	ss << "Content-Length: " << (body.size() + 1) << "\n"; // + 1 plus additional \n at the end?
 	ss << "Connection: " << "connectionClosedOrNot" << "\n";
@@ -115,7 +76,7 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
 
 	std::stringstream ss;
-	std::string statusMessage = Response::statusCodes.find(statusCode)->second;
+	std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
 	request.setMethodMimeType("test.html");
 
 	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
@@ -159,7 +120,7 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 	catch (std::exception &e)
 	{
 		std::stringstream ss;
-		std::string statusMessage = Response::statusCodes.find(statusCode)->second;
+		std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
 		request.setMethodMimeType("test.html");
 
 		ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";

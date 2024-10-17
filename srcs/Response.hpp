@@ -2,7 +2,6 @@
 
 // #include "Request.hpp"
 #include <string>
-#include <map>
 
 #include "ErrorHandle.hpp"
 class Request;
@@ -25,12 +24,7 @@ class Response {
 		Response& operator=(const Response& other);
 		~Response();
 
-		static const std::map<std::string, std::string> statusCodes; //BP maybe move from here?
-
-		static std::string getActualTimeString();
-
 		Response* clone() const;
-
 
 		static void header(int socketFd, Request& request, std::string& body);
 		static void	headerAndBody(int socketFd, Request& request, std::string& body);

@@ -2,8 +2,8 @@
 
 #include "ErrorHandle.hpp"
 #include "Client.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
+#include "Helper.hpp"
+
 #include "ServerConfig.hpp"
 #include <cstddef>
 #include <iostream>
@@ -67,7 +67,7 @@ std::string ErrorHandle::modifyErrorPage()
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
 {
     std::string errorPage = client->_server->_serverConfig.getErrorPage();
-    std::string message = client->_request._response->statusCodes.find(statusCode)->second;
+    std::string message = Helper::statusCodes.find(statusCode)->second;
 
     errorFile = errorPage;
     errorStatusCode = statusCode;

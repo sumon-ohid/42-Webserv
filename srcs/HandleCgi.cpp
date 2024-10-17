@@ -33,7 +33,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
         std::string tempPath = locationConfig[i].getPath();
         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
-    
+
         if (tempPath == "/")
         {
             std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
@@ -128,7 +128,7 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
     std::vector<char> cgiOutput(1024);
     ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
     if (n < 0)
-        throw std::runtime_error("Read failed !!");
+        throw std::runtime_error("Read failed !!"); // BP: close fd[0]
     cgiOutput.resize(n);
     std::ostringstream httpRequest;
     httpRequest << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << n << "\n\n";
