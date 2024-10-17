@@ -6,6 +6,7 @@
 #include "Method.hpp"
 #include "ServerConfig.hpp"
 
+class Server;
 class Response;
 
 class Request {
@@ -21,7 +22,7 @@ class Request {
 
 	public:
 		Response*	_response;
-	
+
 		Request();
 		Request(std::string method);
 		Request(const Request& other);
@@ -43,6 +44,12 @@ class Request {
 		void	checkLine(std::vector<char>& line);
 		void	checkHost(ServerConfig& config) const;
 		void	executeMethod(int socketFd, Client *client);
+
+		int		clientRequest(Client* client);
+		void	validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request);
+		void	validRequest(std::vector<char>, ssize_t, Request&);
+		int		invalidRequest(Client*);
+		int		emptyRequest(Client*);
 
 		void	requestReset();
 

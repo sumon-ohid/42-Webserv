@@ -76,12 +76,9 @@ private:
 	 * and manages socket state on errors or disconnections.
 	 * Returns 0 on success, -1 on errors or client disconnection.
 	 */
-	int		clientRequest(Client*);
+	// int		clientRequest(Client*);
 	// DISCUSS: should be handled in Request
-	void	validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request);
-	void	validRequest(std::vector<char>, ssize_t, Request&);
-	int		invalidRequest(Client*);
-	int		emptyRequest(Client*);
+
 
 	void	clientResponse(Client*);
 
@@ -100,7 +97,7 @@ public:
 	 * and enters the monitoring loop to handle incoming events.
 	 */
 	void	Routine(vSrv&);
-	
+
 	// ------------- Cleanup -------------
 	// removes the fd from epoll and closes the fd
 	void	removeClientEpoll(int);
