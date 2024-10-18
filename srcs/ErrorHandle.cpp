@@ -66,13 +66,22 @@ std::string ErrorHandle::modifyErrorPage()
 
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
 {
+    std::cout << "$" << statusCode << "$" << std::endl;
     std::string errorPage = client->_server->_serverConfig.getErrorPage();
-    std::string message = Helper::statusCodes.find(statusCode)->second;
+    std::map<std::string, std::string>::const_iterator it;
+	it = Helper::statusCodes.find(statusCode);
+	std::string statusMessage;
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
 
     errorFile = errorPage;
     errorStatusCode = statusCode;
-    errorMessage = message;
-    pageTitle = statusCode + " " + message;
+    errorMessage = statusMessage;
+    pageTitle = statusCode + " " + statusMessage;
 }
 
 std::vector<ErrorHandle> ErrorHandle::getErrorVector()

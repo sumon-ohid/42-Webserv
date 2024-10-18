@@ -39,7 +39,15 @@ Response*	Response::clone() const {
 static std::string createHeaderString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
 	std::cout << "$" << statusCode << "$" << std::endl;
-	std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
+	std::map<std::string, std::string>::const_iterator it;
+	it = Helper::statusCodes.find(statusCode);
+	std::string statusMessage;
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
 
 	ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
@@ -77,7 +85,16 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 void	Response::fallbackError(int socketFd, Request& request, std::string statusCode) {
 
 	std::stringstream ss;
-	std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
+	std::cout << "$" << statusCode << "$" << std::endl;
+	std::map<std::string, std::string>::const_iterator it;
+	it = Helper::statusCodes.find(statusCode);
+	std::string statusMessage;
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
 	request.setMethodMimeType("test.html");
 
 	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
@@ -115,6 +132,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 		std::string errorBody = errorHandle.modifyErrorPage();
 		std::string totalString = createHeaderAndBodyString(request, errorBody, statusCode);
 		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
+		std::cout << "written" << std::endl;
 		if (writeReturn == -1)
 			throw std::runtime_error("Error writing to socket in Response::error!!");
 		// NOTE: sometimes write fails, subject says errno is forbidden for read and write
@@ -123,10 +141,10 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 	catch (std::exception &e)
 	{
 		try {
-			std::cerr << e.what() << std::endl;
+			std::cerr << BOLD RED << e.what() << RESET << std::endl;
 			fallbackError(socketFd, request, statusCode);
 		} catch (std::exception& e) {
-			std::cerr << e.what() << std::endl;
+			std::cerr << BOLD RED << e.what() << RESET << std::endl;
 		}
 	}
 }
