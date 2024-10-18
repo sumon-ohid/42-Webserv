@@ -28,9 +28,9 @@ class Response {
 
 		static void header(int socketFd, Request& request, std::string& body);
 		static void	headerAndBody(int socketFd, Request& request, std::string& body);
-		static void FallbackError(int socketFd, Request& request, std::string statusCode);
+		static void fallbackError(int socketFd, Request& request, std::string statusCode);
 
-		static void FallbackError(int socketFd, Request& request, std::string statusCode, Client *client);
+		static void error(int socketFd, Request& request, std::string statusCode, Client *client);
 
 		static void	sendChunks(int socketFd, std::string chunkString);
 		static void	sendWithChunkEncoding(int socketFd, Request& request, std::string& body);

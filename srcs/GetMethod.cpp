@@ -45,7 +45,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
     bool cgiFound = false;
     bool autoIndex = false;
 
-    locationMatched = findMatchingLocation(locationConfig, requestPath, 
+    locationMatched = findMatchingLocation(locationConfig, requestPath,
                         locationPath, root, index, cgiFound, autoIndex, tryFiles);
     if (locationMatched)
     {
@@ -73,7 +73,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
                 {
                     size_t found = tryFiles.find("./");
                     if (found == std::string::npos)
-                        Response::FallbackError(socketFd, request, "404", client);
+                        Response::error(socketFd, request, "404", client); // BP: after this it still runs the next commands
                     std::string tryFilesPath = tryFiles.substr(found);
                     std::ifstream tryFilesFile(tryFilesPath.c_str());
                     if (tryFilesFile.is_open())
@@ -82,12 +82,12 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
                         serveStaticFile(locationPath, request, client);
                         return;
                     }
-                    else  
-                        Response::FallbackError(socketFd, request, "404", client);
+                    else
+                        Response::error(socketFd, request, "404", client);
                 }
                 // else
                 //    locationPath = root + requestPath + "/" + index;
-                
+
                 serveStaticFile(locationPath, request, client);
             }
             file.close();
@@ -199,7 +199,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     }
     else
     {
-        Response::FallbackError(socketFd, request, "403", client);
+        Response::error(socketFd, request, "403", client);
         return;
     }
     std::string bodyStr = body.str();
@@ -217,8 +217,10 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
                    << "Connection: close\r\n\r\n";
     std::string response = redirectHeader.str();
     ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
-    if (bytes_written == -1)
+    if (bytes_written == -1) {
+        std::cout << "Test1" << std::endl;
         throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
+    }
     else
         std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
 }
@@ -232,7 +234,7 @@ void GetMethod::serveStaticFile(std::string &path, Request &request, Client *cli
     if (!file.is_open())
     {
         //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
-        Response::FallbackError(socketFd, request, "404", client);
+        Response::error(socketFd, request, "404", client);
         return;
     }
 
@@ -252,10 +254,10 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
         HandleCgi cgi(requestPath, socketFd, *client, request);
         std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
     }
-    catch (std::runtime_error &e)
+    catch (std::exception &e)
     {
         std::cerr << BOLD RED << "Error: " << e.what() << RESET << std::endl;
-        Response::FallbackError(socketFd, request, "404", client);
+        Response::error(socketFd, request, "404", client);
     }
 }
 

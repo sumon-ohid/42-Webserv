@@ -38,7 +38,16 @@ Response*	Response::clone() const {
 
 static std::string createHeaderString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
-	std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
+	std::cout << "$" << statusCode << "$" << std::endl;
+	std::map<std::string, std::string>::const_iterator it;
+	it = Helper::statusCodes.find(statusCode);
+	std::string statusMessage;
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
 
 	ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n"; // or use string directly
 	ss << "Server: " << "someName" << "\n";
@@ -73,10 +82,19 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 	}
 }
 
-void	Response::FallbackError(int socketFd, Request& request, std::string statusCode) {
+void	Response::fallbackError(int socketFd, Request& request, std::string statusCode) {
 
 	std::stringstream ss;
-	std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
+	std::cout << "$" << statusCode << "$" << std::endl;
+	std::map<std::string, std::string>::const_iterator it;
+	it = Helper::statusCodes.find(statusCode);
+	std::string statusMessage;
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
 	request.setMethodMimeType("test.html");
 
 	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
@@ -84,7 +102,9 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 	ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
 	std::string body = ss.str();
 	std::string totalString = createHeaderAndBodyString(request, body, statusCode);
-	write(socketFd, totalString.c_str(), totalString.size());
+	ssize_t writeReturn = write(socketFd, totalString.c_str(), totalString.size());
+	if (writeReturn == -1)
+		throw std::runtime_error("Error writing to socket in Response::fallbackError!!");
 }
 
 //hardcoding of internal server Error (check case stringsteam fails)
@@ -96,7 +116,7 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 
 //-- SUMON: Trying to make it work with ErrorHandle class
 // what if we have a write error?
-void	Response::FallbackError(int socketFd, Request& request, std::string statusCode, Client *client)
+void	Response::error(int socketFd, Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
 	ssize_t writeReturn = 0;
@@ -112,25 +132,20 @@ void	Response::FallbackError(int socketFd, Request& request, std::string statusC
 		std::string errorBody = errorHandle.modifyErrorPage();
 		std::string totalString = createHeaderAndBodyString(request, errorBody, statusCode);
 		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
+		std::cout << "written" << std::endl;
 		if (writeReturn == -1)
-			throw std::runtime_error("Error writing to socket in Response::FallbackError!!");
+			throw std::runtime_error("Error writing to socket in Response::error!!");
 		// NOTE: sometimes write fails, subject says errno is forbidden for read and write
 		// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
 	}
 	catch (std::exception &e)
 	{
-		std::stringstream ss;
-		std::string statusMessage = Helper::statusCodes.find(statusCode)->second;
-		request.setMethodMimeType("test.html");
-
-		ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
-		ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";
-		ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
-		std::string body = ss.str();
-		std::string totalString = createHeaderAndBodyString(request, body, statusCode);
-		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
-		if (writeReturn == -1)
-			throw std::runtime_error("Error writing to socket in Response::FallbackError!!");
+		try {
+			std::cerr << BOLD RED << e.what() << RESET << std::endl;
+			fallbackError(socketFd, request, statusCode);
+		} catch (std::exception& e) {
+			std::cerr << BOLD RED << e.what() << RESET << std::endl;
+		}
 	}
 }
 

@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 	// Config config(argv[1]);
 	// config.printConfig();
 	if (argc > 2) {
-		std::cerr << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << std::endl;
+		std::cerr << BOLD RED << "Wrong use of webserv!\nCorrect use: ./webserv configuration-file" << RESET << std::endl;
 		return ERROR;
 	}
 	ServerManager	serverManager;

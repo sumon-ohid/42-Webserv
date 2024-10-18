@@ -69,11 +69,11 @@ void HandleCgi::proccessCGI(int nSocket)
 {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1)
-        throw std::runtime_error("Pipe failed !!");
+        throw std::runtime_error("Pipe failed !!"); // BP: maybe 500 or where catch it throw 500
 
     pid_t pid = fork();
     if (pid < 0)
-        throw std::runtime_error("Fork failed !!");
+        throw std::runtime_error("Fork failed !!"); // BP: maybe 500 or where catch it throw 500
     else if (pid == 0)
         handleChildProcess(pipe_fd, locationPath);
     else
@@ -88,7 +88,7 @@ std::string HandleCgi::getExecutable(const std::string &locationPath)
     if (pos != std::string::npos)
         extension = locationPath.substr(pos);
     else
-        throw std::runtime_error("Invalid file extension !!");
+        throw std::runtime_error("Invalid file extension !!"); 
 
     std::string executable;
     executable = Helper::executableMap.find(extension)->second;
