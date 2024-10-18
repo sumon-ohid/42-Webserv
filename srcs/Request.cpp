@@ -274,7 +274,7 @@ int	Request::clientRequest(Client* client)
 			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
 				client->_server->_epoll->removeClient(client);
 			} else {
-				Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
+				Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 			}
 			std::cout << "exception: " << e.what() << std::endl;
 			writeFlag = true;
@@ -287,7 +287,7 @@ int	Request::clientRequest(Client* client)
 			client->_request.executeMethod(event_fd, client);
 		}
 		catch (std::exception &e) {
-			Response::FallbackError(event_fd, client->_request, static_cast<std::string>(e.what()));
+			Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 		}
 
 		std::cout << "-------------------------------------" << std::endl;
