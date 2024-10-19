@@ -28,6 +28,10 @@ GetMethod&	GetMethod::operator=(const GetMethod& other) {
 
 GetMethod::~GetMethod() {}
 
+//-- To hold previous location path.
+std::string holdLocationPath;
+std::string matchLocationPath;
+
 //-- This function can execute the request.
 //-- Store the request path,
 //-- compare it with location path.
@@ -37,6 +41,7 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
     socketFd = _socketFd;
     std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
     std::string requestPath = request.getMethodPath();
+
     std::string locationPath;
     std::string root;
     std::string index;
@@ -49,6 +54,8 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
                         locationPath, root, index, cgiFound, autoIndex, tryFiles);
     if (locationMatched)
     {
+        holdLocationPath = root;
+        matchLocationPath = requestPath;
         if (cgiFound)
             executeCgiScript(requestPath, client, request);
         else if (requestPath[requestPath.length() - 1] == '/')
@@ -56,19 +63,16 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
             std::ifstream file(locationPath.c_str());
             if (!file.is_open() && autoIndex)
             {
-                std::cout << BOLD YELLOW << "File not opened, Autoindex ON " << RESET << std::endl;
                 std::string fullPath = root + requestPath;
                 handleAutoIndex(fullPath, request, client);
             }
             else if (!file.is_open() && !autoIndex)
             {
-                std::cout << BOLD YELLOW << "File not opened, Autoindex OFF " << RESET << std::endl;
                 locationPath = "./conf/webpage/home.html";
                 serveStaticFile(locationPath, request, client);
             }
             else
             {
-                std::cout << BOLD YELLOW << "File opened, Autoindex OFF/ON " << RESET << std::endl;
                 if (!tryFiles.empty() && (index.empty() || root.empty()))
                 {
                     size_t found = tryFiles.find("./");
@@ -109,16 +113,8 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
     }
     else
     {
-        for (size_t i = 0; i < locationConfig.size(); i++)
-        {
-            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
-            std::multimap<std::string, std::string>::iterator it = locationMap.find("root");
-            if (it != locationMap.end())
-                root = it->second;
-            std::string path = root + request.getMethodPath();
-
-            serveStaticFile(path, request, client);
-        }
+        std::string path = holdLocationPath + matchLocationPath + request.getMethodPath();        
+        serveStaticFile(path, request, client);
     }
 }
 
@@ -217,8 +213,8 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
                    << "Connection: close\r\n\r\n";
     std::string response = redirectHeader.str();
     ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
-    if (bytes_written == -1) {
-        std::cout << "Test1" << std::endl;
+    if (bytes_written == -1)
+    {
         throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
     }
     else

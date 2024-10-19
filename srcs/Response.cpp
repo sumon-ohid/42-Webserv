@@ -38,7 +38,6 @@ Response*	Response::clone() const {
 
 static std::string createHeaderString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
-	std::cout << "$" << statusCode << "$" << std::endl;
 	std::map<std::string, std::string>::const_iterator it;
 	it = Helper::statusCodes.find(statusCode);
 	std::string statusMessage;
@@ -85,7 +84,6 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 void	Response::fallbackError(int socketFd, Request& request, std::string statusCode) {
 
 	std::stringstream ss;
-	std::cout << "$" << statusCode << "$" << std::endl;
 	std::map<std::string, std::string>::const_iterator it;
 	it = Helper::statusCodes.find(statusCode);
 	std::string statusMessage;
@@ -105,6 +103,8 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 	ssize_t writeReturn = write(socketFd, totalString.c_str(), totalString.size());
 	if (writeReturn == -1)
 		throw std::runtime_error("Error writing to socket in Response::fallbackError!!");
+	else
+		std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
 }
 
 //hardcoding of internal server Error (check case stringsteam fails)
@@ -132,9 +132,10 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 		std::string errorBody = errorHandle.modifyErrorPage();
 		std::string totalString = createHeaderAndBodyString(request, errorBody, statusCode);
 		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
-		std::cout << "written" << std::endl;
 		if (writeReturn == -1)
 			throw std::runtime_error("Error writing to socket in Response::error!!");
+		else  
+			std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
 		// NOTE: sometimes write fails, subject says errno is forbidden for read and write
 		// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
 	}

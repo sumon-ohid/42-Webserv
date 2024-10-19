@@ -126,7 +126,15 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
     waitpid(pid, NULL, 0); //--- Wait for the child process to finish
     ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
     if (n < 0)
-        throw std::runtime_error("Read failed !!"); // BP: close fd[0]
+    {
+        close(pipe_fd[0]);
+        throw std::runtime_error("Read failed at CGI !!");
+    }
+    else if (n == 0)
+    {
+        close(pipe_fd[0]);
+        throw std::runtime_error("No data received from CGI script !!");
+    }
     cgiOutput.resize(n);
     std::ostringstream httpRequest;
     httpRequest << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << n << "\n\n";

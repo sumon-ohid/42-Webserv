@@ -239,12 +239,6 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	} else {
 		request.checkFirstLine(buffer);
 	}
-	// std::cout << "test2: " << request.getFirstLineChecked() << std::endl;
-	//--- This should be here
-	// std::string bufferRead(buffer.begin(), buffer.end());
-	// size_t pos = bufferRead.find("cgi-bin");
-	// if (pos != std::string::npos)
-	// 	HandleCgi cgi(request.getMethodPath(), _connSock, serv);
 }
 
 int	Request::clientRequest(Client* client)
