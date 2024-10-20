@@ -1,14 +1,13 @@
 //-- Written by : msumon
 
 #include "Config.hpp"
-// #include "Server.hpp"
 #include "ServerConfig.hpp"
-#include <cstddef>
+
 #include <algorithm>
-#include <iostream>
-#include <iterator>
+#include <cstddef>
 #include <sstream>
-#include <string>
+#include <iostream>
+#include <fstream>
 
 // --> Config class
 // --> read the config file and store the values in the vector
@@ -108,7 +107,7 @@ void Config::readConfig(std::string configFile)
     }
     else
     {
-        throw std::runtime_error ("cannot open config file");
+        throw std::runtime_error (BOLD RED "Unable to open Config file [ " + configFile + " ]" RESET);
     }
 }
 

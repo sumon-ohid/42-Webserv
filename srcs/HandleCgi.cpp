@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <string>
+#include <algorithm>
 
 HandleCgi::HandleCgi()
 {

@@ -1,11 +1,12 @@
 #include "ServerManager.hpp"
+#include "ServerConfig.hpp"
 #include "Epoll.hpp"
 #include "Server.hpp"
-#include "ServerConfig.hpp"
+
 #include <exception>
 #include <stdexcept>
-#include <variant>
 #include <vector>
+#include <algorithm>
 
 ServerManager::ServerManager() {}
 ServerManager::~ServerManager() {}

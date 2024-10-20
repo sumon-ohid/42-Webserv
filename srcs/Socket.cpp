@@ -1,6 +1,7 @@
 #include "Socket.hpp"
 #include <exception>
 #include <netinet/in.h>
+#include <cstring>
 
 // Coplien
 Socket::Socket() : _port(-1) {}

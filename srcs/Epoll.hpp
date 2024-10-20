@@ -1,11 +1,11 @@
 #pragma once
 
 #include <sys/epoll.h>
-#include <cerrno>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <list>
+
 #include "Client.hpp"
 #include "Socket.hpp"
 #include "./Request.hpp"
