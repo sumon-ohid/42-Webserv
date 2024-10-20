@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <string>
 #include <algorithm>
+#include <iostream>
+#include <errno.h>
 
 #include "Request.hpp"
 #include "Client.hpp"

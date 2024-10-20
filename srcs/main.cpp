@@ -1,6 +1,5 @@
 #include <csignal>
 
-#include "Server.hpp"
 #include "main.hpp"
 #include <exception>
 #include "ServerManager.hpp"
@@ -29,7 +28,7 @@ int main(int argc, char **argv)
 	}
 	catch (std::exception& e)
 	{
-		std::cout << "Error:\t" << e.what() << std::endl;
+		std::cout << BOLD RED "Error:\t" << e.what() << RESET << std::endl;
 	}
 	serverManager.shutdown();
 }

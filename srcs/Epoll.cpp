@@ -1,14 +1,14 @@
 #include "Epoll.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
-// #include "main.hpp"
+
+#include <iostream>
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
-// #include <exception>
 #include <sys/types.h>
 #include <vector>
-#include "Response.hpp"
+#include <cstring>
 
 Epoll::Epoll() : _epollFd(-1) {}
 Epoll::~Epoll() {}
