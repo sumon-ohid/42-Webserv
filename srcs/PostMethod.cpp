@@ -32,32 +32,19 @@ PostMethod::~PostMethod() {}
 //-- Execute the POST method
 void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
 {
-    std::string body = "------WebKitFormBoundaryhLw0c39BS7tY0rrh\r\n"
-                       "Content-Disposition: form-data; name=\"file\"; filename=\"testUpload.txt\"\r\n"
-                       "Content-Type: text/plain\r\n"
-                       "\r\n"
-                       "asdf\r\n"
-                       "asdf\r\n"
-                       "jfjfjfjfj\r\n"
-                       "halloe!\r\n";
+    std::string body = request._requestBody;
     
     std::string requestPath = request.getMethodPath();
     this->socketFd = socketFd;
     this->saveDir = root + locationPath + "/";
-    this->fileBody = parseBody(body);
-    fileName = parseFilename(body);
+    this->fileBody = body;
+    fileName = request._postFilename;
 
-    if (requestPath == "/submit" || requestPath == "/upload")
-    {
-        handlePostRequest(request, client);
-    }
-    else
-        Response::error(socketFd, request, "404", client);
+    handlePostRequest(request, client);
 }
 
 void PostMethod::handlePostRequest(Request &request, Client *client)
 {
-    (void) request;
     (void) client;
     std::string fileToCreate = saveDir + fileName;
     std::ofstream file;
