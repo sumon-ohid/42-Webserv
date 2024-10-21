@@ -1,6 +1,6 @@
 //-- Written by : msumon
 
-#include "LocationConfig.hpp"
+#include "../includes/LocationConfig.hpp"
 
 LocationConfig::LocationConfig() : Config()
 {

@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "Method.hpp"
+#include "../includes/Method.hpp"
 
 static std::map<std::string, std::string> initMimeMap() {
 	std::map<std::string, std::string> mimes;

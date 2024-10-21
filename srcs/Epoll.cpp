@@ -1,6 +1,6 @@
-#include "Epoll.hpp"
-#include "Server.hpp"
-#include "Response.hpp"
+#include "../includes/Epoll.hpp"
+#include "../includes/Server.hpp"
+#include "../includes/Response.hpp"
 
 #include <iostream>
 #include <cerrno>

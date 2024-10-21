@@ -1,7 +1,7 @@
 //-- Written by : msumon
 
-#include "ServerConfig.hpp"
-#include "LocationConfig.hpp"
+#include "../includes/ServerConfig.hpp"
+#include "../includes/LocationConfig.hpp"
 
 #include <cstddef>
 #include <string>

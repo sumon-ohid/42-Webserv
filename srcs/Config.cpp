@@ -1,7 +1,7 @@
 //-- Written by : msumon
 
-#include "Config.hpp"
-#include "ServerConfig.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/ServerConfig.hpp"
 
 #include <algorithm>
 #include <cstddef>

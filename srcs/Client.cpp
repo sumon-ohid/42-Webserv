@@ -1,4 +1,4 @@
-#include "Client.hpp"
+#include "../includes/Client.hpp"
 
 // ------------- Coplien's Form -------------
 Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _server(NULL) {};

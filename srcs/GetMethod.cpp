@@ -1,8 +1,9 @@
-#include "GetMethod.hpp"
-#include "Method.hpp"
-#include "HandleCgi.hpp"
-#include "ServerConfig.hpp"
-#include "Response.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/GetMethod.hpp"
+#include "../includes/Method.hpp"
+#include "../includes/HandleCgi.hpp"
+#include "../includes/Response.hpp"
+#include "../includes/ServerConfig.hpp"
 
 #include <iostream>
 #include <cstddef>
@@ -74,6 +75,7 @@ void GetMethod::handleAutoIndexOrError( std::string& root,  std::string& request
         handleAutoIndex(fullPath, request, client);
     else
     {
+        //-- This is unnecessary. 
         std::string locationPath = "./conf/webpage/home.html";
         serveStaticFile(locationPath, request, client);
     }

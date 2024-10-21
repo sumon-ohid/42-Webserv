@@ -1,7 +1,7 @@
-#include "ServerManager.hpp"
-#include "ServerConfig.hpp"
-#include "Epoll.hpp"
-#include "Server.hpp"
+#include "../includes/ServerManager.hpp"
+#include "../includes/ServerConfig.hpp"
+#include "../includes/Epoll.hpp"
+#include "../includes/Server.hpp"
 
 #include <exception>
 #include <stdexcept>

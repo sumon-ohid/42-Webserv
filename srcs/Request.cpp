@@ -5,13 +5,13 @@
 #include <iostream>
 #include <errno.h>
 
-#include "Request.hpp"
-#include "Client.hpp"
-#include "GetMethod.hpp"
-#include "main.hpp"
-#include "Response.hpp"
-#include "Epoll.hpp"
-#include "Server.hpp"
+#include "../includes/Request.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/GetMethod.hpp"
+#include "../includes/main.hpp"
+#include "../includes/Response.hpp"
+#include "../includes/Epoll.hpp"
+#include "../includes/Server.hpp"
 
 Request::Request() {
 	this->_type = -1;

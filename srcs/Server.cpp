@@ -1,7 +1,8 @@
-#include "Server.hpp"
-#include "Client.hpp"
-#include "Epoll.hpp"
-#include "ServerConfig.hpp"
+#include "../includes/Server.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/Epoll.hpp"
+#include "../includes/ServerConfig.hpp"
+
 #include <cstddef>
 #include <stdexcept>
 #include <utility>

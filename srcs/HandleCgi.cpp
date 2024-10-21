@@ -1,11 +1,11 @@
 //-- Written by : msumon
 
-#include "HandleCgi.hpp"
-#include "Client.hpp"
-#include "Request.hpp"
-#include "Server.hpp"
-#include "ServerConfig.hpp"
-#include "Helper.hpp"
+#include "../includes/HandleCgi.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/Request.hpp"
+#include "../includes/Server.hpp"
+#include "../includes/ServerConfig.hpp"
+#include "../includes/Helper.hpp"
 
 #include <cstddef>
 #include <string>
