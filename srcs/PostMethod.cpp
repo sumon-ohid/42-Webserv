@@ -17,7 +17,7 @@ PostMethod::PostMethod() : socketFd(-1)
     locationPath = "";
 }
 
-PostMethod::PostMethod(const PostMethod& other) : socketFd(other.socketFd) {}
+PostMethod::PostMethod(const PostMethod& other) : Method(other), socketFd(other.socketFd) {}
 
 PostMethod& PostMethod::operator=(const PostMethod& other)
 {
