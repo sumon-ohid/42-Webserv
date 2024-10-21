@@ -2,16 +2,9 @@
 #include <string>
 
 #include "../includes/Method.hpp"
+#include "../includes/Helper.hpp"
 
-static std::map<std::string, std::string> initMimeMap() {
-	std::map<std::string, std::string> mimes;
-	mimes[".css"] = "text/css";
-	mimes[".html"] = "text/html";
-	mimes[".js"] = "text/javascript";
-	return mimes;
-}
 
-const std::map<std::string, std::string> Method::mimeTypes = initMimeMap();
 
 const std::string Method::_methodArray[ARRAY_SIZE] = {"OPTIONS", "HEAD", "GET", "POST", "DELETE"};
 
@@ -95,7 +88,7 @@ void	Method::setMimeType(std::string& path) {
 	if (endPos == std::string::npos)
 		return;
 	std::string ending = path.substr(endPos);
-	for (std::map<std::string, std::string>::const_iterator it = mimeTypes.begin(); it != mimeTypes.end(); it++) {
+	for (std::map<std::string, std::string>::const_iterator it = Helper::mimeTypes.begin(); it != Helper::mimeTypes.end(); it++) {
 		if (ending == it->first)
 			this->_mimeType = it->second;
 	}
