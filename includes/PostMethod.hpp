@@ -2,10 +2,18 @@
 
 #include "Method.hpp"
 
+#include <string>
+
 class PostMethod : public Method
 {
     private:
         int socketFd;
+        std::string saveDir;
+        std::string fileName;
+        std::string fileBody;
+
+        std::string root;
+        std::string locationPath;
 
     public:
         PostMethod();
@@ -13,6 +21,13 @@ class PostMethod : public Method
         PostMethod& operator=(const PostMethod& other);
         ~PostMethod();
 
+        void setRoot(std::string root);
+        void setLocationPath(std::string locationPath);
+
         void executeMethod(int socketFd, Client *client, Request &request);
         void handlePostRequest(Request &request, Client *client);
+        std::string parseBody(std::string body);
+        std::string parseFilename(std::string& content);
+
+        Method*	clone();
 };

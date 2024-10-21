@@ -5,6 +5,8 @@
 #include "../includes/Response.hpp"
 #include "../includes/ServerConfig.hpp"
 
+#include "../includes/PostMethod.hpp"
+
 #include <iostream>
 #include <cstddef>
 #include <fstream>
@@ -42,7 +44,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     socketFd = _socketFd;
     std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
     std::string requestPath = request.getMethodPath();
-
+    
     std::string locationPath;
     std::string root;
     std::string index;
@@ -52,6 +54,14 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     bool autoIndex = false;
 
     locationMatched = findMatchingLocation(locationConfig, requestPath, locationPath, root, index, cgiFound, autoIndex, tryFiles);
+    if (request.getMethodName() == "POST")
+    {
+        PostMethod post;
+        post.setLocationPath(matchLocationPath);
+        post.setRoot(root);
+        post.executeMethod(_socketFd, client, request);
+        return;
+    }
     if (locationMatched)
     {
         holdLocationPath = root;

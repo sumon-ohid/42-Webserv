@@ -19,12 +19,13 @@ class Request {
 		int		_type; // request or response
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
-		std::string	_requestBody;
-		std::string	_postFilename;
 
 		void	checkOneLine(std::string oneLine);
 
 	public:
+		std::string	_requestBody;
+		std::string	_postFilename;
+		
 		Response*	_response;
 
 		Request();
