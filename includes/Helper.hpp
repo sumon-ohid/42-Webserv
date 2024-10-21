@@ -14,6 +14,7 @@ class Helper {
 		// std::string statusCode, std::string statusMessage
 		static const std::map<std::string, std::string> statusCodes;
 		static const std::map<std::string, std::string> executableMap;
+		static const std::map<std::string, std::string> mimeTypes;
 
 		static std::string getActualTimeStringGMT();
 };
