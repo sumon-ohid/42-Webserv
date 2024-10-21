@@ -47,8 +47,18 @@ static std::map<std::string, std::string> initExecMap() {
 	return execs;
 }
 
+static std::map<std::string, std::string> initMimeMap() {
+	std::map<std::string, std::string> mimes;
+	mimes[".css"] = "text/css";
+	mimes[".html"] = "text/html";
+	mimes[".js"] = "text/javascript";
+	return mimes;
+}
+
+
 const std::map<std::string, std::string> Helper::statusCodes = initStatusCodesMap();
 const std::map<std::string, std::string> Helper::executableMap = initExecMap();
+const std::map<std::string, std::string> Helper::mimeTypes = initMimeMap();
 
 std::string Helper::getActualTimeStringGMT() {
 	std::string weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};

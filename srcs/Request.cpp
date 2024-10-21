@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <errno.h>
+#include <sys/types.h>
 
 #include "../includes/Request.hpp"
 #include "../includes/Client.hpp"
@@ -114,7 +115,7 @@ static void	checkLineLastChars(std::string& line) {
 }
 
 
-static void	checkInterruption(std::vector<char>& line) {
+static void	checkTelnetInterruption(std::vector<char>& line) {
 	signed char stopTelnet[] = {-1, -12, -1, -3, 6};
 
 	if (line.size() == 5 && std::equal(line.begin(), line.end(), stopTelnet)) {
@@ -135,12 +136,11 @@ void Request::checkOneLine(std::string oneLine) {
 		_headerMap[key] = value;
 	else
 		_headerMap[key] += value;
-	// std::cout << "$" << key << "$" << value << "$" << std::endl;
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
 	this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
-	checkInterruption(line);
+	checkTelnetInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
@@ -168,10 +168,29 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 		// multiline input
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1, spacePos3 - (spacePos2 + 1)));
 		std::size_t pos = strLine.find("\r\n", spacePos3 + 1);
-		while (pos != std::string::npos) {
+		std::size_t endPos = strLine.find("\r\n\r\n", spacePos3 + 1);
+		while (pos < endPos) {
 			checkOneLine(strLine.substr(spacePos3 + 2, pos - (spacePos3 + 2)));
 			spacePos3 = pos;
 			pos = strLine.find("\r\n", spacePos3 + 1);
+		}
+		if (this->_method->getName() == "POST") {
+			pos = strLine.find("filename=");
+
+			_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
+			pos = strLine.find("\r\n\r\n", endPos + 4);
+			// std::cout << "$" << _postFilename << "$" << std::endl;
+			std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
+			// std::cout << it->second << std::endl;
+			std::string boundary;
+			if (it != _headerMap.end()) {
+				boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
+			}
+			// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
+			// std::string end =  strLine.rfind();
+			endPos = strLine.find(boundary, pos + 4);
+			_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
+			// std::cout << "$" << _requestBody << "$" << std::endl;
 		}
 		_readingFinished = true;
 	}
@@ -179,8 +198,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 }
 
 void	Request::checkLine(std::vector<char>& line) {
-	// std::cout << "checkline_start" << std::endl;
-	checkInterruption(line);
+	checkTelnetInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
@@ -188,9 +206,6 @@ void	Request::checkLine(std::vector<char>& line) {
 		return;
 	}
 	checkOneLine(strLine);
-	// std::cout << "checkline_end" << std::endl;
-	// if (value.empty())
-	// 	throw std::runtime_error("empty value string");
 }
 
 void	Request::checkHost(ServerConfig& config) const {
@@ -208,7 +223,7 @@ void	Request::checkHost(ServerConfig& config) const {
 //-- SUMON: I am working on this function
 void	Request::executeMethod(int socketFd, Client *client)
 {
-	// this->checkHost(config); // BP: activate when reading of servername is corrected
+	// this->checkHost(config); // BP: first check which hostname else it would use the standardhostname
 	this->_method->executeMethod(socketFd, client, *this);
 }
 
@@ -245,15 +260,13 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 
 int	Request::clientRequest(Client* client)
 {
-
-	// Read data from the client
 	int		event_fd = client->getFd();
 	bool	writeFlag = false;
 	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
 	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
 
-	while (!client->_request.getReadingFinished())
-	{
+	// while (!client->_request.getReadingFinished())
+	// {
 		try
 		{
 			buffer.resize(SOCKET_BUFFER_SIZE);
@@ -276,7 +289,7 @@ int	Request::clientRequest(Client* client)
 			writeFlag = true;
 			return OK;
 		}
-	}
+	// }
 	if (!writeFlag)
 	{
 		try {
@@ -290,9 +303,8 @@ int	Request::clientRequest(Client* client)
 	}
 	(void) count;
 	writeFlag = false;
-	std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
+	// std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
 	std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
-	std::cout << "map size: " << testMap.size() << std::endl;
 	client->_request.requestReset();
 	return (0);
 }

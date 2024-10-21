@@ -5,7 +5,6 @@ class Request;
 class Client;
 
 #include <string>
-#include <map>
 
 #define ARRAY_SIZE 5
 
@@ -18,7 +17,6 @@ class Method {
 
 	public:
 		static const std::string	_methodArray[ARRAY_SIZE];
-		static const std::map<std::string, std::string> mimeTypes;
 
 		Method();
 		Method(const Method& other);
