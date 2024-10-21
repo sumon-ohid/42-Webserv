@@ -1,8 +1,9 @@
-#include <csignal>
 
-#include "main.hpp"
+#include "../includes/main.hpp"
+#include "../includes/ServerManager.hpp"
+
+#include <csignal>
 #include <exception>
-#include "ServerManager.hpp"
 
 volatile sig_atomic_t stopSignal = 0;
 

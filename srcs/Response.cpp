@@ -7,10 +7,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include "Response.hpp"
-#include "ErrorHandle.hpp"
-#include "Request.hpp"
-#include "Helper.hpp"
+#include "../includes/Response.hpp"
+#include "../includes/ErrorHandle.hpp"
+#include "../includes/Request.hpp"
+#include "../includes/Helper.hpp"
 
 Response::Response() : _socketFd(-1), _isChunk(false), _bytesSent(0), _message(""), _mimeType("") {}
 
