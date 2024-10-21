@@ -52,6 +52,8 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
 
     locationMatched = findMatchingLocation(locationConfig, requestPath,
                         locationPath, root, index, cgiFound, autoIndex, tryFiles);
+    if (root.empty() && index.empty())
+        Response::error(socketFd, request, "403", client);
     if (locationMatched)
     {
         holdLocationPath = root;
@@ -99,6 +101,10 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
         else if (locationPath.find(".html") != std::string::npos)
         {
             if (requestPath.find(".css") != std::string::npos || requestPath.find(".js") != std::string::npos)
+                locationPath = root + requestPath;
+            else if (requestPath.find(".html") != std::string::npos)
+                locationPath = root + requestPath;
+            else if (requestPath.find(".jpg") != std::string::npos || requestPath.find(".svg") != std::string::npos || requestPath.find(".png") != std::string::npos)
                 locationPath = root + requestPath;
             else
                 locationPath = root + requestPath + "/" + index;
