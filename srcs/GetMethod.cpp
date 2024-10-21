@@ -52,8 +52,6 @@ void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
 
     locationMatched = findMatchingLocation(locationConfig, requestPath,
                         locationPath, root, index, cgiFound, autoIndex, tryFiles);
-    if (root.empty() && index.empty())
-        Response::error(socketFd, request, "403", client);
     if (locationMatched)
     {
         holdLocationPath = root;
