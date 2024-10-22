@@ -1,3 +1,4 @@
+#include <exception>
 #include <ios>
 #include <ostream>
 #include <iostream>
@@ -119,35 +120,50 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 void	Response::error(int socketFd, Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
-	ssize_t writeReturn = 0;
-	try
+	
+	std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
+	if (errorPages.find(statusCode) != errorPages.end())
 	{
-		ErrorHandle errorHandle;
-		errorHandle.prepareErrorPage(client, statusCode);
-		request.setMethodMimeType(errorHandle.getNewErrorFile());
+		ssize_t writeReturn = 0;
+		try
+		{
+			ErrorHandle errorHandle;
+			errorHandle.prepareErrorPage(client, statusCode);
+			request.setMethodMimeType(errorHandle.getNewErrorFile());
 
-		//-- this will create a new error file, error code will be the file name
-		//-- this will modify the error page replacing the status code, message and page title
-		//-- this will return the modified error page as a string
-		std::string errorBody = errorHandle.modifyErrorPage();
-		std::string totalString = createHeaderAndBodyString(request, errorBody, statusCode);
-		writeReturn = write(socketFd, totalString.c_str(), totalString.size());
-		if (writeReturn == -1)
-			throw std::runtime_error("Error writing to socket in Response::error!!");
-		else  
-			std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
-		// NOTE: sometimes write fails, subject says errno is forbidden for read and write
-		// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
+			//-- this will create a new error file, error code will be the file name
+			//-- this will modify the error page replacing the status code, message and page title
+			//-- this will return the modified error page as a string
+			std::string errorBody = errorHandle.modifyErrorPage();
+			std::string totalString = createHeaderAndBodyString(request, errorBody, statusCode);
+			writeReturn = write(socketFd, totalString.c_str(), totalString.size());
+			if (writeReturn == -1)
+				throw std::runtime_error("Error writing to socket in Response::error!!");
+			else  
+				std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
+			// NOTE: sometimes write fails, subject says errno is forbidden for read and write
+			// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
+		}
+		catch (std::exception &e)
+		{
+			try {
+				std::cerr << BOLD RED << e.what() << RESET << std::endl;
+				fallbackError(socketFd, request, statusCode);
+			} catch (std::exception& e) {
+				std::cerr << BOLD RED << e.what() << RESET << std::endl;
+			}
+		}
 	}
-	catch (std::exception &e)
+	else  
 	{
 		try {
-			std::cerr << BOLD RED << e.what() << RESET << std::endl;
 			fallbackError(socketFd, request, statusCode);
-		} catch (std::exception& e) {
+		}
+		catch (std::exception &e) {
 			std::cerr << BOLD RED << e.what() << RESET << std::endl;
 		}
 	}
+	
 }
 
 #include <unistd.h>

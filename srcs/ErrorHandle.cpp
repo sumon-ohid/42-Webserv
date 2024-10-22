@@ -66,7 +66,19 @@ std::string ErrorHandle::modifyErrorPage()
 
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
 {
-    std::string errorPage = client->_server->_serverConfig.getErrorPage();
+    std::string errorPage;
+	
+    std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
+    std::map<std::string, std::string>::iterator itError;
+    for (itError = errorPages.begin(); itError != errorPages.end(); itError++)
+    {
+        if (statusCode == itError->first)
+        {
+            errorPage = itError->second;
+            break;
+        }
+    }
+
     std::map<std::string, std::string>::const_iterator it;
 	it = Helper::statusCodes.find(statusCode);
 	std::string statusMessage;
