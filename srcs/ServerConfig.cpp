@@ -74,6 +74,13 @@ void ServerConfig::handleErrorPages(std::string line, ServerConfig &server)
     errorPagePath = errorCodes.at(errorCodes.size() - 1);
     for (size_t i = 0; i < errorCodes.size() -1; i++)
     {
+        // Convert string to int using std::stringstream
+        std::stringstream codeStream(errorCodes[i]);
+        int errorCode;
+        codeStream >> errorCode;
+
+        if (errorCode < 400 || errorCode > 599)
+            throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         server.errorPages.insert(std::pair<std::string, std::string>(errorCodes[i], errorPagePath));
     }
 
@@ -120,6 +127,15 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         else if (line.find("error_page") == 0)
         {
             handleErrorPages(line, server);
+            if (errorPages.empty())
+            {
+                size_t pos = line.find(" ");
+                if (pos != std::string::npos)
+                    server.errorPage = line.substr(pos + 1);
+                server.errorPage.erase(std::remove(server.errorPage.begin(), server.errorPage.end(), ' '), server.errorPage.end());
+                if (server.errorPage.empty())
+                    throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+            }
         }
         else if (line.find("cgi-bin") == 0)
         {
