@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <iostream>
 
-#define	SOCKET_BUFFER_SIZE		30000
+#define	SOCKET_BUFFER_SIZE		64000 // 64 kb
 #define SOCKET_MAX_LISTEN		1000
 
 class Socket
