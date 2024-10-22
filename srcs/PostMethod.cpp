@@ -49,14 +49,24 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     std::string fileToCreate = saveDir + fileName;
     std::ofstream file;
 
-    file.open(fileToCreate.c_str());
-    file << fileBody;
-    file.close();
-
+    file.open(fileToCreate.c_str(), std::ios::binary);
+    if (file.is_open())
+    {
+        file.write(fileBody.c_str(), fileBody.size());
+        file.close();
+    }
+    else   
+    {
+        std::cerr << "Error: Could not open file for writing" << std::endl;
+        Response::error(socketFd, request, "500", client);
+        return;
+    }
+ 
     std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
     Response::headerAndBody(socketFd, request, body);
     
-    std::cout << BOLD BLUE "File: " << fileToCreate << RESET << std::endl;
+    std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
+    std::cout << BOLD BLUE "File : " << fileToCreate << RESET << std::endl;
     std::cout << BOLD GREEN "FILE SAVED! 💾" << RESET << std::endl;
 }
 
