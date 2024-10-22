@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -32,6 +33,7 @@ class ServerConfig : public LocationConfig
         std::vector<std::string> serverNames;
         std::string _configFile;
         std::string clientMaxBodySize;
+        std::map<std::string, std::string> errorPages;
 
     public:
         ServerConfig();
@@ -48,6 +50,7 @@ class ServerConfig : public LocationConfig
         std::string getClientMaxBodySize();
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
+        std::map<std::string, std::string> getErrorPages();
 
         void makePortVector();
         void makeServerNameVector();
@@ -56,5 +59,6 @@ class ServerConfig : public LocationConfig
         bool checkLocations();
 
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
+        void handleErrorPages(std::string line, ServerConfig &server);
         void locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
 };

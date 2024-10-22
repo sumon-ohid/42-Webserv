@@ -11,8 +11,7 @@
 #include <map>
 #include <algorithm>
 #include <sstream>
-
-
+#include <map>
 
 ServerConfig::ServerConfig() : LocationConfig()
 {
@@ -57,6 +56,33 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
     server.locations.push_back(locationConfig);
 }
 
+void ServerConfig::handleErrorPages(std::string line, ServerConfig &server)
+{
+    std::vector<std::string> errorCodes;
+    std::string errorPagePath;
+    std::string temp;
+
+    size_t pos = line.find(" ");
+    if (pos != std::string::npos)
+        temp = line.substr(pos + 1);
+
+    std::stringstream ss(temp);
+    std::string word;
+    while (ss >> word)
+        errorCodes.push_back(word);
+
+    errorPagePath = errorCodes.at(errorCodes.size() - 1);
+    for (size_t i = 0; i < errorCodes.size() -1; i++)
+    {
+        server.errorPages.insert(std::pair<std::string, std::string>(errorCodes[i], errorPagePath));
+    }
+
+    //std::cout << BOLD YELLOW << errorPagePath << RESET << std::endl;
+
+    // if (server.errorPage.empty())
+    //     throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+}
+
 void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile)
 {
     while (i < configVector.size())
@@ -93,12 +119,7 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         }
         else if (line.find("error_page") == 0)
         {
-            size_t pos = line.find(" ");
-            if (pos != std::string::npos)
-                server.errorPage = line.substr(pos + 1);
-            server.errorPage.erase(std::remove(server.errorPage.begin(), server.errorPage.end(), ' '), server.errorPage.end());
-            if (server.errorPage.empty())
-                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+            handleErrorPages(line, server);
         }
         else if (line.find("cgi-bin") == 0)
         {
@@ -354,6 +375,11 @@ std::vector<std::string> ServerConfig::getServerNames()
 std::string ServerConfig::getTryFiles()
 {
     return (tryFiles);
+}
+
+std::map<std::string, std::string> ServerConfig::getErrorPages()
+{
+    return (errorPages);
 }
 
 ServerConfig::~ServerConfig()
