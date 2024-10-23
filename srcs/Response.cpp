@@ -40,8 +40,9 @@ Response*	Response::clone() const {
 static std::string createHeaderString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
 	std::map<std::string, std::string>::const_iterator it;
-	it = Helper::statusCodes.find(statusCode);
 	std::string statusMessage;
+
+	it = Helper::statusCodes.find(statusCode);
 	if (it == Helper::statusCodes.end()) {
 		statusCode = "500";
 		statusMessage = "Internal Server Error";
@@ -49,10 +50,16 @@ static std::string createHeaderString(Request& request, std::string& body, std::
 		statusMessage = it->second;
 	}
 
-	ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n"; // or use string directly
-	ss << "Server: " << "someName" << "\n";
+	if (request.hasMethod())
+		ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n";
+	else
+	 	ss << "HTTP/1.1 " << statusCode << " " << statusMessage << "\n";
+	ss << "Server: " << "webserv 1.0" << "\n";
 	ss << "Date: " << Helper::getActualTimeStringGMT() << "\n";
-	ss << "Content-Type: " << request.getMethodMimeType() << "\n";
+	if (request.hasMethod())
+		ss << "Content-Type: " << request.getMethodMimeType() << "\n";
+	else
+	 	ss << "Content-Type: text/html\n";
 	ss << "Content-Length: " << (body.size() + 1) << "\n"; // + 1 plus additional \n at the end?
 	ss << "Connection: " << "connectionClosedOrNot" << "\n";
 
@@ -120,7 +127,7 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 void	Response::error(int socketFd, Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
-	
+
 	std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
 	if (errorPages.find(statusCode) != errorPages.end() || errorPages.empty())
 	{
@@ -139,7 +146,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 			writeReturn = write(socketFd, totalString.c_str(), totalString.size());
 			if (writeReturn == -1)
 				throw std::runtime_error("Error writing to socket in Response::error!!");
-			else  
+			else
 				std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
 			// NOTE: sometimes write fails, subject says errno is forbidden for read and write
 			// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
@@ -154,7 +161,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 			}
 		}
 	}
-	else  
+	else
 	{
 		try {
 			fallbackError(socketFd, request, statusCode);
@@ -163,7 +170,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 			std::cerr << BOLD RED << e.what() << RESET << std::endl;
 		}
 	}
-	
+
 }
 
 #include <unistd.h>

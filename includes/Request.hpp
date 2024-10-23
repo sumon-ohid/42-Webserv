@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
@@ -15,10 +16,14 @@ class Response;
 class Request {
 	private:
 		bool	_firstLineChecked;
+		bool	_headerChecked;
 		bool	_readingFinished;
+		bool	_isChunked;
 		int		_type; // request or response
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
+		std::size_t	_contentLength;
+		std::size_t	_contentRead;
 
 		void	storeHeadersInMap(const std::string& oneLine);
 
@@ -35,6 +40,7 @@ class Request {
 		bool		operator==(const Request& other) const;
 		~Request();
 
+		bool		hasMethod() const;
 		std::string getMethodName() const;
 		std::string getMethodPath() const;
 		std::string getMethodProtocol() const;
