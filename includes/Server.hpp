@@ -46,7 +46,7 @@ public:
 	// adds a client's fd to _clnts
 	void	addClient(Client&);
 	// removes a client's fd from _clnts
-	void	removeClient(int);
+	void	removeClientFromServer(int);
 	// lists all clients currently connected
 	void	listClients(void) const;
 	// returns true if client is connected and false if not

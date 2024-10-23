@@ -6,6 +6,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
+#include <sys/epoll.h>
 #include <sys/types.h>
 #include <vector>
 #include <cstring>
@@ -47,7 +48,6 @@ void	Epoll::createEpoll()
 
 void	Epoll::registerLstnSockets(vSrv& servers)
 {
-	_ev.events = EPOLLIN;
 	for (vSrv::iterator it = servers.begin(); it != servers.end(); ++it)
 	{
 		it->_epoll = this;
@@ -55,14 +55,14 @@ void	Epoll::registerLstnSockets(vSrv& servers)
 		const lstSocs&	sockets = it->getLstnSockets();
 		// Iterate over each listening socket
 		for (lstSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
-			registerSocket(it->getFdSocket());
+			registerSocket(it->getFdSocket(), EPOLLIN);
 	}
 }
 
-bool	Epoll::registerSocket(int fd)
+bool	Epoll::registerSocket(int fd, uint32_t events)
 {
 	// Set the event flags to monitor for incoming connections
-	_ev.events = EPOLLIN;  // Set event to listen for incoming data
+	_ev.events = events;  // Set event to listen for incoming data
 	_ev.data.fd = fd;  // Set the file descriptor for the client socket
 	// Add the socket to the epoll instance for monitoring
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev) == -1)
@@ -142,7 +142,7 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	}
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
-	if (!registerSocket(_connSock))
+	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
 	Client	tmp(_connSock, sockIt->getPort(), &serv);
 	// addTimestamp(tmp);
@@ -193,7 +193,7 @@ void	Epoll:: removeClientEpoll(int fd)
 
 void	Epoll::removeClientFromServer(Server* serv, int fd)
 {
-	serv->removeClient(fd);
+	serv->removeClientFromServer(fd);
 }
 
 void	Epoll::removeClient(Client* client)
