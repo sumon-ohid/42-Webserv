@@ -80,13 +80,13 @@ std::string Request::getMethodPath() const {
 std::string Request::getMethodProtocol() const {
 	if (this->_method)
 		return this->_method->getProtocol();
-	return "HTTP/1.1"; // to also return when method is wrong
+	return "HTTP/1.1";
 }
 
 std::string Request::getMethodMimeType() const {
 	if (this->_method)
 		return this->_method->getMimeType();
-	return "text/plain"; // BP: or throw error
+	return "text/plain"; // BP: or throw error?
 }
 
 bool	Request::getFirstLineChecked() const {
@@ -105,7 +105,7 @@ void Request::setMethodMimeType(std::string path) {
 	this->_method->setMimeType(path);
 }
 
-#include <iostream>
+
 
 static void	checkLineLastChars(std::string& line) {
 	if (!line.empty() && line[line.size() - 1] == '\n')
@@ -123,7 +123,7 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 	}
 }
 
-void Request::checkOneLine(std::string oneLine) {
+void Request::storeHeadersInMap(const std::string& oneLine) {
 	std::size_t pos = oneLine.find(":");
 	if (pos == std::string::npos)
 		return;
@@ -135,7 +135,41 @@ void Request::checkOneLine(std::string oneLine) {
 	if (_headerMap.find(key) != _headerMap.end())
 		_headerMap[key] = value;
 	else
-		_headerMap[key] += value;
+		_headerMap[key] += value; // BP: to test
+}
+
+void	Request::storeRequestBody(const std::string& strLine, std::size_t pos, std::size_t endPos) {
+	pos = strLine.find("filename=");
+
+	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
+	pos = strLine.find("\r\n\r\n", endPos + 4);
+	// std::cout << "$" << _postFilename << "$" << std::endl;
+	std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
+	// std::cout << it->second << std::endl;
+	std::string boundary;
+	if (it != _headerMap.end()) {
+		boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
+	}
+	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
+	// std::string end =  strLine.rfind();
+	endPos = strLine.find(boundary, pos + 4);
+	_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
+	// std::cout << "$" << _requestBody << "$" << std::endl;
+}
+
+void	Request::checkSentAtOnce(const std::string& strLine, std::size_t pos1, std::size_t pos2) {
+		this->_method->setProtocol(strLine.substr(pos1 + 1, pos2 - (pos1 + 1)));
+		std::size_t pos = strLine.find("\r\n", pos2 + 1);
+		std::size_t endPos = strLine.find("\r\n\r\n", pos2 + 1);
+		while (pos < endPos) {
+			storeHeadersInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
+			pos2 = pos;
+			pos = strLine.find("\r\n", pos2 + 1);
+		}
+		if (this->_method->getName() == "POST") {
+			storeRequestBody(strLine, pos, endPos);
+		}
+		_readingFinished = true;
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
@@ -165,34 +199,7 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	if (spacePos3 == std::string::npos)
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
 	else {
-		// multiline input
-		this->_method->setProtocol(strLine.substr(spacePos2 + 1, spacePos3 - (spacePos2 + 1)));
-		std::size_t pos = strLine.find("\r\n", spacePos3 + 1);
-		std::size_t endPos = strLine.find("\r\n\r\n", spacePos3 + 1);
-		while (pos < endPos) {
-			checkOneLine(strLine.substr(spacePos3 + 2, pos - (spacePos3 + 2)));
-			spacePos3 = pos;
-			pos = strLine.find("\r\n", spacePos3 + 1);
-		}
-		if (this->_method->getName() == "POST") {
-			pos = strLine.find("filename=");
-
-			_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
-			pos = strLine.find("\r\n\r\n", endPos + 4);
-			// std::cout << "$" << _postFilename << "$" << std::endl;
-			std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
-			// std::cout << it->second << std::endl;
-			std::string boundary;
-			if (it != _headerMap.end()) {
-				boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
-			}
-			// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
-			// std::string end =  strLine.rfind();
-			endPos = strLine.find(boundary, pos + 4);
-			_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
-			// std::cout << "$" << _requestBody << "$" << std::endl;
-		}
-		_readingFinished = true;
+		checkSentAtOnce(strLine, spacePos2, spacePos3);
 	}
 	_firstLineChecked = true;
 }
@@ -205,7 +212,7 @@ void	Request::checkLine(std::vector<char>& line) {
 		this->_readingFinished = true;
 		return;
 	}
-	checkOneLine(strLine);
+	storeHeadersInMap(strLine);
 }
 
 void	Request::checkHost(ServerConfig& config) const {
