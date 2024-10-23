@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <sys/epoll.h>
 
 
 Helper::Helper() {}
@@ -76,4 +77,17 @@ std::string Helper::getActualTimeStringGMT() {
 	ss << std::setfill('0') << std::setw(2) << localNow->tm_min << ":";
 	ss << std::setfill('0') << std::setw(2) << localNow->tm_sec << " GMT";
 	return ss.str();
+}
+
+void	Helper::modifyEpollEvent(Epoll &epoll, Client *client, uint32_t events)
+{
+	struct	epoll_event	event;
+	event.events = events;
+	event.data.fd = client->getFd();
+	if (epoll_ctl(epoll.getFd(), EPOLL_CTL_MOD, event.data.fd, &event) == -1)
+	{
+		// return to client that there was an internal server error - (is that possible? we would have to change the event then to EPOLLOUT to be able to send the response to the client; maybe this was the one not working, we don't know for sure; but even if not, we would have to change the events, which failed before)
+		// then remove client (?)
+		epoll.removeClient(client);
+	}
 }
