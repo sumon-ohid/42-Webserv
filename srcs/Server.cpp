@@ -62,7 +62,7 @@ void	Server::addClient(Client& cl)
 	_clients.insert(std::make_pair(cl.getFd(), cl));
 }
 
-void	Server::removeClient(int fd)
+void	Server::removeClientFromServer(int fd)
 {
 	mpCl::iterator it = _clients.find(fd);
 	if (it != _clients.end())

@@ -40,7 +40,7 @@ private:
 	 * Registers a socket for monitoring with epoll.
 	 * Sets the event flag to EPOLLIN for incoming data; closes the socket if registration fails.
 	 */
-	bool	registerSocket(int fd);
+	bool	registerSocket(int, uint32_t);
 	/**
 	 * Monitors events on the epoll instance in an infinite loop.
 	 * Processes new client connections and events on existing clients.

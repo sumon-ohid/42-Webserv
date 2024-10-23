@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Epoll.hpp"
 #include <map>
 #include <string>
 
@@ -17,4 +18,5 @@ class Helper {
 		static const std::map<std::string, std::string> mimeTypes;
 
 		static std::string getActualTimeStringGMT();
+		static void			modifyEpollEvent(Epoll&, Client*, uint32_t);
 };
