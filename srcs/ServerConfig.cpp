@@ -4,6 +4,7 @@
 #include "../includes/LocationConfig.hpp"
 
 #include <cstddef>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <set>
@@ -45,6 +46,8 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
         {
             std::string key = line.substr(0, pos);
             std::string value = line.substr(pos + 1);
+            if (key == "allowed_methods")
+                check_allowed_methods(value, locationConfig.getPath());
             if (key != "allowed_methods" && key != "try_files")
                 value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
             if (key.empty() || value.empty())
@@ -54,6 +57,31 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
         i++;
     }
     server.locations.push_back(locationConfig);
+}
+
+void ServerConfig::check_allowed_methods(std::string value, std::string locationPath)
+{
+    std::vector<std::string> methods;
+   
+    locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), ' '), locationPath.end());
+    locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), '{'), locationPath.end());
+    
+    std::stringstream ss(value);
+    std::string word;
+    while (ss >> word)
+        methods.push_back(word);
+
+    for (size_t i = 0; i < methods.size(); i++)
+    {
+        //-- NOTE : if you want to handle more methods, add them here.
+        if (methods[i] != "GET" && methods[i] != "POST" && methods[i] != "DELETE" && methods[i] != "OPTIONS")
+            throw std::runtime_error(BOLD RED "ERROR : " + value + " [ NOT VALID ]" RESET);
+        if (locationPath == "/cgi-bin")
+        {
+            if (methods[i] != "GET" && methods[i] != "POST")
+                throw std::runtime_error(BOLD RED "ERROR : " + value + " [ NOT VALID ]" RESET);
+        }
+    }
 }
 
 void ServerConfig::handleErrorPages(std::string line, ServerConfig &server)
