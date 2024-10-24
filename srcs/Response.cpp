@@ -3,7 +3,6 @@
 #include <ostream>
 #include <iostream>
 #include <sstream>
-#include <ctime>
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <unistd.h>
 #include <sys/types.h>
@@ -9,6 +10,7 @@
 #include <sys/wait.h>
 #include <sstream>
 
+#include "Request.hpp"
 #include "ServerConfig.hpp"
 #include "Server.hpp"
 
@@ -19,14 +21,16 @@ class HandleCgi : public ServerConfig
         std::string method;
         std::string postBody;
         std::string fileName;
+        std::map<std::string, std::string> env;
 
     public:
         HandleCgi();
         HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request);
         ~HandleCgi();
 
-        void proccessCGI(int nSocket);
-        void handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid);
+        void initEnv(Request &request);
+        void proccessCGI(int nSocket, Request &request);
+        void handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid, Request &request);
         void handleChildProcess(int pipe_fd[2], const std::string &locationPath);
         std::string getExecutable(const std::string &locationPath);
         

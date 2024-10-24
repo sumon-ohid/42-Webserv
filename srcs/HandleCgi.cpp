@@ -7,6 +7,7 @@
 #include "../includes/ServerConfig.hpp"
 #include "../includes/Helper.hpp"
 #include "../includes/PostMethod.hpp"
+#include "../includes/Response.hpp"
 
 #include <cstddef>
 #include <string>
@@ -18,6 +19,21 @@ HandleCgi::HandleCgi()
     method = "";
     postBody = "";
     fileName = "";
+    env.clear();
+}
+
+//-- Function to initialize the environment variables
+//-- We can add more environment variables here
+void HandleCgi::initEnv(Request &request)
+{
+    env["SERVER_PROTOCOL"] = request.getMethodProtocol();
+    env["GATEWAY_INTERFACE"] = "CGI/1.1";
+    env["SERVER_SOFTWARE"] = "Webserv/1.0";
+    env["METHOD"] = request.getMethodName();
+    env["SCRIPT_NAME"] = request._postFilename;
+    env["METHOD PATH"] = request.getMethodPath();
+    env["CONTENT_LENGTH"] = xto_string(request._requestBody.size());
+    env["CONTENT_TYPE"] = request.getMethodMimeType();
 }
 
 //-- Constructor to handle the CGI request
@@ -32,6 +48,9 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     std::string rootFolder;
     std::string root;
     std::string index;
+
+    //-- Initialize the environment variables
+    initEnv(request);
 
     std::vector<LocationConfig> locationConfig = client._server->_serverConfig.getLocations();
     for (size_t i = 0; i < locationConfig.size(); i++)
@@ -79,13 +98,13 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     }
 
     if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == root + index)
-        proccessCGI(nSocket);
+        proccessCGI(nSocket, request);
     else
         throw std::runtime_error("404");
 }
 
 //--- Main function to process CGI
-void HandleCgi::proccessCGI(int nSocket)
+void HandleCgi::proccessCGI(int nSocket, Request &request)
 {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1)
@@ -97,7 +116,7 @@ void HandleCgi::proccessCGI(int nSocket)
     else if (pid == 0)
         handleChildProcess(pipe_fd, locationPath);
     else
-        handleParentProcess(nSocket, pipe_fd, pid);
+        handleParentProcess(nSocket, pipe_fd, pid, request);
 }
 
 //-- Function to determine the executable based on the file extension
@@ -130,19 +149,31 @@ void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPa
 
     //--- Prepare arguments for execve
     char *const argv[] = { (char *)executable.c_str(), (char *)locationPath.c_str(), NULL };
-    char *const envp[] = { NULL };
+    
+    //--- Prepare environment variables for execve
+    std::vector<char*> envp;
+    for (std::map<std::string, std::string>::const_iterator it = env.begin(); it != env.end(); it++)
+    {
+        std::string envVar = it->first + "=" + it->second + '\n';
+        char* envStr = new char[envVar.size() + 1];
+        std::copy(envVar.begin(), envVar.end(), envStr);
+        envStr[envVar.size()] = '\0';
+        envp.push_back(envStr);
+    }
+    envp.push_back(NULL);
 
-    execve(executable.c_str(), argv, envp);
+    execve(executable.c_str(), argv, envp.data());
     throw std::runtime_error("Execve failed !!");
 }
 
 //----- Function to handle the parent process
-void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
+void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid, Request &request)
 {
+    (void)request;
     close(pipe_fd[1]); //--- Close unused write end
 
     //--- Read CGI output from the pipe
-    std::vector<char> cgiOutput(1024);
+    std::vector<char> cgiOutput(SOCKET_BUFFER_SIZE);
     waitpid(pid, NULL, 0); //--- Wait for the child process to finish
     ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
     if (n < 0)
@@ -155,18 +186,28 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid)
         close(pipe_fd[0]);
         throw std::runtime_error("No data received from CGI script !!");
     }
-    cgiOutput.resize(n);
-    std::ostringstream httpRequest;
-    httpRequest << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << n << "\n\n";
 
-    //--- Send the HTTP request
-    send(nSocket, httpRequest.str().c_str(), httpRequest.str().size(), 0);
-    //--- Send the CGI output
-    send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
+    cgiOutput.resize(n);
+
+    std::string body = xto_string(cgiOutput.data());
+
+    //*** This is to handle mime types for cgi scripts
+    // size_t pos = body.find("Content-Type:");
+    // std::string mimeType = body.substr(pos + 14, body.find("\n", pos) - pos - 14);
+    // std::ostringstream httpRequest;
+    // httpRequest << "HTTP/1.1 200 OK\nContent-Type: "<< mimeType <<"\nContent-Length: " << n << "\n\n";
+
+    // //--- Send the HTTP request
+    // send(nSocket, httpRequest.str().c_str(), httpRequest.str().size(), 0);
+    // //--- Send the CGI output
+    // send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
+
+    Response::headerAndBody(nSocket, request, body);
 
     close(pipe_fd[0]); //--- Close read end
 }
 
 HandleCgi::~HandleCgi()
 {
+    env.clear();
 }
