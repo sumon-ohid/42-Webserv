@@ -29,6 +29,5 @@ class LocationFinder
         ~LocationFinder();
 
         bool locationMatch(Client *client, std::string, int socketFd);
-        void handleRedirection(std::string &redirectUrl, Request &request);
         bool isDirectory(const std::string &path);
 };
