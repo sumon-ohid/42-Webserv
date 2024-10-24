@@ -64,10 +64,11 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
             handleAutoIndexOrError(locationFinder ,request, client);
             return;
         }
+        file.close();
         serveStaticFile(pathToServe, request, client);
     }
     else
-    {
+    { 
         pathToServe = locationFinder._pathToServe;
         serveStaticFile(pathToServe, request, client);
     } 

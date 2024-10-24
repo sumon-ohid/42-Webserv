@@ -1,13 +1,11 @@
 #include "../includes/LocationFinder.hpp"
 #include "../includes/Server.hpp"
-#include "../includes/Response.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <string>
 #include <vector>
 #include <sys/stat.h>
-#include <sstream>
 
 LocationFinder::LocationFinder()
 {
@@ -45,19 +43,6 @@ bool LocationFinder::isDirectory(const std::string &path)
     return false;
 }
 
-void LocationFinder::handleRedirection(std::string &redirectUrl, Request &request)
-{
-    std::cout << BOLD YELLOW << "Redirecting to: " << redirectUrl << RESET << std::endl;
-    std::ostringstream redirectHeader;
-    redirectHeader << "HTTP/1.1 301 Moved permanently\r\n"
-                   << "Location: " << redirectUrl << "\r\n"
-                   << "Content-Length: 0\r\n"
-                   << "Connection: close\r\n\r\n";
-    std::string response = redirectHeader.str();
-    Response::headerAndBody(socketFd, request, response);
-    return;
-}
-
 //-- RequestPath should be the location of the request.
 //-- If the request path matches with the location path,
 //-- then get the root and index and other values.
@@ -66,20 +51,16 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
 {
     std::string requestPath;
     socketFd = _socketFd;
-
-    if (path[path.length() - 1] == '/' && !isDirectory(path)) {
-        size_t pos = path.find_last_not_of('/');
-        requestPath = path.substr(0, pos + 1);
-    }
-    else if (isDirectory(path) && path != "/" && path[path.length() - 1] != '/')
+ 
+    //-- Remove the last slash from the path to avoid mismatch.
+    if (path != "/" && path[path.size() - 1] == '/')
     {
-        _redirect = path + "/";
-        handleRedirection(_redirect, client->_request);
-        return true;
+        size_t pos = path.find_last_not_of("/");
+        path = path.substr(0, pos + 1);
     }
-    else  
-        requestPath = path;
+    requestPath = path;
 
+    //std::cout << BOLD BLUE << "PATH " << path << RESET << std::endl;
     //std::cout << BOLD BLUE << "REQUEST PATH " << requestPath << RESET << std::endl;
 
     locationsVector = client->_server->_serverConfig.getLocations();
