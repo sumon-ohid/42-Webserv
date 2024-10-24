@@ -6,6 +6,7 @@
 #include "../includes/Server.hpp"
 #include "../includes/ServerConfig.hpp"
 #include "../includes/Helper.hpp"
+#include "../includes/PostMethod.hpp"
 
 #include <cstddef>
 #include <string>
@@ -14,6 +15,9 @@
 HandleCgi::HandleCgi()
 {
     locationPath = "";
+    method = "";
+    postBody = "";
+    fileName = "";
 }
 
 //-- Constructor to handle the CGI request
@@ -25,7 +29,6 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     //--NOTE: cgiConf should have root in the beginning
     //-- parse location config to get the root here
 
-    (void)request;
     std::string rootFolder;
     std::string root;
     std::string index;
@@ -57,6 +60,22 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
             }
             locationPath = rootFolder + root + index;
         }
+    }
+
+    //-- Handle POST method for CGI
+    method = request.getMethodName();
+    postBody = request._requestBody;
+    fileName = request._postFilename;
+
+    if (method == "POST")
+    {
+        locationPath = rootFolder + root;
+        PostMethod postMethod;
+
+        postMethod.setLocationPath(locationPath);
+        postMethod.setRoot("");
+        postMethod.executeMethod(nSocket, &client, request);
+        return;
     }
 
     if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == root + index)

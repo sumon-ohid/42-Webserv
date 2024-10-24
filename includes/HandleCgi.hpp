@@ -16,6 +16,9 @@ class HandleCgi : public ServerConfig
 {
     private:
         std::string locationPath;
+        std::string method;
+        std::string postBody;
+        std::string fileName;
 
     public:
         HandleCgi();
