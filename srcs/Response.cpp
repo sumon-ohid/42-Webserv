@@ -94,7 +94,8 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 	} else {
 		statusMessage = it->second;
 	}
-	request.setMethodMimeType("test.html");
+	if (request.GetMethodClass())
+		request.setMethodMimeType("test.html");
 
 	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
 	ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";

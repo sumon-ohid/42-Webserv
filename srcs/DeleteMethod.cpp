@@ -4,32 +4,28 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <cstdio>
 
-
-enum	ObjectType 
-{
-	FILE_TYPE,
-	DIRECTORY,
-	OTHER
-};
-
-DeleteMethod::DeleteMethod() {}
-DeleteMethod::DeleteMethod(const DeleteMethod& orig) {}
+DeleteMethod::DeleteMethod() {setName("DELETE");}
+DeleteMethod::DeleteMethod(const DeleteMethod& orig) : Method(orig), _pathToDelete(orig._pathToDelete) {}
 DeleteMethod::~DeleteMethod() {}
 DeleteMethod&	DeleteMethod::operator=(const DeleteMethod &rhs) 
 {
 	if (this != &rhs)
 	{
-
+		Method::operator=(rhs);
+		_pathToDelete = rhs._pathToDelete;
 	}
 	return (*this);
 }
 
 void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 {
-	_pathToDelete = root + request.getMethodPath();
-	deleteObject()
-
+	// _pathToDelete = root + request.getMethodPath();
+	deleteObject();
+	(void)socketFd;
+	(void)client;
+	(void)request;
 }
 
 void	DeleteMethod::deleteObject()
