@@ -4,8 +4,8 @@
 #include "../includes/HandleCgi.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/ServerConfig.hpp"
-
 #include "../includes/PostMethod.hpp"
+#include "../includes/LocationFinder.hpp"
 
 #include <iostream>
 #include <cstddef>
@@ -31,7 +31,6 @@ GetMethod&	GetMethod::operator=(const GetMethod& other) {
 
 GetMethod::~GetMethod() {}
 
-//-- To hold previous location path.
 std::string holdLocationPath;
 std::string matchLocationPath;
 
@@ -42,44 +41,33 @@ std::string matchLocationPath;
 void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 {
     socketFd = _socketFd;
-    std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
-    std::string requestPath = request.getMethodPath();
-    
-    std::string locationPath;
-    std::string root;
-    std::string index;
-    std::string tryFiles;
+    std::string pathToServe;
     bool locationMatched = false;
-    bool cgiFound = false;
-    bool autoIndex = false;
+    std::string requestPath = request.getMethodPath();
 
-    locationMatched = findMatchingLocation(locationConfig, requestPath, locationPath, root, index, cgiFound, autoIndex, tryFiles);
+    LocationFinder locationFinder;
+    locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
     if (locationMatched)
     {
-        holdLocationPath = root;
-        matchLocationPath = requestPath;
-        if (cgiFound)
+        if (locationFinder._redirectFound)
+        {
+            handleRedirection(locationFinder._redirect);
+            return;
+        }
+        if (locationFinder._cgiFound)
         {
             executeCgiScript(requestPath, client, request);
             return;
         }
-        else
-            handleRequest(locationPath, root, requestPath, index, autoIndex, tryFiles, request, client);
+        holdLocationPath = locationFinder._locationPath;
+        pathToServe = locationFinder._pathToServe;
+        serveStaticFile(pathToServe, request, client);
     }
     else
     {
-        std::string path = holdLocationPath + matchLocationPath + request.getMethodPath();
-        serveStaticFile(path, request, client);
-    }
-    if (request.getMethodName() == "POST")
-    {
-        std::cout << "Request Path: " << requestPath << std::endl;
-        PostMethod post;
-        post.setLocationPath(matchLocationPath);
-        post.setRoot(root);
-        post.executeMethod(_socketFd, client, request);
-        return;
-    }
+        pathToServe = locationFinder._pathToServe;
+        serveStaticFile(pathToServe, request, client);
+    } 
 }
 
 void GetMethod::handleAutoIndexOrError( std::string& root,  std::string& requestPath, bool autoIndex, Request& request, Client* client)
@@ -163,53 +151,59 @@ void GetMethod::handleRequest(std::string& locationPath,  std::string& root,  st
     }
 }
 
-bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
-     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex, std::string &tryFiles)
-{
-    for (size_t i = 0; i < locationConfig.size(); i++)
-    {
-        std::string tempPath = locationConfig[i].getPath();
-        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
-        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
+//***** MOVED TO A CLASS LocationFinder *****
 
-        if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
-        {
-            if (requestPath.find("cgi-bin") != std::string::npos) {
-                cgiFound = true;
-                return true;
-            }
+// bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
+//      std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex, std::string &tryFiles)
+// {
+//     for (size_t i = 0; i < locationConfig.size(); i++)
+//     {
+//         std::string tempPath = locationConfig[i].getPath();
+//         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
+//         tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
 
-            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
-            std::multimap<std::string, std::string>::iterator it;
+//         std::cout << BOLD BLUE << "tempPath: " << tempPath << RESET << std::endl;
+//         std::cout << BOLD BLUE << "RequestPath: " << requestPath << RESET << std::endl;
 
-            for (it = locationMap.begin(); it != locationMap.end(); it++)
-            {
-                if (it->first == "root")
-                    root = it->second;
-                if (it->first == "index")
-                    index = it->second;
-                if (it->first == "return") {
-                    handleRedirection(it->second);
-                    return false;
-                }
-                if (it->first == "autoindex") {
-                    if (it->second == "on")
-                        autoIndex = true;
-                }
-                if (it->first == "try_files")
-                    tryFiles = it->second;
-            }
-            if (requestPath == "/")
-                locationPath = root + index;
-            else if (autoIndex)
-                locationPath = root + requestPath + index;
-            else
-                locationPath = root + requestPath;
-            return true;
-        }
-    }
-    return false;
-}
+
+//         if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
+//         {
+//             if (requestPath.find("cgi-bin") != std::string::npos) {
+//                 cgiFound = true;
+//                 return true;
+//             }
+
+//             std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
+//             std::multimap<std::string, std::string>::iterator it;
+
+//             for (it = locationMap.begin(); it != locationMap.end(); it++)
+//             {
+//                 if (it->first == "root")
+//                     root = it->second;
+//                 if (it->first == "index")
+//                     index = it->second;
+//                 if (it->first == "return") {
+//                     handleRedirection(it->second);
+//                     return false;
+//                 }
+//                 if (it->first == "autoindex") {
+//                     if (it->second == "on")
+//                         autoIndex = true;
+//                 }
+//                 if (it->first == "try_files")
+//                     tryFiles = it->second;
+//             }
+//             if (requestPath == "/")
+//                 locationPath = root + index;
+//             else if (autoIndex)
+//                 locationPath = root + requestPath + index;
+//             else
+//                 locationPath = root + requestPath;
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
 {
@@ -247,7 +241,7 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
 {
     std::cout << BOLD YELLOW << "Redirecting to: " << redirectUrl << RESET << std::endl;
     std::ostringstream redirectHeader;
-    redirectHeader << "HTTP/1.1 301 Moved Permanently\r\n"
+    redirectHeader << "HTTP/1.1 307 Temporary Redirection\r\n"
                    << "Location: " << redirectUrl << "\r\n"
                    << "Content-Length: 0\r\n"
                    << "Connection: close\r\n\r\n";

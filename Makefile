@@ -24,6 +24,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				ServerManager.cpp \
 				ErrorHandle.cpp \
 				PostMethod.cpp \
+				LocationFinder.cpp \
 				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)
