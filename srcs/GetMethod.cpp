@@ -4,14 +4,12 @@
 #include "../includes/HandleCgi.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/ServerConfig.hpp"
-
-#include "../includes/PostMethod.hpp"
+#include "../includes/LocationFinder.hpp"
 
 #include <iostream>
 #include <cstddef>
 #include <fstream>
 #include <sstream>
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -31,7 +29,6 @@ GetMethod&	GetMethod::operator=(const GetMethod& other) {
 
 GetMethod::~GetMethod() {}
 
-//-- To hold previous location path.
 std::string holdLocationPath;
 std::string matchLocationPath;
 
@@ -42,173 +39,48 @@ std::string matchLocationPath;
 void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 {
     socketFd = _socketFd;
-    std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
-    std::string requestPath = request.getMethodPath();
-    
-    std::string locationPath;
-    std::string root;
-    std::string index;
-    std::string tryFiles;
+    std::string pathToServe;
     bool locationMatched = false;
-    bool cgiFound = false;
-    bool autoIndex = false;
+    std::string requestPath = request.getMethodPath();
 
-    locationMatched = findMatchingLocation(locationConfig, requestPath, locationPath, root, index, cgiFound, autoIndex, tryFiles);
+    LocationFinder locationFinder;
+    locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
     if (locationMatched)
     {
-        holdLocationPath = root;
-        matchLocationPath = requestPath;
-        if (cgiFound)
+        if (locationFinder._redirectFound)
+        {
+            handleRedirection(locationFinder._redirect);
+            return;
+        }
+        if (locationFinder._cgiFound)
         {
             executeCgiScript(requestPath, client, request);
             return;
         }
-        else
-            handleRequest(locationPath, root, requestPath, index, autoIndex, tryFiles, request, client);
-    }
-    else
-    {
-        std::string path = holdLocationPath + matchLocationPath + request.getMethodPath();
-        serveStaticFile(path, request, client);
-    }
-    if (request.getMethodName() == "POST")
-    {
-        std::cout << "Request Path: " << requestPath << std::endl;
-        PostMethod post;
-        post.setLocationPath(matchLocationPath);
-        post.setRoot(root);
-        post.executeMethod(_socketFd, client, request);
-        return;
-    }
-}
-
-void GetMethod::handleAutoIndexOrError( std::string& root,  std::string& requestPath, bool autoIndex, Request& request, Client* client)
-{
-    std::string fullPath = root + requestPath;
-    if (autoIndex)
-        handleAutoIndex(fullPath, request, client);
-    else
-    {
-        //-- This is unnecessary. 
-        std::string locationPath = "./conf/webpage/home.html";
-        serveStaticFile(locationPath, request, client);
-    }
-}
-
-void GetMethod::handleTryFiles( std::string& tryFiles,  std::string& root,  std::string& requestPath, Request& request, Client* client)
-{
-    (void)root;
-    (void)requestPath;
-
-    if (!tryFiles.empty())
-    {
-        size_t found = tryFiles.find("./");
-        if (found == std::string::npos)
+        pathToServe = locationFinder._pathToServe;
+        std::ifstream file(pathToServe.c_str());
+        if (!file.is_open())
         {
-            Response::error(socketFd, request, "404", client);
+            handleAutoIndexOrError(locationFinder ,request, client);
             return;
         }
-        std::string tryFilesPath = tryFiles.substr(found);
-        std::ifstream tryFilesFile(tryFilesPath.c_str());
-        if (tryFilesFile.is_open())
-            serveStaticFile(tryFilesPath, request, client);
-        else
-            Response::error(socketFd, request, "404", client);
-    }
-}
-
-void GetMethod::handleFileRequest( std::string& locationPath,  std::string& root,  std::string& requestPath,  std::string& index, Request& request, Client* client)
-{
-    (void)locationPath;
-    if (requestPath.find(".css") != std::string::npos || requestPath.find(".js") != std::string::npos ||
-        requestPath.find(".html") != std::string::npos || requestPath.find(".jpg") != std::string::npos ||
-        requestPath.find(".svg") != std::string::npos || requestPath.find(".png") != std::string::npos)
-    {
-        std::string path = root + requestPath;
-        serveStaticFile(path, request, client);
-    }
-    else
-    {
-        std::string path = root + requestPath + "/" + index;
-        serveStaticFile(path, request, client);
-    }
-}
-
-void GetMethod::handleDirectoryRequest(std::string& locationPath,  std::string& root,  std::string& requestPath,  std::string& index, bool autoIndex,  std::string& tryFiles, Request& request, Client* client)
-{
-    std::ifstream file(locationPath.c_str());
-    if (!file.is_open())
-        handleAutoIndexOrError(root, requestPath, autoIndex, request, client);
-    else
-    {
-        if (!tryFiles.empty() && (index.empty() || root.empty()))
-            handleTryFiles(tryFiles, root, requestPath, request, client);
-        else
-            serveStaticFile(locationPath, request, client);
-    
         file.close();
+        serveStaticFile(pathToServe, request, client);
     }
-}
-
-void GetMethod::handleRequest(std::string& locationPath,  std::string& root,  std::string& requestPath,  std::string& index, bool autoIndex,  std::string& tryFiles, Request& request, Client* client)
-{
-    if (requestPath[requestPath.length() - 1] == '/')
-        handleDirectoryRequest(locationPath, root, requestPath, index, autoIndex, tryFiles, request, client);
-    else if (locationPath.find(".html") != std::string::npos)
-        handleFileRequest(locationPath, root, requestPath, index, request, client);
     else
-    {
-        std::string path = root + requestPath + index;
-        serveStaticFile(path, request, client);
-    }
+    { 
+        pathToServe = locationFinder._pathToServe;
+        serveStaticFile(pathToServe, request, client);
+    } 
 }
 
-bool GetMethod::findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
-     std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex, std::string &tryFiles)
+void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& request, Client* client)
 {
-    for (size_t i = 0; i < locationConfig.size(); i++)
-    {
-        std::string tempPath = locationConfig[i].getPath();
-        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
-        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
-
-        if (requestPath == tempPath || (requestPath.find(tempPath) == 0 && requestPath[tempPath.length()] == '/'))
-        {
-            if (requestPath.find("cgi-bin") != std::string::npos) {
-                cgiFound = true;
-                return true;
-            }
-
-            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
-            std::multimap<std::string, std::string>::iterator it;
-
-            for (it = locationMap.begin(); it != locationMap.end(); it++)
-            {
-                if (it->first == "root")
-                    root = it->second;
-                if (it->first == "index")
-                    index = it->second;
-                if (it->first == "return") {
-                    handleRedirection(it->second);
-                    return false;
-                }
-                if (it->first == "autoindex") {
-                    if (it->second == "on")
-                        autoIndex = true;
-                }
-                if (it->first == "try_files")
-                    tryFiles = it->second;
-            }
-            if (requestPath == "/")
-                locationPath = root + index;
-            else if (autoIndex)
-                locationPath = root + requestPath + index;
-            else
-                locationPath = root + requestPath;
-            return true;
-        }
-    }
-    return false;
+    std::string fullPath =locationFinder._root + locationFinder._locationPath;
+    if (locationFinder._autoIndex == "on" && locationFinder.isDirectory(fullPath))
+        handleAutoIndex(fullPath, request, client);
+    else
+        Response::error(socketFd, request, "403", client);
 }
 
 void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
@@ -247,7 +119,7 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
 {
     std::cout << BOLD YELLOW << "Redirecting to: " << redirectUrl << RESET << std::endl;
     std::ostringstream redirectHeader;
-    redirectHeader << "HTTP/1.1 301 Moved Permanently\r\n"
+    redirectHeader << "HTTP/1.1 307 Temporary Redirection\r\n"
                    << "Location: " << redirectUrl << "\r\n"
                    << "Content-Length: 0\r\n"
                    << "Connection: close\r\n\r\n";
@@ -300,95 +172,3 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
 Method*	GetMethod::clone() {
 	return new GetMethod(*this);
 }
-
-
-
-// ***** SUMON *****
-// I splited this function into smaller functions to make it more readable.
-// But I keep it as backup.
-
-// void GetMethod::executeMethod(int _socketFd, Client *client, Request &request)
-// {
-//     socketFd = _socketFd;
-//     std::vector<LocationConfig> locationConfig = client->_server->_serverConfig.getLocations();
-//     std::string requestPath = request.getMethodPath();
-
-//     std::string locationPath;
-//     std::string root;
-//     std::string index;
-//     std::string tryFiles;
-//     bool locationMatched = false;
-//     bool cgiFound = false;
-//     bool autoIndex = false;
-
-//     locationMatched = findMatchingLocation(locationConfig, requestPath,
-//                         locationPath, root, index, cgiFound, autoIndex, tryFiles);
-//     if (locationMatched)
-//     {
-//         holdLocationPath = root;
-//         matchLocationPath = requestPath;
-//         if (cgiFound)
-//             executeCgiScript(requestPath, client, request);
-//         else if (requestPath[requestPath.length() - 1] == '/')
-//         {
-//             std::ifstream file(locationPath.c_str());
-//             if (!file.is_open() && autoIndex)
-//             {
-//                 std::string fullPath = root + requestPath;
-//                 handleAutoIndex(fullPath, request, client);
-//             }
-//             else if (!file.is_open() && !autoIndex)
-//             {
-//                 locationPath = "./conf/webpage/home.html";
-//                 serveStaticFile(locationPath, request, client);
-//             }
-//             else
-//             {
-//                 if (!tryFiles.empty() && (index.empty() || root.empty()))
-//                 {
-//                     size_t found = tryFiles.find("./");
-//                     if (found == std::string::npos)
-//                         Response::error(socketFd, request, "404", client); // BP: after this it still runs the next commands
-//                     std::string tryFilesPath = tryFiles.substr(found);
-//                     std::ifstream tryFilesFile(tryFilesPath.c_str());
-//                     if (tryFilesFile.is_open())
-//                     {
-//                         locationPath = tryFilesPath;
-//                         serveStaticFile(locationPath, request, client);
-//                         return;
-//                     }
-//                     else
-//                         Response::error(socketFd, request, "404", client);
-//                 }
-//                 // else
-//                 //    locationPath = root + requestPath + "/" + index;
-
-//                 serveStaticFile(locationPath, request, client);
-//             }
-//             file.close();
-//         }
-//         else if (locationPath.find(".html") != std::string::npos)
-//         {
-//             if (requestPath.find(".css") != std::string::npos || requestPath.find(".js") != std::string::npos)
-//                 locationPath = root + requestPath;
-//             else if (requestPath.find(".html") != std::string::npos)
-//                 locationPath = root + requestPath;
-//             else if (requestPath.find(".jpg") != std::string::npos || requestPath.find(".svg") != std::string::npos || requestPath.find(".png") != std::string::npos)
-//                 locationPath = root + requestPath;
-//             else
-//                 locationPath = root + requestPath + "/" + index;
-
-//             serveStaticFile(locationPath, request, client);
-//         }
-//         else
-//         {
-//             locationPath = root + requestPath + index;
-//             serveStaticFile(locationPath, request, client);
-//         }
-//     }
-//     else
-//     {
-//         std::string path = holdLocationPath + matchLocationPath + request.getMethodPath();        
-//         serveStaticFile(path, request, client);
-//     }
-// }

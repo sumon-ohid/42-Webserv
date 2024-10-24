@@ -6,12 +6,11 @@ class ServerConfig;
 
 #include "Method.hpp"
 #include "Client.hpp"
-#include "LocationConfig.hpp"
+#include "LocationFinder.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Server.hpp"
 
-#include <vector>
 #include <string>
 
 class GetMethod : public Method
@@ -26,14 +25,7 @@ class GetMethod : public Method
 		~GetMethod();
 
 		void executeMethod(int socketFd, Client *client, Request &request);
-		void handleAutoIndexOrError( std::string& root,  std::string& requestPath, bool autoIndex, Request& request, Client* client);
-		void handleTryFiles( std::string& tryFiles,  std::string& root,  std::string& requestPath, Request& request, Client* client);
-		void handleFileRequest( std::string& locationPath,  std::string& root,  std::string& requestPath,  std::string& index, Request& request, Client* client);
-		void handleDirectoryRequest(std::string& locationPath,  std::string& root,  std::string& requestPath,  std::string& index, bool autoIndex,  std::string& tryFiles, Request& request, Client* client);
-		void handleRequest( std::string& locationPath,  std::string& root,  std::string& requestPath,  std::string& index, bool autoIndex,  std::string& tryFiles, Request& request, Client* client);
-		bool findMatchingLocation(std::vector<LocationConfig> &locationConfig, std::string &requestPath,
-				std::string &locationPath, std::string &root, std::string &index, bool &cgiFound, bool &autoIndex,
-				std::string &tryFiles);	
+		void handleAutoIndexOrError(LocationFinder &locationFinder, Request& request, Client* client);
 		void handleRedirection(std::string &redirectUrl);
 		void handleAutoIndex(std::string &path, Request &request, Client *client);
 		void serveStaticFile(std::string &path, Request &request, Client *client);

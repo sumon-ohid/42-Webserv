@@ -13,6 +13,7 @@
 #include "../includes/Response.hpp"
 #include "../includes/Epoll.hpp"
 #include "../includes/Server.hpp"
+#include "../includes/PostMethod.hpp"
 
 Request::Request() {
 	this->_type = -1;
@@ -181,20 +182,33 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 		return;
 	}
 	std::size_t spacePos = strLine.find(" ", 0);
-	std::string	methodName = strLine.substr(0, spacePos);
+	std::string methodName = strLine.substr(0, spacePos);
 	if (spacePos == std::string::npos)
 		throw std::runtime_error("400");
+	
+	// Delete the previous method handler
 	delete this->_method;
-	this->_method = new GetMethod();
-	// check which method
-
+	
+	// Instantiate the appropriate method handler based on the method name
+	if (methodName == "GET")
+		this->_method = new GetMethod();
+	else if (methodName == "POST")
+		this->_method = new PostMethod();
+	// else if (methodName == "DELETE")
+	// 	this->_method = new DeleteMethod();
+	// else if (methodName == "OPTIONS")
+	// 	this->_method = new OptionMethod();
+	else
+		throw std::runtime_error("405"); //-- Method Not Allowed
+	
+	// Set the method name
 	this->_method->setName(methodName);
-
+	
 	std::size_t spacePos2 = strLine.find(" ", spacePos + 1);
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
 	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
-
+	
 	std::size_t spacePos3 = strLine.find("\r\n", spacePos2 + 1);
 	if (spacePos3 == std::string::npos)
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
