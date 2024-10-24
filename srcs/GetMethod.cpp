@@ -54,20 +54,15 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     bool autoIndex = false;
 
     locationMatched = findMatchingLocation(locationConfig, requestPath, locationPath, root, index, cgiFound, autoIndex, tryFiles);
-    if (request.getMethodName() == "POST")
-    {
-        PostMethod post;
-        post.setLocationPath(matchLocationPath);
-        post.setRoot(root);
-        post.executeMethod(_socketFd, client, request);
-        return;
-    }
     if (locationMatched)
     {
         holdLocationPath = root;
         matchLocationPath = requestPath;
         if (cgiFound)
+        {
             executeCgiScript(requestPath, client, request);
+            return;
+        }
         else
             handleRequest(locationPath, root, requestPath, index, autoIndex, tryFiles, request, client);
     }
@@ -75,6 +70,15 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     {
         std::string path = holdLocationPath + matchLocationPath + request.getMethodPath();
         serveStaticFile(path, request, client);
+    }
+    if (request.getMethodName() == "POST")
+    {
+        std::cout << "Request Path: " << requestPath << std::endl;
+        PostMethod post;
+        post.setLocationPath(matchLocationPath);
+        post.setRoot(root);
+        post.executeMethod(_socketFd, client, request);
+        return;
     }
 }
 

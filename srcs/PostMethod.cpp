@@ -43,7 +43,6 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
 
 void PostMethod::handlePostRequest(Request &request, Client *client)
 {
-    (void) client;
     std::string fileToCreate = saveDir + fileName;
     std::ofstream file;
 
@@ -55,7 +54,7 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     }
     else
     {
-        std::cerr << "Error: Could not open file for writing" << std::endl;
+        std::cerr << BOLD RED << "Error: Could not open file for writing" << RESET << std::endl;
         Response::error(socketFd, request, "500", client);
         return;
     }

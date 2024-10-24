@@ -53,6 +53,14 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".css"] = "text/css";
 	mimes[".html"] = "text/html";
 	mimes[".js"] = "text/javascript";
+	mimes[".jpg"] = "image/jpeg";
+	mimes[".jpeg"] = "image/jpeg";
+	mimes[".png"] = "image/png";
+	mimes[".gif"] = "image/gif";
+	mimes[".pdf"] = "application/pdf";
+	mimes["mp4"] = "video/mp4";
+	mimes["xml"] = "application/xml";
+	mimes["json"] = "application/json";
 	return mimes;
 }
 
