@@ -24,10 +24,11 @@ class LocationFinder
         bool _allowedMethodFound;
         bool _redirectFound;
 
-		LocationFinder();
-		LocationFinder& operator=(const LocationFinder& other);
-		~LocationFinder();
+        LocationFinder();
+        LocationFinder& operator=(const LocationFinder& other);
+        ~LocationFinder();
 
         bool locationMatch(Client *client, std::string, int socketFd);
-        void handleRedirection(std::string &redirectUrl);
+        void handleRedirection(std::string &redirectUrl, Request &request);
+        bool isDirectory(const std::string &path);
 };

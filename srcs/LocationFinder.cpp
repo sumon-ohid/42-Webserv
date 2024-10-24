@@ -1,5 +1,6 @@
 #include "../includes/LocationFinder.hpp"
 #include "../includes/Server.hpp"
+#include "../includes/Response.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -22,7 +23,7 @@ LocationFinder::LocationFinder()
     _autoIndexFound = false;
     _allowedMethodFound = false;
     _redirectFound = false;
-
+    
     locationsVector.clear();
 }
 
@@ -36,7 +37,7 @@ LocationFinder&	LocationFinder::operator=(const LocationFinder& other)
 LocationFinder::~LocationFinder() {}
 
 //-- Check if the path is a directory.
-static bool isDirectory(const std::string &path)
+bool LocationFinder::isDirectory(const std::string &path)
 {
     struct stat pathStat;
     if (stat(path.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode))
@@ -44,7 +45,7 @@ static bool isDirectory(const std::string &path)
     return false;
 }
 
-void LocationFinder::handleRedirection(std::string &redirectUrl)
+void LocationFinder::handleRedirection(std::string &redirectUrl, Request &request)
 {
     std::cout << BOLD YELLOW << "Redirecting to: " << redirectUrl << RESET << std::endl;
     std::ostringstream redirectHeader;
@@ -53,13 +54,8 @@ void LocationFinder::handleRedirection(std::string &redirectUrl)
                    << "Content-Length: 0\r\n"
                    << "Connection: close\r\n\r\n";
     std::string response = redirectHeader.str();
-    ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
-    if (bytes_written == -1)
-    {
-        throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
-    }
-    else
-        std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
+    Response::headerAndBody(socketFd, request, response);
+    return;
 }
 
 //-- RequestPath should be the location of the request.
@@ -75,10 +71,10 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         size_t pos = path.find_last_not_of('/');
         requestPath = path.substr(0, pos + 1);
     }
-    else if (isDirectory(path))
+    else if (isDirectory(path) && path != "/" && path[path.length() - 1] != '/')
     {
         _redirect = path + "/";
-        handleRedirection(_redirect);
+        handleRedirection(_redirect, client->_request);
         return true;
     }
     else  
@@ -128,7 +124,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             _pathToServe = _root + tempPath + "/" + _index;
             _locationPath = tempPath;
 
-            std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
+            //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
             
             return true;
         }
