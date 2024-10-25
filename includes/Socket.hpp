@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <iostream>
 
-#define	SOCKET_BUFFER_SIZE		64000 // 64 kb
+#define	SOCKET_BUFFER_SIZE		32000 // 64 kb
 #define SOCKET_MAX_LISTEN		1000
 
 class Socket
@@ -17,7 +17,7 @@ private:
 	int				_port;
 	socklen_t		_addrlen;
 	sockaddr_in		_address;
-	
+
 	// ------------- Socket Setup -------------
 	/**
 	* Creates a socket file descriptor for TCP communication.
