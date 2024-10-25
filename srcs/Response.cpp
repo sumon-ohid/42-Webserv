@@ -3,7 +3,6 @@
 #include <ostream>
 #include <iostream>
 #include <sstream>
-#include <ctime>
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -55,7 +54,7 @@ static std::string createHeaderString(Request& request, std::string& body, std::
 	ss << "Content-Type: " << request.getMethodMimeType() << "\n";
 	ss << "Content-Length: " << (body.size() + 1) << "\n"; // + 1 plus additional \n at the end?
 	ss << "Connection: " << "connectionClosedOrNot" << "\n";
-
+	
 	return ss.str();
 }
 
