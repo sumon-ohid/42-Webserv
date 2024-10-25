@@ -68,13 +68,25 @@ void	DeleteMethod::checkStatError()
 	switch (errno)
 	{
 		case ENOENT:
+		{
 			_statusCode = 404;
+			break;
+		}
 		case EACCES:
+		{
 			_statusCode = 403;
+			break;
+		}
 		case ENOTEMPTY:
+		{
 			_statusCode = 409;
+			break;
+		}
 		default:
+		{
 			_statusCode = 500;
+			break;
+		}
 	}
 }
 
