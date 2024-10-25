@@ -1,10 +1,13 @@
 #include "../includes/DeleteMethod.hpp"
 #include "../includes/Request.hpp"
+#include "../includes/LocationFinder.hpp"
+#include "../includes/Response.hpp"
+
 #include <cerrno>
-#include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <cstdio>
+#include <iostream>
 
 DeleteMethod::DeleteMethod() {setName("DELETE");}
 DeleteMethod::DeleteMethod(const DeleteMethod& orig) : Method(orig), _pathToDelete(orig._pathToDelete) {}
@@ -21,11 +24,19 @@ DeleteMethod&	DeleteMethod::operator=(const DeleteMethod &rhs)
 
 void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 {
-	// _pathToDelete = root + request.getMethodPath();
+	LocationFinder locationFinder;
+	locationFinder.locationMatch(client, request.getMethodPath() ,socketFd);
+	std::string root = locationFinder._root;
+	size_t pos = root.find_last_of("/");
+	root = root.substr(0, pos);
+
+	_pathToDelete = root + request.getMethodPath();
+
 	deleteObject();
-	(void)socketFd;
-	(void)client;
-	(void)request;
+
+	//-- headerAndBody is always 200, but we need for different codes as well.
+	std::string body = "<html><body><h1>File Deleted Successfully!</h1></body></html>";
+	Response::headerAndBody(socketFd, request, body);
 }
 
 void	DeleteMethod::deleteObject()
@@ -35,18 +46,20 @@ void	DeleteMethod::deleteObject()
 		checkStatError();
 	if (S_ISREG(statInfo.st_mode) || S_ISLNK(statInfo.st_mode))
 	{
-		if (remove(_pathToDelete.c_str()) == -1)
+		if (std::remove(_pathToDelete.c_str()) == -1)
 			checkStatError();
-		throw std::runtime_error("204");
+		std::cout << BOLD RED << "FILE REMOVED : " << _pathToDelete << RESET << " 📁🗑️" << std::endl;
+		_statusCode = 204;
 	}
 	else if (S_ISDIR(statInfo.st_mode))
 	{
-		if (rmdir(_pathToDelete.c_str()) == -1)
+		if (std::remove(_pathToDelete.c_str()) == -1)
 			checkStatError();
-		throw std::runtime_error("204");
+		std::cout << BOLD RED << "FILE REMOVED : " << _pathToDelete << RESET << " 📁🗑️" << std::endl;
+		_statusCode = 204;
 	}
 	else
-		throw std::runtime_error("415");
+		_statusCode = 415;
 
 }
 
@@ -55,13 +68,13 @@ void	DeleteMethod::checkStatError()
 	switch (errno)
 	{
 		case ENOENT:
-			throw std::runtime_error("404");
+			_statusCode = 404;
 		case EACCES:
-			throw std::runtime_error("403");
+			_statusCode = 403;
 		case ENOTEMPTY:
-			throw std::runtime_error("409");
+			_statusCode = 409;
 		default:
-			throw std::runtime_error("500");
+			_statusCode = 500;
 	}
 }
 
