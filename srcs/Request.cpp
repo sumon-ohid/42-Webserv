@@ -389,10 +389,3 @@ void	Request::requestReset() {
 	this->_method = NULL;
 	this->_headerMap.clear();
 }
-
-Method*	Request::GetMethodClass() const
-{
-	if (_method)
-		return (_method);
-	return (NULL);
-}
