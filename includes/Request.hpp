@@ -24,8 +24,8 @@ class Request {
 		std::map<std::string, std::string> _headerMap;
 		std::size_t	_contentLength;
 		std::size_t	_contentRead;
-
-		void	storeHeadersInMap(const std::string& oneLine);
+		void	storeOneHeaderInMap(const std::string& oneLine);
+		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
 
 	public:
 		std::string	_requestBody;
@@ -49,12 +49,12 @@ class Request {
 		bool		getReadingFinished() const;
 		std::map<std::string, std::string> getHeaderMap() const;
 
-		void	checkSentAtOnce(const std::string& strLine, std::size_t spacePos1, std::size_t spacePos2);
+		void	checkSentAtOnce(const std::string& strLine, std::size_t pos2);
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t pos, std::size_t endPos);
 		void	extractHttpMethod(std::string&);
 		void	createHttpMethod(const std::string&);
-		void	checkFirstLine(std::vector<char>& line);
+		void	checkFirstLine(std::string& strLine, std::size_t& endPos);
 
 		void	checkLine(std::vector<char>& line);
 		void	checkHost(ServerConfig& config) const;
