@@ -196,7 +196,7 @@ void	Request::checkSentAtOnce(const std::string& strLine, std::size_t pos1, std:
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
-	this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
+	// this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
 	checkTelnetInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);

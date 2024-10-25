@@ -101,11 +101,10 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 	} else {
 		statusMessage = it->second;
 	}
-	request.setMethodMimeType("test.html");
 
 	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
 	ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";
-	ss << "<hr><center>" << "WEBSERV OR SERVERNAME?" << "</center>\n</body>\n</html>\n";
+	ss << "<hr><center>" << "webserv 1.0" << "</center>\n</body>\n</html>\n";
 	std::string body = ss.str();
 	std::string totalString = createHeaderAndBodyString(request, body, statusCode);
 	ssize_t writeReturn = write(socketFd, totalString.c_str(), totalString.size());
@@ -129,6 +128,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 	signal(SIGPIPE, SIG_IGN);
 
 	std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
+	std::cout << "test: " << statusCode << std::endl;
 	if (errorPages.find(statusCode) != errorPages.end() || errorPages.empty())
 	{
 		ssize_t writeReturn = 0;
@@ -136,8 +136,8 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 		{
 			ErrorHandle errorHandle;
 			errorHandle.prepareErrorPage(client, statusCode);
-			request.setMethodMimeType(errorHandle.getNewErrorFile());
-
+			if (request.hasMethod())
+				request.setMethodMimeType(errorHandle.getNewErrorFile());
 			//-- this will create a new error file, error code will be the file name
 			//-- this will modify the error page replacing the status code, message and page title
 			//-- this will return the modified error page as a string
