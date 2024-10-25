@@ -5,7 +5,8 @@ class DeleteMethod : public Method
 {
 private:
 	std::string	_pathToDelete;
-	
+	size_t _statusCode;
+
 public:
 	DeleteMethod(void);
 	DeleteMethod(const DeleteMethod& other);

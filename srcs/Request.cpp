@@ -245,8 +245,6 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 
 	// this->_method->setName(methodName);
 
-	std::cout << _method->getName() << std::endl;
-
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
