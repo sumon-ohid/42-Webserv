@@ -17,23 +17,31 @@
 #include "../includes/DeleteMethod.hpp"
 
 Request::Request() {
-	this->_type = -1;
-	this->_firstLineChecked = false;
-	this->_readingFinished = false;
-	this->_method = NULL;
-	this->_response = new Response();
+	_type = -1;
+	_firstLineChecked = false;
+	_headerChecked = false;
+	_readingFinished = false;
+	_isChunked = false;
+	_method = NULL;
+	_response = new Response();
+	_contentLength = 0;
+	_contentRead = 0;
 }
 
 Request::Request(const Request& other) {
-	_firstLineChecked = other._firstLineChecked;
-	_readingFinished = other._readingFinished;
 	_type = other._type;
+	_firstLineChecked = other._firstLineChecked;
+	_headerChecked = other._headerChecked;
+	_readingFinished = other._readingFinished;
+	_isChunked = other._isChunked;
 	if (other._method)
 		_method = other._method->clone();
 	else
 	 	_method = NULL;
-	this->_response = other._response->clone();
+	_response = other._response->clone();
 	_headerMap = other._headerMap;
+	_contentLength = other._contentLength;
+	_contentRead = other._contentRead;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -41,7 +49,9 @@ Request&	Request::operator=(const Request& other) {
 		return *this;
 
 	_firstLineChecked = other._firstLineChecked;
+	_headerChecked = other._headerChecked;
 	_readingFinished = other._readingFinished;
+	_isChunked = other._isChunked;
 	_type = other._type;
 	delete _method;
 	_method = NULL;
@@ -50,21 +60,33 @@ Request&	Request::operator=(const Request& other) {
 	delete _response;
 	_response = other._response->clone();
 	_headerMap = other._headerMap;
+	_contentLength = other._contentLength;
+	_contentRead = other._contentRead;
 	return *this;
 }
 
 bool		Request::operator==(const Request& other) const
 {
 	return (_firstLineChecked == other._firstLineChecked &&
+			_headerChecked == other._headerChecked &&
 			_readingFinished == other._readingFinished &&
+			_isChunked == other._isChunked &&
 			_type == other._type &&
 			_method == other._method &&
-			_headerMap == other._headerMap);
+			_headerMap == other._headerMap &&
+			_contentLength == other._contentLength &&
+			_contentRead == other._contentRead);
 }
 
 Request::~Request() {
 	delete this->_method;
 	delete this->_response;
+}
+
+bool	Request::hasMethod() const {
+	if (_method)
+		return true;
+	return false;
 }
 
 std::string Request::getMethodName() const {
@@ -168,10 +190,11 @@ void	Request::checkSentAtOnce(const std::string& strLine, std::size_t pos1, std:
 			pos2 = pos;
 			pos = strLine.find("\r\n", pos2 + 1);
 		}
+
 		if (this->_method->getName() == "POST") {
 			storeRequestBody(strLine, pos, endPos);
 		}
-		_readingFinished = true;
+		// _readingFinished = true;
 }
 
 void	Request::extractHttpMethod(std::string& requestLine)
@@ -204,7 +227,7 @@ void Request::createHttpMethod(const std::string& method) {
 }
 
 void	Request::checkFirstLine(std::vector<char>& line) {
-	this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
+	// this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
 	checkTelnetInterruption(line);
 	std::string strLine(line.begin(), line.end());
 	checkLineLastChars(strLine);
@@ -290,10 +313,17 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	buffer.resize(count);
 	// if (_buffer.size() == 5)
 	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
-	if(request.getFirstLineChecked()) {
+	if(!request.getFirstLineChecked()) {
+		checkFirstLine(buffer);
+	}
+	if (request.getFirstLineChecked() && !request._headerChecked) {
+		// storeHeadersInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
+	}
+	if (request._firstLineChecked && request._headerChecked) {
 		request.checkLine(buffer);
-	} else {
-		request.checkFirstLine(buffer);
+		// if (this->_method->getName() == "POST") {
+		// 	storeRequestBody(strLine, pos, endPos);
+		// }
 	}
 }
 
@@ -338,12 +368,12 @@ int	Request::clientRequest(Client* client)
 			Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 		}
 
-		std::cout << "-------------------------------------" << std::endl;
 	}
 	(void) count;
 	writeFlag = false;
 	// std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
 	std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
+	std::cout << "-------------------------------------" << std::endl;
 	client->_request.requestReset();
 	return (0);
 }
@@ -356,11 +386,4 @@ void	Request::requestReset() {
 	delete this->_method;
 	this->_method = NULL;
 	this->_headerMap.clear();
-}
-
-Method*	Request::GetMethodClass() const
-{
-	if (_method)
-		return (_method);
-	return (NULL);
 }

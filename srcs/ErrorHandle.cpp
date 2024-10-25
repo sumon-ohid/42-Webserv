@@ -67,7 +67,7 @@ std::string ErrorHandle::modifyErrorPage()
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
 {
     std::string errorPage;
-	
+
     std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
     if (errorPages.empty())
         errorPage = client->_server->_serverConfig.getErrorPage();
