@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+#include <dirent.h>
 
 LocationFinder::LocationFinder()
 {
@@ -16,6 +17,7 @@ LocationFinder::LocationFinder()
     _allowed_methods = "";
     _pathToServe = "";
     _locationPath = "";
+    _defaultRoot = "./www";
 
     _cgiFound = false;
     _autoIndexFound = false;
@@ -41,6 +43,31 @@ bool LocationFinder::isDirectory(const std::string &path)
     if (stat(path.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode))
         return true;
     return false;
+}
+
+void LocationFinder::searchIndexHtml(const std::string &directory, std::string &foundPaths)
+{
+    DIR* dir = opendir(directory.c_str());
+    if (dir == NULL)
+    {
+        std::cerr << "Failed to open directory: " << directory << std::endl;
+        return;
+    }
+
+    struct dirent* ent;
+    while ((ent = readdir(dir)) != NULL)
+    {
+        if (std::string(ent->d_name) == "index.html")
+        {
+            std::string path = directory + "/" + ent->d_name;
+            struct stat st;
+            if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode))
+                foundPaths = path;
+            else if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+                searchIndexHtml(path, foundPaths);
+        }
+    }
+    closedir(dir);
 }
 
 //-- RequestPath should be the location of the request.
@@ -75,6 +102,27 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             std::multimap<std::string, std::string> locationMap = locationsVector[i].getLocationMap();
             std::multimap<std::string, std::string>::iterator it;
             
+            //-- IF location has no Index or Root, It will search for index,html
+            //-- In the current directory, if inde.html is a dir
+            //-- It will open it and look for index.html file.
+            if (locationMap.find("root") == locationMap.end())
+            {
+                std::string path = _defaultRoot + tempPath;
+                searchIndexHtml(path, _pathToServe);
+                //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
+                return true;
+            }
+
+            if (locationMap.find("index") == locationMap.end())
+            {
+                if (locationMap.find("root") != locationMap.end())
+                    _defaultRoot = locationsVector[0].getLocationMap().find("root")->second;
+                std::string path = _defaultRoot + tempPath;
+                searchIndexHtml(path, _pathToServe);
+                //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
+                return true;
+            }            
+
             if (requestPath.find("cgi-bin") != std::string::npos) {
                 _cgiFound = true;
                 _root = locationMap.find("root")->second;
