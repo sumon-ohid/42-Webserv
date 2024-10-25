@@ -14,6 +14,7 @@
 #include "../includes/Epoll.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/PostMethod.hpp"
+#include "../includes/DeleteMethod.hpp"
 
 Request::Request() {
 	this->_type = -1;
@@ -173,6 +174,35 @@ void	Request::checkSentAtOnce(const std::string& strLine, std::size_t pos1, std:
 		_readingFinished = true;
 }
 
+void	Request::extractHttpMethod(std::string& requestLine)
+{
+	std::string	methodContainer = requestLine.substr(0, 8);
+	size_t endPos = methodContainer.find_first_of(" ");
+	if (endPos == std::string::npos)
+		throw std::runtime_error("400");
+	std::string method = requestLine.substr(0, endPos);
+	requestLine.erase(0, endPos + 1);
+	createHttpMethod(method);
+}
+
+void Request::createHttpMethod(const std::string& method) {
+	// _bufferSize = 4096; //could be set at init already
+	if (method == "GET")
+		_method = new GetMethod();
+	else if (method == "POST")
+	{
+		// _bufferSize = 8192;
+		_method = new PostMethod();
+	}
+	// else if (method == "OPTIONS")
+	// 	return new OptionsMethod();
+	else if (method == "DELETE")
+		_method = new DeleteMethod();
+	else
+		throw std::runtime_error("400");
+	_method->setName(method);
+}
+
 void	Request::checkFirstLine(std::vector<char>& line) {
 	this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
 	checkTelnetInterruption(line);
@@ -181,34 +211,24 @@ void	Request::checkFirstLine(std::vector<char>& line) {
 	if (strLine.length() == 0) {
 		return;
 	}
-	std::size_t spacePos = strLine.find(" ", 0);
-	std::string methodName = strLine.substr(0, spacePos);
-	if (spacePos == std::string::npos)
-		throw std::runtime_error("400");
-	
-	// Delete the previous method handler
-	delete this->_method;
-	
-	// Instantiate the appropriate method handler based on the method name
-	if (methodName == "GET")
-		this->_method = new GetMethod();
-	else if (methodName == "POST")
-		this->_method = new PostMethod();
-	// else if (methodName == "DELETE")
-	// 	this->_method = new DeleteMethod();
-	// else if (methodName == "OPTIONS")
-	// 	this->_method = new OptionMethod();
-	else
-		throw std::runtime_error("405"); //-- Method Not Allowed
-	
-	// Set the method name
-	this->_method->setName(methodName);
-	
-	std::size_t spacePos2 = strLine.find(" ", spacePos + 1);
+	extractHttpMethod(strLine);
+	// std::size_t spacePos = strLine.find(" ", 0);
+	// std::string	methodName = strLine.substr(0, spacePos);
+	// if (spacePos == std::string::npos)
+	// 	throw std::runtime_error("400");
+	// delete this->_method;
+	// this->_method = new GetMethod();
+	// // check which method
+
+	// this->_method->setName(methodName);
+
+	std::cout << _method->getName() << std::endl;
+
+	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
-	this->_method->setPath(strLine.substr(spacePos + 1, spacePos2 - (spacePos + 1)));
-	
+	this->_method->setPath(strLine.substr(0, spacePos2));
+
 	std::size_t spacePos3 = strLine.find("\r\n", spacePos2 + 1);
 	if (spacePos3 == std::string::npos)
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
@@ -338,4 +358,11 @@ void	Request::requestReset() {
 	delete this->_method;
 	this->_method = NULL;
 	this->_headerMap.clear();
+}
+
+Method*	Request::GetMethodClass() const
+{
+	if (_method)
+		return (_method);
+	return (NULL);
 }

@@ -35,6 +35,7 @@ class Request {
 		bool		operator==(const Request& other) const;
 		~Request();
 
+		Method*		GetMethodClass()	const;
 		std::string getMethodName() const;
 		std::string getMethodPath() const;
 		std::string getMethodProtocol() const;
@@ -46,6 +47,8 @@ class Request {
 		void	checkSentAtOnce(const std::string& strLine, std::size_t spacePos1, std::size_t spacePos2);
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t pos, std::size_t endPos);
+		void	extractHttpMethod(std::string&);
+		void	createHttpMethod(const std::string&);
 		void	checkFirstLine(std::vector<char>& line);
 
 		void	checkLine(std::vector<char>& line);

@@ -25,6 +25,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				ErrorHandle.cpp \
 				PostMethod.cpp \
 				LocationFinder.cpp \
+				DeleteMethod.cpp \
 				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)
