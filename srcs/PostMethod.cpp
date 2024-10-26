@@ -42,12 +42,21 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         return;
     }
 
+    //-- Check if the allowed methods include POST
+    if (isLocation && locationFinder._allowedMethodFound)
+    {
+        if (locationFinder._allowed_methods.find("POST") == std::string::npos)
+        {
+            Response::error(socketFd, request, "405", client);
+            return;
+        }
+    }
+
     std::string body = request._requestBody;
     std::string requestPath = request.getMethodPath();
     this->socketFd = socketFd;
     this->root = locationFinder._root;
     this->locationPath = locationFinder._locationPath;
-    locationPath.erase(remove(locationPath.begin(), locationPath.end(), '/'), locationPath.end());
     this->saveDir = root + locationPath + "/";
     this->fileBody = body;
     fileName = request._postFilename;
@@ -77,7 +86,7 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     Response::headerAndBody(socketFd, request, body);
     
     std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
-    std::cout << BOLD BLUE "File : " << fileToCreate << RESET << std::endl;
+    std::cout << BOLD BLUE "File : " << fileName << RESET << std::endl;
     std::cout << BOLD GREEN "FILE SAVED! 💾" << RESET << std::endl;
 }
 
