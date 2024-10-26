@@ -108,7 +108,9 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         size_t pos = path.find_last_not_of("/");
         path = path.substr(0, pos + 1);
     }
-    else if (path != "/" && path[path.size() - 1] != '/' && isDirectory(path))
+    else if (path != "/" && path[path.size() - 1] != '/'
+        && isDirectory(path) && client->_request.getMethodName() == "GET"
+        && path.find("cgi-bin") == std::string::npos)
     {
         _redirect = "301 " + path + "/";
         _redirectFound = true;
@@ -170,13 +172,8 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
                 return true;
             }
 
-            if (requestPath.find("cgi-bin") != std::string::npos) {
+            if (requestPath.find("cgi-bin") != std::string::npos)
                 _cgiFound = true;
-                _root = locationMap.find("root")->second;
-                _index = locationMap.find("index")->second;
-                _allowed_methods = locationMap.find("allowed_methods")->second;
-                return true;
-            }
 
             _pathToServe = _root + tempPath + "/" + _index;
             _locationPath = tempPath;

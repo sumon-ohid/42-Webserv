@@ -55,6 +55,12 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
         }
         if (locationFinder._cgiFound)
         {
+            pathToServe = locationFinder._pathToServe;
+            if (locationFinder.isDirectory(pathToServe))
+            {
+                handleAutoIndexOrError(locationFinder ,request, client);
+                return;
+            }
             executeCgiScript(requestPath, client, request);
             return;
         }
@@ -66,12 +72,12 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
             return;
         }
         file.close();
-        serveStaticFile(pathToServe, request, client);
+        serveStaticFile(locationFinder, pathToServe, request, client);
     }
     else
-    { 
+    {
         pathToServe = locationFinder._pathToServe;
-        serveStaticFile(pathToServe, request, client);
+        serveStaticFile(locationFinder, pathToServe, request, client);
     } 
 }
 
@@ -151,9 +157,21 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
         std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
 }
 
-void GetMethod::serveStaticFile( std::string &path, Request &request, Client *client)
+void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &path, Request &request, Client *client)
 {
     signal (SIGPIPE, SIG_IGN);
+
+    //-- Check if the allowed methods include GET
+    //-- If not, return 405 Method Not Allowed
+    //-- It will check in the matched location block
+    if (locationFinder._allowedMethodFound)
+    {
+        if (locationFinder._allowed_methods.find("GET") == std::string::npos)
+        {
+            Response::error(socketFd, request, "405", client);
+            return;
+        }
+    }
 
     this->setMimeType(path);
     std::ifstream file(path.c_str());
@@ -182,8 +200,7 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
     }
     catch (std::exception &e)
     {
-        std::cerr << BOLD RED << "Error: " << e.what() << RESET << std::endl;
-        Response::error(socketFd, request, "404", client);
+        Response::error(socketFd, request, e.what(), client);
     }
 }
 
