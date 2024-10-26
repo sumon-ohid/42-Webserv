@@ -5,6 +5,7 @@
 #include "../includes/Response.hpp"
 #include "../includes/ServerConfig.hpp"
 #include "../includes/LocationFinder.hpp"
+#include "../includes/Helper.hpp"
 
 #include <iostream>
 #include <cstddef>
@@ -116,19 +117,36 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
 }
 
 void GetMethod::handleRedirection(std::string &redirectUrl)
-{
-    std::cout << BOLD YELLOW << "Redirecting to: " << redirectUrl << RESET << std::endl;
+{    
+    std::map<std::string, std::string> redirectCodes = Helper::redirectCodes;
+
+    std::string redirectCode = "302"; // Default redirect code
+    std::string url = redirectUrl;
+
+    //-- Check if the redirectUrl contains a redirect code at the beginning
+    size_t spacePos = redirectUrl.find(" ");
+    if (spacePos != std::string::npos)
+    {
+        std::string potentialCode = redirectUrl.substr(0, spacePos);
+        if (redirectCodes.find(potentialCode) != redirectCodes.end())
+        {
+            redirectCode = potentialCode;
+            url = redirectUrl.substr(spacePos + 1);
+        }
+    }
+
+    std::cout << BOLD YELLOW << "Redirecting to: " << url << RESET << std::endl;
     std::ostringstream redirectHeader;
-    redirectHeader << "HTTP/1.1 307 Temporary Redirection\r\n"
-                   << "Location: " << redirectUrl << "\r\n"
+    redirectHeader << "HTTP/1.1 " << redirectCode << " " << redirectCodes[redirectCode] << "\r\n"
+                   << "Location: " << url << "\r\n"
                    << "Content-Length: 0\r\n"
                    << "Connection: close\r\n\r\n";
     std::string response = redirectHeader.str();
     ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
     if (bytes_written == -1)
-    {
         throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
-    }
+    else if (bytes_written == 0)
+        std::cerr << BOLD RED << "Error: 0 bytes written to socket in GetMethod::handleRedirection" << RESET << std::endl;
     else
         std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
 }

@@ -47,8 +47,10 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
             std::string key = line.substr(0, pos);
             std::string value = line.substr(pos + 1);
             if (key == "allowed_methods")
-                check_allowed_methods(value, locationConfig.getPath());
-            if (key != "allowed_methods" && key != "try_files")
+                checkAllowedMethods(value, locationConfig.getPath());
+            if (key == "return")
+                checkRedirect(value);
+            if (key != "allowed_methods" && key != "return")
                 value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
             if (key.empty() || value.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
@@ -59,7 +61,36 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
     server.locations.push_back(locationConfig);
 }
 
-void ServerConfig::check_allowed_methods(std::string value, std::string locationPath)
+void ServerConfig::checkRedirect(std::string value)
+{
+    std::vector<std::string> redirect;
+
+    std::stringstream ss(value);
+    std::string word;
+    while (ss >> word)
+         redirect.push_back(word);
+    
+    //-- Only URL is provided, consider it valid
+    if (redirect.size() == 1)
+    {
+        if (redirect[0].find("/") == std::string::npos)
+            throw std::runtime_error(BOLD RED + value + " [ NOT VALID ]" RESET);
+        return;
+    }
+
+    //-- Some validation checks
+    if (redirect.size() == 2)
+    {
+        if (redirect[0] != "301" && redirect[0] != "302" && redirect[0] != "303" && redirect[0] != "307" && redirect[0] != "308")
+            throw std::runtime_error(BOLD RED + value + " [ NOT VALID ]" RESET);
+        if (redirect[1].empty())
+            throw std::runtime_error(BOLD RED + value + " [ NOT VALID ]" RESET);
+    }
+    else
+        throw std::runtime_error(BOLD RED + value + " [ NOT VALID ]" RESET);
+}   
+
+void ServerConfig::checkAllowedMethods(std::string value, std::string locationPath)
 {
     std::vector<std::string> methods;
    
@@ -269,7 +300,7 @@ bool ServerConfig::checkLocations()
                 locationPath = it->first;
                 if (locationPath == "root" || locationPath == "index" ||
                     locationPath == "autoindex" || locationPath == "cgi-bin" ||
-                    locationPath == "allowed_methods" || locationPath == "try_files" ||
+                    locationPath == "allowed_methods" ||
                     locationPath == "return" || locationPath == "client_max_body_size")
                 {
                     if (locationSet.find(locationPath) != locationSet.end())

@@ -57,8 +57,9 @@ class ServerConfig : public LocationConfig
         std::vector<int> getListenPorts();
         std::vector<std::string> getServerNames();
         bool checkLocations();
-        void check_allowed_methods(std::string value, std::string line);
-
+        void checkAllowedMethods(std::string value, std::string line);
+        void checkRedirect(std::string value);
+        
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void handleErrorPages(std::string line, ServerConfig &server);
         void locationBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
