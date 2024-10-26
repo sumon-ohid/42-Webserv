@@ -4,10 +4,10 @@
 #include "../includes/Client.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Server.hpp"
-#include "../includes/ServerConfig.hpp"
 #include "../includes/Helper.hpp"
 #include "../includes/PostMethod.hpp"
 #include "../includes/Response.hpp"
+#include "../includes/LocationFinder.hpp"
 
 #include <cstddef>
 #include <string>
@@ -42,62 +42,39 @@ void HandleCgi::initEnv(Request &request)
 //-- and send the output to the client
 HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request)
 {
-    //--NOTE: cgiConf should have root in the beginning
-    //-- parse location config to get the root here
-
-    std::string rootFolder;
-    std::string root;
-    std::string index;
-
     //-- Initialize the environment variables
     initEnv(request);
 
-    std::vector<LocationConfig> locationConfig = client._server->_serverConfig.getLocations();
-    for (size_t i = 0; i < locationConfig.size(); i++)
-    {
-        std::string tempPath = locationConfig[i].getPath();
-        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), ' '), tempPath.end());
-        tempPath.erase(std::remove(tempPath.begin(), tempPath.end(), '{'), tempPath.end());
-
-        if (tempPath == "/")
-        {
-            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
-            std::multimap<std::string, std::string>::iterator it = locationMap.find("root");
-            if (it != locationMap.end())
-                rootFolder = it->second;
-            i++;
-        }
-        if (tempPath == "/cgi-bin")
-        {
-            std::multimap<std::string, std::string> locationMap = locationConfig[i].getLocationMap();
-            for (std::multimap<std::string, std::string>::iterator it = locationMap.begin(); it != locationMap.end(); ++it)
-            {
-                if (it->first == "index")
-                    index = it->second;
-                if (it->first == "root")
-                    root = it->second;
-            }
-            locationPath = rootFolder + root + index;
-        }
-    }
+    LocationFinder locationFinder;
+    locationFinder.locationMatch(&client, requestBuffer, nSocket);
+    std::string rootFolder = locationFinder._root;
+    std::string location = locationFinder._locationPath;
+    std::string index = locationFinder._index;
+    locationPath = rootFolder + location + "/" + index;
 
     //-- Handle POST method for CGI
     method = request.getMethodName();
     postBody = request._requestBody;
     fileName = request._postFilename;
 
+    if (locationFinder.isDirectory(locationPath))
+        throw std::runtime_error("404");
+    if (method != "GET" && method != "POST")
+        throw std::runtime_error("405");
+
+    if (locationFinder._allowedMethodFound && locationFinder._cgiFound)
+    {
+        if (locationFinder._allowed_methods.find(method) == std::string::npos)
+            throw std::runtime_error("405");
+    }
+
     if (method == "POST")
     {
-        locationPath = rootFolder + root;
         PostMethod postMethod;
-
-        postMethod.setLocationPath(locationPath);
-        postMethod.setRoot("");
         postMethod.executeMethod(nSocket, &client, request);
         return;
     }
-
-    if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == root + index)
+    if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == location + index)
         proccessCGI(nSocket, request);
     else
         throw std::runtime_error("404");

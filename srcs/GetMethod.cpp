@@ -55,6 +55,12 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
         }
         if (locationFinder._cgiFound)
         {
+            pathToServe = locationFinder._pathToServe;
+            if (locationFinder.isDirectory(pathToServe))
+            {
+                handleAutoIndexOrError(locationFinder ,request, client);
+                return;
+            }
             executeCgiScript(requestPath, client, request);
             return;
         }
@@ -194,8 +200,7 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
     }
     catch (std::exception &e)
     {
-        std::cerr << BOLD RED << "Error: " << e.what() << RESET << std::endl;
-        Response::error(socketFd, request, "404", client);
+        Response::error(socketFd, request, e.what(), client);
     }
 }
 

@@ -28,6 +28,12 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
     LocationFinder locationFinder;
     locationFinder.locationMatch(client, request.getMethodPath(), socketFd);
 
+	if (locationFinder._cgiFound)
+	{
+		Response::error(socketFd, request, "405", client);
+		return;
+    }
+
     //-- Check if the allowed methods include DELETE
     if (locationFinder._allowedMethodFound)
     {
