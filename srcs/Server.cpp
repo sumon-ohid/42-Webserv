@@ -104,7 +104,6 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 				_listenSockets.push_back(tmp);
 		}
 	}
-
 	// check if there is at least one listening socket
 	if (_listenSockets.empty())
 		throw std::runtime_error("couldn't create any listen socket");

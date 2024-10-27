@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 
 #include "Method.hpp"
-#include "ServerConfig.hpp"
 
 class Server;
 class Response;
@@ -60,7 +59,7 @@ class Request {
 		void	checkFirstLine(std::vector<char>& line);
 
 		void	checkLine(std::vector<char>& line);
-		void	checkHost(ServerConfig& config);
+		void	checkHost();
 		void	executeMethod(int socketFd, Client *client);
 
 		int		clientRequest(Client* client);

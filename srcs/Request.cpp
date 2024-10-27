@@ -273,14 +273,13 @@ void	Request::checkLine(std::vector<char>& line) {
 	storeHeadersInMap(strLine);
 }
 
-void	Request::checkHost(ServerConfig& config) {
+void	Request::checkHost() {
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400");
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
-	std::cout << "host: $" << host << "$, fromServer: $" << config.getServerName() << "$" << std::endl;
 	_host = host;
 	// if (host != config.getServerName())
 	// 	throw std::runtime_error("404"); // BP: to check if correct value
@@ -289,7 +288,7 @@ void	Request::checkHost(ServerConfig& config) {
 //-- SUMON: I am working on this function
 void	Request::executeMethod(int socketFd, Client *client)
 {
-	// this->checkHost(config); // BP: first check which hostname else it would use the standardhostname
+	this->checkHost(); // BP: first check which hostname else it would use the standardhostname
 	this->_method->executeMethod(socketFd, client, *this);
 }
 

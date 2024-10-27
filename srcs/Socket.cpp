@@ -73,7 +73,6 @@ void	Socket::createSocket(struct addrinfo* p)
     // the socket type (SOCK_STREAM for TCP), and setting the socket to non-blocking mode
     // (SOCK_NONBLOCK) while using the default protocol (0).
 	_fd = socket(p->ai_family, p->ai_socktype | SOCK_NONBLOCK | SOCK_CLOEXEC, p->ai_protocol);
-	std::cout << "file descriptor socket\t" << _fd << std::endl;
     // if there was an error creating the socket
 	if (_fd < 0)
 		throw std::runtime_error("socket - could not create socket");
@@ -114,13 +113,10 @@ void	Socket::socketSetUpAddress(const std::string& hostname, ServerConfig& servC
 	portStream << _port; // Convert the integer to string
 	std::string portStr = portStream.str();
 
-	static int i = 0;
 	// Resolve the hostname
-	std::cout << i++ << std::endl;
 	int status = getaddrinfo(hostname.c_str(), portStr.c_str(), &hints, &res);
 	if (status != 0)
 		throw std::runtime_error(gai_strerror(status));
-	std::cout << i++ << std::endl;
 	createSocketForAddress(hostname, res, servConf, sm);
 	// Create a listening socket
 }

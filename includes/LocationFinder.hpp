@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Client.hpp"
+#include "LocationConfig.hpp"
 
 #include <string>
 
