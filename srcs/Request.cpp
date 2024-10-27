@@ -42,6 +42,7 @@ Request::Request(const Request& other) {
 	_headerMap = other._headerMap;
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
+	_host = other._host;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -62,6 +63,7 @@ Request&	Request::operator=(const Request& other) {
 	_headerMap = other._headerMap;
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
+	_host = other._host;
 	return *this;
 }
 
@@ -75,7 +77,8 @@ bool		Request::operator==(const Request& other) const
 			_method == other._method &&
 			_headerMap == other._headerMap &&
 			_contentLength == other._contentLength &&
-			_contentRead == other._contentRead);
+			_contentRead == other._contentRead &&
+			_host == other._host);
 }
 
 Request::~Request() {
@@ -270,7 +273,7 @@ void	Request::checkLine(std::vector<char>& line) {
 	storeHeadersInMap(strLine);
 }
 
-void	Request::checkHost(ServerConfig& config) const {
+void	Request::checkHost(ServerConfig& config) {
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400");
@@ -278,8 +281,9 @@ void	Request::checkHost(ServerConfig& config) const {
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
 	std::cout << "host: $" << host << "$, fromServer: $" << config.getServerName() << "$" << std::endl;
-	if (host != config.getServerName())
-		throw std::runtime_error("404"); // BP: to check if correct value
+	_host = host;
+	// if (host != config.getServerName())
+	// 	throw std::runtime_error("404"); // BP: to check if correct value
 }
 
 //-- SUMON: I am working on this function
@@ -386,4 +390,9 @@ void	Request::requestReset() {
 	delete this->_method;
 	this->_method = NULL;
 	this->_headerMap.clear();
+}
+
+std::string	Request::getHost() const
+{
+	return (_host);
 }

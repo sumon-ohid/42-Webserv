@@ -4,9 +4,12 @@
 #include "../includes/ServerConfig.hpp"
 
 #include <cstddef>
+#include <exception>
+#include <netdb.h>
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#include <cerrno>
 
 // ------------- Coplien's form -------------
 
@@ -37,19 +40,71 @@ bool Server::operator==(const Server& other) const
 }
 // ------------- Sockets -------------
 
-void	Server::setUpLstnSockets()
+void	Server::setUpLstnSockets(ServerManager& sm)
 {
-	std::vector<int> ports = this->_serverConfig.getListenPorts();
+	std::vector<int> ports = _serverConfig.getListenPorts();
+	std::vector<std::string> hostnames = _serverConfig.getServerNames();
+
 	for (size_t i = 0; i < ports.size(); ++i)
-	{
+	{	
 		int port = ports[i];
-        // create a temporary socket instance which will listen to a specific port
-		Socket	tmp(port);
-		tmp.setUpSocket();
-        // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
-		if (tmp.getFdSocket() != -1)
-			_listenSockets.push_back(tmp);
+		if (!hostnames.empty())
+		{
+			for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
+			{	
+				// create a temporary socket instance which will listen to a specific port
+				Socket	tmp(port);
+				try
+				{
+					tmp.setUpSocket(*hostname, _serverConfig, sm);
+					_listenSockets.push_back(tmp);
+				}
+				catch (std::exception &e){
+					if (tmp.getFdSocket() != -1)
+						close (tmp.getFdSocket());
+					std::cerr << e.what() << std::endl;
+					std::cerr << "Couldn't create a socket that listens at host " << *hostname << " at port:\t" << port << std::endl;
+					if (std::string(e.what()) == "Name or service not known")
+						break;
+				}
+				// store the socket in a vector to keep track of all listening sockets if the socket was created successfully
+				// if (tmp.getFdSocket() != -1)
+			}
+		}
+		else 
+		{
+			Socket	tmp(port);
+			tmp.setUpSocket("0.0.0.0", _serverConfig, sm);
+			// store the socket in a vector to keep track of all listening sockets if the socket was created successfully
+			if (tmp.getFdSocket() != -1)
+				_listenSockets.push_back(tmp);
+		}
 	}
+	if (ports.empty())
+	{
+		int port = 80;
+		if (!hostnames.empty())
+		{
+			for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
+			{	
+				// create a temporary socket instance which will listen to a specific port
+				Socket	tmp(port);
+				tmp.setUpSocket(*hostname, _serverConfig, sm);
+				// store the socket in a vector to keep track of all listening sockets if the socket was created successfully
+				if (tmp.getFdSocket() != -1)
+					_listenSockets.push_back(tmp);
+			}
+		}
+		else 
+		{
+			Socket	tmp(port);
+			tmp.setUpSocket("0.0.0.0", _serverConfig, sm);
+			// store the socket in a vector to keep track of all listening sockets if the socket was created successfully
+			if (tmp.getFdSocket() != -1)
+				_listenSockets.push_back(tmp);
+		}
+	}
+
 	// check if there is at least one listening socket
 	if (_listenSockets.empty())
 		throw std::runtime_error("couldn't create any listen socket");
@@ -147,5 +202,21 @@ Client*	Server::getClient(int fd)
 	mpCl::iterator it = _clients.find(fd);
 	if (it != _clients.end())
 		return (&it->second);
+	return (NULL);
+}
+
+Socket*	Server::getSocket(int port)
+{
+	for (lstSocs::iterator it = _listenSockets.begin(); it != _listenSockets.end(); ++it)
+		if (port == it->getPort())
+			return (&(*it));
+	return (NULL);
+}
+
+std::vector<LocationConfig>* Server::getLocationConfig(std::string hostname, int port)
+{
+	Socket* tmp = getSocket(port);
+	if (tmp)
+		return (tmp->getConfig(hostname));
 	return (NULL);
 }

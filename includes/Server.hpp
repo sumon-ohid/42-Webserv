@@ -3,13 +3,18 @@
 #include "Client.hpp"
 #include "Epoll.hpp"
 #include "ServerConfig.hpp"
+#include "ServerManager.hpp"
 #include "Socket.hpp"
 #include <list>
+
+class Socket;
 
 typedef std::list<Socket> lstSocs;
 typedef std::map<int, Client> mpCl;
 
 class Client;
+class ServerManager;
+class Epoll;
 
 class Server
 {
@@ -40,7 +45,7 @@ public:
 
 	// ------------- Listen Sockets -------------
 	// creates a socket to listen on for all the IP, port combinations requested
-	void	setUpLstnSockets();
+	void	setUpLstnSockets(ServerManager&);
 
 	// ------------- Client handling -------------
 	// adds a client's fd to _clnts
@@ -67,4 +72,8 @@ public:
 	lstSocs&		getLstnSockets(void);
 	// returns a pointer to a client if the client is found connected to the server; otherwise NULL
 	Client*			getClient(int fd);
+
+	Socket*			getSocket(int port);
+
+	std::vector<LocationConfig>* getLocationConfig(std::string hostname, int port);
 };

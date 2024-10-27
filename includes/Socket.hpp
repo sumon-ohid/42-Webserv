@@ -1,14 +1,23 @@
 #pragma once
 
+#include "LocationConfig.hpp"
+#include "ServerConfig.hpp"
+#include "ServerManager.hpp"
 #include <netinet/in.h>
 #include <ostream>
+#include <string>
 #include <sys/socket.h>
 #include <vector>
 #include <unistd.h>
 #include <iostream>
+#include <map>
 
 #define	SOCKET_BUFFER_SIZE		32000 // 64 kb
 #define SOCKET_MAX_LISTEN		1000
+
+typedef std::map<std::string, std::vector<LocationConfig> >	mHstLoc;
+
+class ServerManager;
 
 class Socket
 {
@@ -17,6 +26,7 @@ private:
 	int				_port;
 	socklen_t		_addrlen;
 	sockaddr_in		_address;
+	mHstLoc			_configs;
 
 	// ------------- Socket Setup -------------
 	/**
@@ -28,13 +38,13 @@ private:
 	* - Mode: Non-blocking (SOCK_NONBLOCK)
 	* - Protocol: Default (0)
 	*/
-	void			createSocket(void);
+	void			createSocket(struct addrinfo*);
 	/**
  	* Binds the socket to a specific port and IP address.
  	*
  	* Instructs the socket to listen for incoming connection requests.
  	*/
-	void			bindToSocketAndListen(void);
+	void			bindToSocketAndListen(struct addrinfo*);
 	/**
  	* Sets up the socket address for binding.
  	*
@@ -45,7 +55,11 @@ private:
  	* - Clears the padding field.
  	* - Logs the port number.
  	*/
-	void			socketSetUpAddress(void);
+	void			socketSetUpAddress(const std::string&, ServerConfig&, ServerManager&);
+	void			hostnameResolveError();
+	bool			IpPortCombinationNonExistent(std::string&, ServerManager&, ServerConfig&);
+	void			createSocketForAddress(const std::string&, struct addrinfo*, ServerConfig&, ServerManager&);
+
 public:
 	Socket();
 	Socket(int);
@@ -53,11 +67,13 @@ public:
 	Socket(const Socket&);
 	Socket&			operator=(const Socket&);
 	bool			operator==(const Socket& other) const;
+	bool 			operator<(const Socket& other) const;
 
 	// ------------- Socket setup -------------
 	// sets up a socket to use at a specified port
-	void			setUpSocket(void);
+	void			setUpSocket(const std::string&, ServerConfig&, ServerManager&);
 
+	void			addConfig(const std::string&, std::vector<LocationConfig>);
 	// ------------- Getters -------------
 	// returns the fd of the socket
 	int				getFdSocket(void) const;
@@ -69,6 +85,7 @@ public:
 	sockaddr_in		getAddress(void) const;
 	// returns the a reference to the address
 	sockaddr_in&	getAddress(void);
+	std::vector<LocationConfig>*	getConfig(std::string&);
 };
 
 std::ostream&	operator<<(std::ostream &os, const std::vector<char> &vc);

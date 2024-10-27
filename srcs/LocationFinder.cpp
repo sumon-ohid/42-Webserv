@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <sys/stat.h>
@@ -89,8 +90,13 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
 
     //std::cout << BOLD BLUE << "PATH " << path << RESET << std::endl;
     //std::cout << BOLD BLUE << "REQUEST PATH " << requestPath << RESET << std::endl;
+	std::vector<LocationConfig>* tmp = client->_server->getLocationConfig(client->_request.getHost(), client->getPort());
+	std::cout << "host" << client->_request.getHost() << std::endl;
+	if (tmp)
+    	locationsVector = *tmp;
+	else
+	 	throw std::runtime_error("");
 
-    locationsVector = client->_server->_serverConfig.getLocations();
     for (size_t i = 0; i < locationsVector.size(); i++)
     {
         std::string tempPath = locationsVector[i].getPath();

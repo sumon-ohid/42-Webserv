@@ -7,14 +7,16 @@
 
 #define LOCATION_CONFIG_FILE "./webserv.conf"
 
-typedef std::vector<Server>			vSrv;
-typedef std::vector<ServerConfig>	vSrvConf;
+typedef std::vector<Server> vSrv;
+typedef std::vector<ServerConfig> vSrvConf;
+typedef	std::map<int, std::list<std::string> > mpPortIp;
 
 class ServerManager
 {
 private:
 	ServerConfig			_generalConfig;
 	std::vector<Server>		_servers;
+	mpPortIp				_socketIp;
 	Epoll					_epoll;
 
 	// calls the config file parsing and the server setUp
@@ -39,4 +41,8 @@ public:
 	void	shutdownServer(Server&);
 	// shuts down all servers and close all fds
 	void	shutdown();
+
+	bool	IpPortCombinationNonExistent(const std::string&, std::string&, Socket&, ServerConfig&);
+
+	void	addNewSocketIpCombination(int, std::string&);
 };

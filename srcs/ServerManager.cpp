@@ -5,18 +5,20 @@
 
 #include <exception>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 #include <algorithm>
 
 ServerManager::ServerManager() {}
 ServerManager::~ServerManager() {}
-ServerManager::ServerManager(const ServerManager& orig) : _generalConfig(orig._generalConfig), _servers(orig._servers), _epoll(orig._epoll) {}
+ServerManager::ServerManager(const ServerManager& orig) : _generalConfig(orig._generalConfig), _servers(orig._servers), _socketIp(orig._socketIp), _epoll(orig._epoll) {}
 ServerManager&	ServerManager::operator=(const ServerManager& rhs)
 {
 	if (this != &rhs)
 	{
 		_servers = rhs._servers;
 		_generalConfig = rhs._generalConfig;
+		_socketIp = rhs._socketIp;
 		_epoll = rhs._epoll;
 	}
 	return (*this);
@@ -48,7 +50,7 @@ void	ServerManager::setUpServers()
 		Server	tmp = Server(*it);
 		try
 		{
-			tmp.setUpLstnSockets();
+			tmp.setUpLstnSockets(*this);
 			_servers.push_back(tmp);
 		}
 		catch (std::exception &e)
@@ -91,4 +93,35 @@ void	ServerManager::shutdown()
 	shutdownAllServers();
 	closeEpoll();
 	std::cout << "\nAll servers shut down" << std::endl;
+}
+
+bool	ServerManager::IpPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, Socket& socket, ServerConfig& servConf)
+{
+	mpPortIp::iterator socketIt =  _socketIp.find(socket.getPort());
+	if (socketIt != _socketIp.end() && socketIt->first == socket.getPort())
+	{
+		std::list<std::string> ipAdress = socketIt->second;
+		for (std::list<std::string>::iterator ipIt = ipAdress.begin(); ipIt != ipAdress.end(); ++ipIt)
+		{
+			if (*ipIt == IpHost)
+			{
+				socket.addConfig(hostname, servConf.getLocations());
+				return (false);
+			}
+		}	
+	}
+	return (true);
+}
+
+void	ServerManager::addNewSocketIpCombination(int port, std::string& hostIp)
+{
+	mpPortIp::iterator it = _socketIp.find(port);
+	if (it != _socketIp.end())
+		it->second.push_back(hostIp);
+	else
+	{
+		std::list<std::string>	hostList;
+		hostList.push_back(hostIp);
+		_socketIp.insert(std::make_pair(port, hostList));
+	}
 }
