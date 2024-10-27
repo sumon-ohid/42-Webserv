@@ -64,10 +64,20 @@ static std::map<std::string, std::string> initMimeMap() {
 	return mimes;
 }
 
+static std::map<std::string, std::string> initRedirectCodesMap() {
+	std::map<std::string, std::string> redirect;
+	redirect["301"] = "Moved Permanently";
+	redirect["302"] = "Found"; //-- default if no code is specified
+	redirect["303"] = "See Other"; //-- redirect after a POST request
+	redirect["307"] = "Temporary Redirect";
+	redirect["308"] = "Permanent Redirect";
+	return redirect;
+}
 
 const std::map<std::string, std::string> Helper::statusCodes = initStatusCodesMap();
 const std::map<std::string, std::string> Helper::executableMap = initExecMap();
 const std::map<std::string, std::string> Helper::mimeTypes = initMimeMap();
+const std::map<std::string, std::string> Helper::redirectCodes = initRedirectCodesMap();
 
 std::string Helper::getActualTimeStringGMT() {
 	std::string weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
