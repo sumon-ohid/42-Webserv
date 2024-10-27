@@ -57,7 +57,8 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 				try
 				{
 					tmp.setUpSocket(*hostname, _serverConfig, sm);
-					_listenSockets.push_back(tmp);
+					if (tmp.getFdSocket() != -1)
+						_listenSockets.push_back(tmp);
 				}
 				catch (std::exception &e){
 					if (tmp.getFdSocket() != -1)
