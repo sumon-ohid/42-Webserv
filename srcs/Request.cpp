@@ -177,7 +177,7 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 			_readingFinished = true;
 		return;
 	}
-	std::cout << endPos << std::endl;
+	// std::cout << endPos << std::endl;
 	if (endPos == std::string::npos) {
 		storeOneHeaderInMap(strLine.substr(0));
 		return;
@@ -225,6 +225,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		endPos = strLine.find(boundary, pos + 4);
 		_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
 	}
+	_readingFinished = true;
 	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
 	// std::string end =  strLine.rfind();
 	// std::cout << "$" << _requestBody << "$" << std::endl;
@@ -344,7 +345,6 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	}
 	if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
 		if (this->_method->getName() == "POST") {
-			std::cout << "Bodycheck" << std::endl;
 			storeRequestBody(strLine, endPos);
 		}
 	}
@@ -377,17 +377,17 @@ int	Request::clientRequest(Client* client)
 			} else {
 				Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 			}
-			std::cout << "exception: " << e.what() << std::endl;
+			std::cerr << "exception: " << e.what() << std::endl;
 			writeFlag = true;
 			return OK;
 		}
 	// }
-	std::cout << _readingFinished << std::endl;
+	// std::cout << _readingFinished << std::endl;
 	if (!writeFlag && _readingFinished)
 	{
 		try {
 			client->_request.executeMethod(event_fd, client);
-			std::cout << client->_request.getHeaderMap().size() << std::endl;
+			// std::cout << client->_request.getHeaderMap().size() << std::endl;
 			client->_request.requestReset();
 		}
 		catch (std::exception &e) {
