@@ -49,7 +49,6 @@ class Request {
 		bool		getReadingFinished() const;
 		std::map<std::string, std::string> getHeaderMap() const;
 
-		void	checkSentAtOnce(const std::string& strLine, std::size_t pos2);
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t endPos);
 		void	extractHttpMethod(std::string&);

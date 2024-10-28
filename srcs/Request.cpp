@@ -156,8 +156,10 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
 		value.erase(0, 1);
 	}
-	if (_headerMap.find(key) != _headerMap.end())
+	if (_headerMap.find(key) == _headerMap.end()) {
 		_headerMap[key] = value;
+		// std::cout << "$" << key << "$" << value << "$" << std::endl;
+	}
 	else
 		_headerMap[key] += value; // BP: to test
 }
@@ -168,12 +170,8 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 	std::size_t pos = strLine.find("\r\n", endPos);
 	std::size_t pos2 = endPos;
 
-	std::cout << "size: " << strLine.size() << std::endl;
-	std::cout << endPos << std::endl;
-	std::cout << "strLine: \n" << strLine << "$" << std::endl;
 	endPos = strLine.find("\r\n\r\n", 0);
 	if (strLine.size() == 2 && strLine.find("\r\n") != std::string::npos) {
-		std::cout << "finished";
 		_headerChecked = true;
 		if (_method->getName() == "GET")
 			_readingFinished = true;
@@ -181,17 +179,15 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 	}
 	std::cout << endPos << std::endl;
 	if (endPos == std::string::npos) {
-		std::cout << "!asdf" << std::endl;
 		storeOneHeaderInMap(strLine.substr(0));
 		return;
 	} else {
-		std::cout << "finished";
 		_headerChecked = true;
 		if (_method->getName() == "GET")
 			_readingFinished = true;
 	}
 	while (pos < endPos) {
-		storeOneHeaderInMap(strLine.substr(pos2, pos - (pos2 + 2)));
+		storeOneHeaderInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
 		pos2 = pos;
 		pos = strLine.find("\r\n", pos2 + 1);
 	}
@@ -219,35 +215,21 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 
 	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
 	pos = strLine.find("\r\n\r\n", endPos + 4);
+	// std::cout << "rnrn: " << pos << std::endl;
 	// std::cout << "$" << _postFilename << "$" << std::endl;
 	std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
-	// std::cout << it->second << std::endl;
+	// std::cout << "content: " << it->second << std::endl;
 	std::string boundary;
 	if (it != _headerMap.end()) {
 		boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
+		endPos = strLine.find(boundary, pos + 4);
+		_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
 	}
 	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
 	// std::string end =  strLine.rfind();
-	endPos = strLine.find(boundary, pos + 4);
-	_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
 	// std::cout << "$" << _requestBody << "$" << std::endl;
 }
 
-void	Request::checkSentAtOnce(const std::string& strLine, std::size_t pos2) {
-
-		std::size_t pos = strLine.find("\r\n", pos2 + 1);
-		std::size_t endPos = strLine.find("\r\n\r\n", pos2 + 1);
-		while (pos < endPos) {
-			// storeHeadersInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
-			pos2 = pos;
-			pos = strLine.find("\r\n", pos2 + 1);
-		}
-
-		// if (this->_method->getName() == "POST") {
-		// 	storeRequestBody(strLine, pos, endPos);
-		// }
-		// _readingFinished = true;
-}
 
 void	Request::extractHttpMethod(std::string& requestLine)
 {
@@ -297,7 +279,6 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
 	else {
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1, endPos - (spacePos2 + 1)));
-		// checkSentAtOnce(strLine, spacePos3);
 	}
 	_firstLineChecked = true;
 }
@@ -363,9 +344,9 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	if (request.getFirstLineChecked() && !request._headerChecked && endPos != std::string::npos) {
 		storeHeadersInMap(strLine, endPos);
 	}
-	if (request._firstLineChecked && request._headerChecked && endPos != std::string::npos) {
-		std::cout << "Bodycheck" << std::endl;
+	if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
 		if (this->_method->getName() == "POST") {
+			std::cout << "Bodycheck" << std::endl;
 			storeRequestBody(strLine, endPos);
 		}
 	}
@@ -406,7 +387,6 @@ int	Request::clientRequest(Client* client)
 	std::cout << _readingFinished << std::endl;
 	if (!writeFlag && _readingFinished)
 	{
-		std::cout << "§in" << std::endl;
 		try {
 			client->_request.executeMethod(event_fd, client);
 			std::cout << client->_request.getHeaderMap().size() << std::endl;
@@ -428,11 +408,11 @@ int	Request::clientRequest(Client* client)
 
 
 void	Request::requestReset() {
-	this->_type = -1;
-	this->_firstLineChecked = false;
-	this->_readingFinished = false;
+	_type = -1;
+	_firstLineChecked = false;
 	_headerChecked = false;
-	delete this->_method;
-	this->_method = NULL;
-	this->_headerMap.clear();
+	_readingFinished = false;
+	delete _method;
+	_method = NULL;
+	_headerMap.clear();
 }
