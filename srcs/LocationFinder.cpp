@@ -185,6 +185,11 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     }
     _root = locationsVector[0].getLocationMap().find("root")->second;
     _pathToServe = _root + _locationPath + path;
+    if (isDirectory(_pathToServe))
+    {
+        searchIndexHtml(_pathToServe, _pathToServe);
+        return true;
+    }
     //std::cout << BOLD RED << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
     return false;
 }
