@@ -267,8 +267,6 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	}
 	extractHttpMethod(strLine);
 
-	std::cout << _method->getName() << std::endl;
-
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
