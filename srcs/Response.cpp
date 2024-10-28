@@ -162,7 +162,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 	else
 	{
 		try {
-			fallbackError(socketFd, request, statusCode);
+			fallbackError(socketFd, request, statusCode); //BP: shouldn't it be our nice standard error page not the fallback?
 		}
 		catch (std::exception &e) {
 			std::cerr << BOLD RED << e.what() << RESET << std::endl;
