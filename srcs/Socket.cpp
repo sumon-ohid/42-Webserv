@@ -121,13 +121,22 @@ void	Socket::socketSetUpAddress(const std::string& hostname, ServerConfig& servC
 	// Create a listening socket
 }
 
+std::string ipToString(struct sockaddr_in* addr) {
+    std::ostringstream oss;
+    unsigned char* ip = reinterpret_cast<unsigned char*>(&addr->sin_addr);
+    oss << static_cast<int>(ip[0]) << "."
+        << static_cast<int>(ip[1]) << "."
+        << static_cast<int>(ip[2]) << "."
+        << static_cast<int>(ip[3]);
+    return oss.str();
+}
+
 void	Socket::createSocketForAddress(const std::string& hostname, struct addrinfo* res, ServerConfig& servConf, ServerManager& sm)
 {
 	for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
 	{
 		struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(p->ai_addr);
-		std::string ipHost(reinterpret_cast<const char*>(&addr->sin_addr), sizeof(addr->sin_addr));
-	// Create the socket with SOCK_NONBLOCK flag
+		std::string ipHost = ipToString(addr);
 		if (sm.IpPortCombinationNonExistent(hostname, ipHost, _port, servConf)) //otherwise add to existing one inside IpPort... the Location File with this Hostname
 		{
 			createSocket(p);

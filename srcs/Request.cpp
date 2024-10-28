@@ -5,6 +5,7 @@
 #include <iostream>
 #include <errno.h>
 #include <sys/types.h>
+#include <vector>
 
 #include "../includes/Request.hpp"
 #include "../includes/Client.hpp"
@@ -26,6 +27,8 @@ Request::Request() {
 	_response = new Response();
 	_contentLength = 0;
 	_contentRead = 0;
+	_response = NULL;
+	_servConf = NULL;
 }
 
 Request::Request(const Request& other) {
@@ -43,6 +46,7 @@ Request::Request(const Request& other) {
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
 	_host = other._host;
+	_servConf = other._servConf;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -64,6 +68,7 @@ Request&	Request::operator=(const Request& other) {
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
 	_host = other._host;
+	_servConf = other._servConf;
 	return *this;
 }
 
@@ -78,7 +83,8 @@ bool		Request::operator==(const Request& other) const
 			_headerMap == other._headerMap &&
 			_contentLength == other._contentLength &&
 			_contentRead == other._contentRead &&
-			_host == other._host);
+			_host == other._host &&
+			_servConf == other._servConf);
 }
 
 Request::~Request() {
@@ -282,6 +288,29 @@ void	Request::checkHost(Client* client) {
 	host = host.substr(0, pos);
 	// if (host != config.getServerName())
 	// 	throw std::runtime_error("404"); // BP: to check if correct value
+	if (client->_socket->getConfigSize())
+	{
+		mHstConfs	configs;
+		for (mHstConfs::iterator it = configs.begin(); it != configs.end(); ++it)
+		{
+			if (host == it->first)
+			{
+				_host = host;
+				_servConf = &it->second;
+			}
+		}
+	}
+	else {
+		std::vector<std::string> serverNames = client->_server->_serverConfig.getServerNames();
+		for (std::vector<std::string>::iterator it = serverNames.begin(); it != serverNames.end(); ++it)
+		{
+			if (*it == host)
+			{
+				_host = host;
+				_servConf = &client->_server->_serverConfig;
+			}
+		}
+	}
 	_host = host;
 }
 

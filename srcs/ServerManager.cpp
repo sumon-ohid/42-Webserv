@@ -97,14 +97,16 @@ void	ServerManager::shutdown()
 
 bool	ServerManager::IpPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, int port, ServerConfig& servConf)
 {
-	mpSocketIp::iterator socketIt =  _socketIp.find(port);
-	if (socketIt != _socketIp.end() && socketIt->first == port && socketIt->second == IpHost)
+	for (mpSocketIp::iterator socketIt =  _socketIp.begin(); socketIt != _socketIp.end(); ++socketIt)
 	{
-		Socket tmp = socketIt->first;
-		tmp.addConfig(hostname, servConf);
-		_socketIp.erase(socketIt);
-		_socketIp.insert(std::make_pair(tmp, IpHost));
-		return (false);
+		if (socketIt->first.getPort() == port && socketIt->second == IpHost)
+		{
+			Socket tmp = socketIt->first;
+			tmp.addConfig(hostname, servConf);
+			_socketIp.erase(socketIt);
+			_socketIp.insert(std::make_pair(tmp, IpHost));
+			return (false);
+		}
 	}
 	return (true);
 }

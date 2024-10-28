@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 
 #include "Method.hpp"
+#include "ServerConfig.hpp"
 
 class Server;
 class Response;
@@ -31,7 +32,7 @@ class Request {
 	public:
 		std::string	_requestBody;
 		std::string	_postFilename;
-
+		ServerConfig*	_servConf;
 		Response*	_response;
 
 		Request();
