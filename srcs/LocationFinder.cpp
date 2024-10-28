@@ -24,7 +24,7 @@ LocationFinder::LocationFinder()
     _autoIndexFound = false;
     _allowedMethodFound = false;
     _redirectFound = false;
-    
+
     locationsVector.clear();
 }
 
@@ -51,7 +51,7 @@ bool LocationFinder::isDirectory(const std::string &path)
         {
             std::multimap<std::string, std::string> locationMap = locationsVector[i].getLocationMap();
             std::multimap<std::string, std::string>::iterator it;
-            
+
             for (it = locationMap.begin(); it != locationMap.end(); it++)
             {
                 if (it->first == "root")
@@ -101,7 +101,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     std::string requestPath;
     socketFd = _socketFd;
     locationsVector = client->_server->_serverConfig.getLocations();
-    
+
 
     //-- Remove the last slash from the path to avoid mismatch.
     if (path != "/" && path[path.size() - 1] == '/')
@@ -121,15 +121,15 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
 
     //std::cout << BOLD BLUE << "PATH " << path << RESET << std::endl;
     //std::cout << BOLD BLUE << "REQUEST PATH " << requestPath << RESET << std::endl;
-	std::vector<LocationConfig>* tmp = client->_server->getLocationConfig(client->_request.getHost(), client->getPort());
-	std::cout << "host:\t" << client->_request.getHost() << std::endl;
-	if (tmp)
-    	locationsVector = *tmp;
-	else
-	{
-		std::cout << "error here" << std::endl;
-	 	throw std::runtime_error("");
-	}
+	// std::vector<LocationConfig>* tmp = client->_server->getLocationConfig(client->_request.getHost(), client->getPort());
+	// std::cout << "host:\t" << client->_request.getHost() << std::endl;
+	// if (tmp)
+    // 	locationsVector = *tmp;
+	// else
+	// {
+	// 	std::cout << "error here" << std::endl;
+	//  	throw std::runtime_error("");
+	// }
 
 
     for (size_t i = 0; i < locationsVector.size(); i++)
@@ -142,7 +142,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         {
             std::multimap<std::string, std::string> locationMap = locationsVector[i].getLocationMap();
             std::multimap<std::string, std::string>::iterator it;
-            
+
             for (it = locationMap.begin(); it != locationMap.end(); it++)
             {
                 if (it->first == "root")
@@ -190,7 +190,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             _locationPath = tempPath;
 
             //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
-            
+
             return true;
         }
     }

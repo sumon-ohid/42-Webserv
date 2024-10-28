@@ -79,7 +79,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     {
         pathToServe = locationFinder._pathToServe;
         serveStaticFile(locationFinder, pathToServe, request, client);
-    } 
+    }
 }
 
 void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& request, Client* client)
@@ -126,7 +126,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
 }
 
 void GetMethod::handleRedirection(std::string &redirectUrl)
-{    
+{
     std::map<std::string, std::string> redirectCodes = Helper::redirectCodes;
 
     std::string redirectCode = "302"; // Default redirect code

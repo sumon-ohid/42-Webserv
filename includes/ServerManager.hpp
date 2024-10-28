@@ -9,14 +9,15 @@
 
 typedef std::vector<Server> vSrv;
 typedef std::vector<ServerConfig> vSrvConf;
-typedef	std::map<int, std::list<std::string> > mpPortIp;
+typedef	std::map<Socket, std::string> mpSocketIp;
+
 
 class ServerManager
 {
 private:
 	ServerConfig			_generalConfig;
 	std::vector<Server>		_servers;
-	mpPortIp				_socketIp;
+	mpSocketIp				_socketIp;
 	Epoll					_epoll;
 
 	// calls the config file parsing and the server setUp
@@ -42,7 +43,7 @@ public:
 	// shuts down all servers and close all fds
 	void	shutdown();
 
-	bool	IpPortCombinationNonExistent(const std::string&, std::string&, Socket&, ServerConfig&);
+	bool	IpPortCombinationNonExistent(const std::string&, std::string&, int, ServerConfig&);
 
-	void	addNewSocketIpCombination(int, std::string&);
+	void	addNewSocketIpCombination(Socket&, std::string&);
 };

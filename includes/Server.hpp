@@ -74,6 +74,4 @@ public:
 	Client*			getClient(int fd);
 
 	Socket*			getSocket(int port);
-
-	std::vector<LocationConfig>* getLocationConfig(std::string hostname, int port);
 };

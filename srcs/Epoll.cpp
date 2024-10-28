@@ -60,7 +60,7 @@ void	Epoll::registerLstnSockets(vSrv& servers)
 		for (lstSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
 		{
 			registerSocket(it->getFdSocket(), EPOLLIN);
-			std::cout << "Server\t" << i << "\tregistered at port:\t" << it->getPort() << std::endl;
+			std::cout << BOLD BLUE "registered at port:\thttp://" << it->_configs.begin()->first << ":" << it->getPort() << RESET <<  std::endl;
 		}
 		i++;
 	}
@@ -153,7 +153,7 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
-	Client	tmp(_connSock, sockIt->getPort(), &serv);
+	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt));
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);

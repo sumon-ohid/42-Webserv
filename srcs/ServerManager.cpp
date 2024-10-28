@@ -95,33 +95,25 @@ void	ServerManager::shutdown()
 	std::cout << "\nAll servers shut down" << std::endl;
 }
 
-bool	ServerManager::IpPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, Socket& socket, ServerConfig& servConf)
+bool	ServerManager::IpPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, int port, ServerConfig& servConf)
 {
-	mpPortIp::iterator socketIt =  _socketIp.find(socket.getPort());
-	if (socketIt != _socketIp.end() && socketIt->first == socket.getPort())
+	mpSocketIp::iterator socketIt =  _socketIp.find(port);
+	if (socketIt != _socketIp.end() && socketIt->first == port && socketIt->second == IpHost)
 	{
-		std::list<std::string> ipAdress = socketIt->second;
-		for (std::list<std::string>::iterator ipIt = ipAdress.begin(); ipIt != ipAdress.end(); ++ipIt)
-		{
-			if (*ipIt == IpHost)
-			{
-				socket.addConfig(hostname, servConf.getLocations());
-				return (false);
-			}
-		}	
+		Socket tmp = socketIt->first;
+		tmp.addConfig(hostname, servConf);
+		_socketIp.erase(socketIt);
+		_socketIp.insert(std::make_pair(tmp, IpHost));
+		return (false);
 	}
 	return (true);
 }
 
-void	ServerManager::addNewSocketIpCombination(int port, std::string& hostIp)
+void	ServerManager::addNewSocketIpCombination(Socket &socket, std::string& hostIp)
 {
-	mpPortIp::iterator it = _socketIp.find(port);
+	mpSocketIp::iterator it = _socketIp.find(socket);
 	if (it != _socketIp.end())
-		it->second.push_back(hostIp);
+		return;
 	else
-	{
-		std::list<std::string>	hostList;
-		hostList.push_back(hostIp);
-		_socketIp.insert(std::make_pair(port, hostList));
-	}
+		_socketIp.insert(std::make_pair(socket, hostIp));
 }

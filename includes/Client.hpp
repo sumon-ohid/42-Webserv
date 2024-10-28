@@ -4,6 +4,7 @@
 #include "Request.hpp"
 
 class Server;
+class Socket;
 
 class Client
 {
@@ -16,10 +17,11 @@ private:
 public:
 	Server*			_server;
 	Request			_request; // BP: can there be one or multiple requests at the same time
-	
+	Socket*			_socket;
+
 	// Coplien's form
 	Client();
-	Client(int, int, Server*);
+	Client(int, int, Server*, Socket*);
 	~Client();
 	Client(const Client&);
 	Client&	operator=(const Client&);

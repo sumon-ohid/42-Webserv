@@ -47,7 +47,7 @@ bool	Socket::operator==(const Socket& other) const
 			_configs == other._configs;
 }
 
-bool 	Socket::operator<(const Socket& other) const 
+bool 	Socket::operator<(const Socket& other) const
 {
 	if (_fd != other._fd)
 		return _fd < other._fd;
@@ -95,7 +95,7 @@ void	Socket::bindToSocketAndListen(struct addrinfo* p)
 		throw std::runtime_error("socket - listen failed");
 }
 
-void	Socket::addConfig(const std::string& hostIp, std::vector<LocationConfig> locConf)
+void	Socket::addConfig(const std::string& hostIp, ServerConfig& locConf)
 {
 	_configs.insert(std::make_pair(hostIp, locConf));
 }
@@ -123,17 +123,17 @@ void	Socket::socketSetUpAddress(const std::string& hostname, ServerConfig& servC
 
 void	Socket::createSocketForAddress(const std::string& hostname, struct addrinfo* res, ServerConfig& servConf, ServerManager& sm)
 {
-	for (struct addrinfo* p = res; p != NULL; p = p->ai_next) 
+	for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
 	{
 		struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(p->ai_addr);
 		std::string ipHost(reinterpret_cast<const char*>(&addr->sin_addr), sizeof(addr->sin_addr));
 	// Create the socket with SOCK_NONBLOCK flag
-		if (sm.IpPortCombinationNonExistent(hostname, ipHost, *this, servConf)) //otherwise add to existing one inside IpPort... the Location File with this Hostname
+		if (sm.IpPortCombinationNonExistent(hostname, ipHost, _port, servConf)) //otherwise add to existing one inside IpPort... the Location File with this Hostname
 		{
 			createSocket(p);
 			bindToSocketAndListen(p);
-			sm.addNewSocketIpCombination(_port, ipHost);
-			_configs.insert(std::make_pair(hostname, servConf.getLocations()));
+			sm.addNewSocketIpCombination(*this, ipHost);
+			_configs.insert(std::make_pair(hostname, servConf));
 		}
 	}
 	freeaddrinfo(res);
@@ -174,11 +174,16 @@ std::ostream&	operator<<(std::ostream &os, const std::vector<char> &vc)
 	return (os);
 }
 
-std::vector<LocationConfig>*	Socket::getConfig(std::string& hostname)
+ServerConfig*	Socket::getConfig(std::string& hostname)
 {
-	mHstLoc::iterator it = _configs.find(hostname);
+	mHstConfs::iterator it = _configs.find(hostname);
 	if (it != _configs.end())
 		return (&it->second);
 	else
 		return (NULL);
+}
+
+int	Socket::getConfigSize() const
+{
+	return (_configs.size());
 }

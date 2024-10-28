@@ -59,7 +59,7 @@ class Request {
 		void	checkFirstLine(std::vector<char>& line);
 
 		void	checkLine(std::vector<char>& line);
-		void	checkHost();
+		void	checkHost(Client*);
 		void	executeMethod(int socketFd, Client *client);
 
 		int		clientRequest(Client* client);

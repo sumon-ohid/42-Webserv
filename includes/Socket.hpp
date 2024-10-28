@@ -1,6 +1,5 @@
 #pragma once
 
-#include "LocationConfig.hpp"
 #include "ServerConfig.hpp"
 #include "ServerManager.hpp"
 #include <netinet/in.h>
@@ -15,7 +14,7 @@
 #define	SOCKET_BUFFER_SIZE		32000 // 64 kb
 #define SOCKET_MAX_LISTEN		1000
 
-typedef std::map<std::string, std::vector<LocationConfig> >	mHstLoc;
+typedef std::map<std::string, ServerConfig>		mHstConfs;
 
 class ServerManager;
 
@@ -26,7 +25,7 @@ private:
 	int				_port;
 	socklen_t		_addrlen;
 	sockaddr_in		_address;
-	mHstLoc			_configs;
+
 
 	// ------------- Socket Setup -------------
 	/**
@@ -68,12 +67,13 @@ public:
 	Socket&			operator=(const Socket&);
 	bool			operator==(const Socket& other) const;
 	bool 			operator<(const Socket& other) const;
+	mHstConfs			_configs;
 
 	// ------------- Socket setup -------------
 	// sets up a socket to use at a specified port
 	void			setUpSocket(const std::string&, ServerConfig&, ServerManager&);
 
-	void			addConfig(const std::string&, std::vector<LocationConfig>);
+	void			addConfig(const std::string&, ServerConfig&);
 	// ------------- Getters -------------
 	// returns the fd of the socket
 	int				getFdSocket(void) const;
@@ -85,7 +85,8 @@ public:
 	sockaddr_in		getAddress(void) const;
 	// returns the a reference to the address
 	sockaddr_in&	getAddress(void);
-	std::vector<LocationConfig>*	getConfig(std::string&);
+	ServerConfig*	getConfig(std::string&);
+	int				getConfigSize() const;
 };
 
 std::ostream&	operator<<(std::ostream &os, const std::vector<char> &vc);

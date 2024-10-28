@@ -46,12 +46,12 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 	std::vector<std::string> hostnames = _serverConfig.getServerNames();
 
 	for (size_t i = 0; i < ports.size(); ++i)
-	{	
+	{
 		int port = ports[i];
 		if (!hostnames.empty())
 		{
 			for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
-			{	
+			{
 				// create a temporary socket instance which will listen to a specific port
 				Socket	tmp(port);
 				try
@@ -72,7 +72,7 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 				// if (tmp.getFdSocket() != -1)
 			}
 		}
-		else 
+		else
 		{
 			Socket	tmp(port);
 			tmp.setUpSocket("0.0.0.0", _serverConfig, sm);
@@ -87,7 +87,7 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 		if (!hostnames.empty())
 		{
 			for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
-			{	
+			{
 				// create a temporary socket instance which will listen to a specific port
 				Socket	tmp(port);
 				tmp.setUpSocket(*hostname, _serverConfig, sm);
@@ -96,7 +96,7 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 					_listenSockets.push_back(tmp);
 			}
 		}
-		else 
+		else
 		{
 			Socket	tmp(port);
 			tmp.setUpSocket("0.0.0.0", _serverConfig, sm);
@@ -210,13 +210,5 @@ Socket*	Server::getSocket(int port)
 	for (lstSocs::iterator it = _listenSockets.begin(); it != _listenSockets.end(); ++it)
 		if (port == it->getPort())
 			return (&(*it));
-	return (NULL);
-}
-
-std::vector<LocationConfig>* Server::getLocationConfig(std::string hostname, int port)
-{
-	Socket* tmp = getSocket(port);
-	if (tmp)
-		return (tmp->getConfig(hostname));
 	return (NULL);
 }
