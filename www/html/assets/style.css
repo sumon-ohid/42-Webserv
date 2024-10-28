@@ -1,5 +1,5 @@
 :root {
-    --background-image: url('assets/dark-bg.jpg');
+    --background-image: url('dark-bg.jpg');
     --background-blur: 80px;
     --text-color: #ffffff;
     --button-bg: rgba(0, 0, 0, 0.3);
@@ -9,7 +9,7 @@
 }
 
 body.light-mode {
-    --background-image: url('assets/light-bg.jpg');
+    --background-image: url('light-bg.jpg');
     --background-blur: 10px;
     --text-color: #000000;
     --button-bg: rgba(255, 255, 255, 0.3);

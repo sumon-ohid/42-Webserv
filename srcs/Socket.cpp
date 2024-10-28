@@ -105,7 +105,7 @@ void	Socket::socketSetUpAddress()
     // to ensure that the size of the sockaddr_in structure
     // is the same as the sockaddr structure.
 	std::memset(_address.sin_zero, '\0', sizeof _address.sin_zero);
-	std::cout << "Address set up for port:\t" << _port << std::endl;
+	std::cout << "Address set up for :\thttp://localhost:" << _port << std::endl;
 }
 
 
