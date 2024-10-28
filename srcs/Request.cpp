@@ -153,20 +153,18 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 		return;
 	std::string	key = oneLine.substr(0, pos);
 	std::string value = oneLine.substr(pos + 1);
-	while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
+	while (!value.empty() && value[0] == ' ') {
 		value.erase(0, 1);
 	}
 	if (_headerMap.find(key) == _headerMap.end()) {
 		_headerMap[key] = value;
-		// std::cout << "$" << key << "$" << value << "$" << std::endl;
+		// std::cout << key << "$" << value << std::endl;
 	}
 	else
-		_headerMap[key] += value; // BP: to test
+		_headerMap[key] += value; // BP: to test, add delimiter
 }
 
 void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
-	if (endPos > 0)
-		endPos += 2;
 	std::size_t pos = strLine.find("\r\n", endPos);
 	std::size_t pos2 = endPos;
 
@@ -177,8 +175,9 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 			_readingFinished = true;
 		return;
 	}
-	// std::cout << endPos << std::endl;
+
 	if (endPos == std::string::npos) {
+		// for request via telnet:
 		storeOneHeaderInMap(strLine.substr(0));
 		return;
 	} else {
@@ -191,22 +190,6 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 		pos2 = pos;
 		pos = strLine.find("\r\n", pos2 + 1);
 	}
-
-	(void) pos;
-	(void) pos2;
-
-	// std::size_t pos = oneLine.find(":");
-	// if (pos == std::string::npos)
-	// 	return;
-	// std::string	key = oneLine.substr(0, pos);
-	// std::string value = oneLine.substr(pos + 1);
-	// while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
-	// 	value.erase(0, 1);
-	// }
-	// if (_headerMap.find(key) != _headerMap.end())
-	// 	_headerMap[key] = value;
-	// else
-	// 	_headerMap[key] += value; // BP: to test
 }
 
 
@@ -375,7 +358,7 @@ int	Request::clientRequest(Client* client)
 			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
 				client->_server->_epoll->removeClient(client);
 			} else {
-				Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
+				client->_request._response->error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 			}
 			std::cerr << "exception: " << e.what() << std::endl;
 			writeFlag = true;
@@ -391,7 +374,7 @@ int	Request::clientRequest(Client* client)
 			client->_request.requestReset();
 		}
 		catch (std::exception &e) {
-			Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
+			client->_request._response->error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 			client->_request.requestReset();
 		}
 

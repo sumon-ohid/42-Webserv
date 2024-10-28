@@ -104,7 +104,7 @@ std::string HandleCgi::getExecutable(const std::string &locationPath)
     if (pos != std::string::npos)
         extension = locationPath.substr(pos);
     else
-        throw std::runtime_error("Invalid file extension !!"); 
+        throw std::runtime_error("Invalid file extension !!");
 
     std::string executable;
     executable = Helper::executableMap.find(extension)->second;
@@ -126,7 +126,7 @@ void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPa
 
     //--- Prepare arguments for execve
     char *const argv[] = { (char *)executable.c_str(), (char *)locationPath.c_str(), NULL };
-    
+
     //--- Prepare environment variables for execve
     std::vector<char*> envp;
     for (std::map<std::string, std::string>::const_iterator it = env.begin(); it != env.end(); it++)
@@ -179,7 +179,7 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid, Requ
     // //--- Send the CGI output
     // send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
 
-    Response::headerAndBody(nSocket, request, body);
+    request._response->headerAndBody(nSocket, request, body);
 
     close(pipe_fd[0]); //--- Close read end
 }

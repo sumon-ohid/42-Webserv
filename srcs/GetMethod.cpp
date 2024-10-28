@@ -79,7 +79,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     {
         pathToServe = locationFinder._pathToServe;
         serveStaticFile(locationFinder, pathToServe, request, client);
-    } 
+    }
 }
 
 void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& request, Client* client)
@@ -88,7 +88,7 @@ void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& 
     if (locationFinder._autoIndex == "on" && locationFinder.isDirectory(fullPath))
         handleAutoIndex(fullPath, request, client);
     else
-        Response::error(socketFd, request, "403", client);
+        request._response->error(socketFd, request, "403", client);
 }
 
 void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
@@ -117,16 +117,16 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     }
     else
     {
-        Response::error(socketFd, request, "403", client);
+        request._response->error(socketFd, request, "403", client);
         return;
     }
     std::string bodyStr = body.str();
-    Response::headerAndBody(socketFd, request, bodyStr);
+    request._response->headerAndBody(socketFd, request, bodyStr);
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
 
 void GetMethod::handleRedirection(std::string &redirectUrl)
-{    
+{
     std::map<std::string, std::string> redirectCodes = Helper::redirectCodes;
 
     std::string redirectCode = "302"; // Default redirect code
@@ -171,7 +171,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     {
         if (locationFinder._allowed_methods.find("GET") == std::string::npos)
         {
-            Response::error(socketFd, request, "405", client);
+            request._response->error(socketFd, request, "405", client);
             return;
         }
     }
@@ -187,7 +187,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     if (!file.is_open())
     {
         //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
-        Response::error(socketFd, request, "404", client);
+        request._response->error(socketFd, request, "404", client);
         return;
     }
 
@@ -195,7 +195,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     buffer << file.rdbuf();
     std::string body = buffer.str();
     file.close();
-    Response::headerAndBody(socketFd, request, body);
+    request._response->headerAndBody(socketFd, request, body);
     std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 }
 
@@ -209,7 +209,7 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
     }
     catch (std::exception &e)
     {
-        Response::error(socketFd, request, e.what(), client);
+        request._response->error(socketFd, request, e.what(), client);
     }
 }
 

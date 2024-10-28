@@ -24,7 +24,7 @@ PostMethod& PostMethod::operator=(const PostMethod& other)
 {
     if (this == &other)
         return (*this);
-    Method::operator=(other);   
+    Method::operator=(other);
     return (*this);
 }
 
@@ -38,7 +38,7 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
     isLocation = locationFinder.locationMatch(client, request.getMethodPath(), socketFd);
     if (!isLocation)
     {
-        Response::error(socketFd, request, "404", client);
+        request._response->error(socketFd, request, "404", client);
         return;
     }
 
@@ -47,7 +47,7 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
     {
         if (locationFinder._allowed_methods.find("POST") == std::string::npos)
         {
-            Response::error(socketFd, request, "405", client);
+            request._response->error(socketFd, request, "405", client);
             return;
         }
     }
@@ -78,13 +78,13 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     else
     {
         std::cerr << BOLD RED << "Error: Could not open file for writing" << RESET << std::endl;
-        Response::error(socketFd, request, "500", client);
+        request._response->error(socketFd, request, "500", client);
         return;
     }
- 
+
     std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
-    Response::headerAndBody(socketFd, request, body);
-    
+    request._response->headerAndBody(socketFd, request, body);
+
     std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
     std::cout << BOLD BLUE "File : " << fileName << RESET << std::endl;
     std::cout << BOLD GREEN "FILE SAVED! 💾" << RESET << std::endl;

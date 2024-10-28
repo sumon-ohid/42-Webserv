@@ -36,7 +36,11 @@ Response*	Response::clone() const {
 	return new Response(*this);
 }
 
-static std::string createHeaderString(Request& request, std::string& body, std::string statusCode) {
+bool	Response::getIsChunk() {
+	return _isChunk;
+}
+
+std::string Response::createHeaderString(Request& request, const std::string& body, std::string statusCode) {
 	std::stringstream ss;
 	std::map<std::string, std::string>::const_iterator it;
 	std::string statusMessage;
@@ -50,22 +54,25 @@ static std::string createHeaderString(Request& request, std::string& body, std::
 	}
 
 	if (request.hasMethod())
-		ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\n";
+		ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\r\n";
 	else
-	 	ss << "HTTP/1.1 " << statusCode << " " << statusMessage << "\n";
-	ss << "Server: " << "webserv 1.0" << "\n";
-	ss << "Date: " << Helper::getActualTimeStringGMT() << "\n";
+	 	ss << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
+	ss << "Server: " << "webserv 1.0" << "\r\n";
+	ss << "Date: " << Helper::getActualTimeStringGMT() << "\r\n";
 	if (request.hasMethod())
-		ss << "Content-Type: " << request.getMethodMimeType() << "\n";
+		ss << "Content-Type: " << request.getMethodMimeType() << "\r\n";
 	else
-	 	ss << "Content-Type: text/html\n";
-	ss << "Content-Length: " << (body.size() + 1) << "\n"; // + 1 plus additional \n at the end?
-	ss << "Connection: " << "connectionClosedOrNot" << "\n";
+	 	ss << "Content-Type: text/html\r\n";
+	if (this->getIsChunk())
+		ss << "Transfer-Encoding: chunked\r\n";
+	else
+		ss << "Content-Length: " << (body.size() + 1) << "\r\n"; // + 1 plus additional \r\n at the end?
+	ss << "Connection: " << "connectionClosedOrNot" << "\r\n";
 
 	return ss.str();
 }
 
-static std::string createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode) {
+std::string Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
 	ss << createHeaderString(request, body, statusCode) << "\n";
 	ss << body << "\n"; //BP: \n at the end - do we need this?
@@ -78,7 +85,7 @@ void	Response::header(int socketFd, Request& request, std::string& body) {
 	write(socketFd , headString.c_str(), headString.size());
 }
 
-void	Response::headerAndBody(int socketFd, Request& request, std::string& body) {
+void	Response::headerAndBody(int socketFd, Request& request, std::string& body) { // BP: change name to sendHeaderAndBody?
 	if (body.size() > CHUNK_SIZE) {
 		sendWithChunkEncoding(socketFd, request, body);
 	} else {
@@ -191,12 +198,14 @@ void	Response::sendChunks(int socketFd, std::string chunkString) {
 
 void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string& body) {
 	(void) request;
-	std::string ChunkStartHeader = "HTTP/1.1 200 OK\r\n"
-                          "Content-Type: video/mp4\r\n"
-                          "Transfer-Encoding: chunked\r\n"
-                          "\r\n";
+	_isChunk = true;
+	std::string chunkStartHeader = createHeaderString(request, body, "200") + "\r\n";
+	// "HTTP/1.1 200 OK\r\n"
+    //                       "Content-Type: video/mp4\r\n"
+    //                       "Transfer-Encoding: chunked\r\n"
+    //                       "\r\n";
 	//ChunkStartHeaderSent false? then:
-	send(socketFd, ChunkStartHeader.c_str(), ChunkStartHeader.size(), 0);
+	send(socketFd, chunkStartHeader.c_str(), chunkStartHeader.size(), 0);
 
 
 	for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent

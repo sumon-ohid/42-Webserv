@@ -73,13 +73,13 @@ void	Method::setPath(std::string path) {
 
 void	Method::setProtocol(std::string protocol) {
 	if (protocol.empty()) {
-		this->_protocol = "HTTP/0.9"; // BP: to check what is different
-		return;
+		// HTTP/0.9 not supported
+		throw std::runtime_error("505");
 	}
-	if (protocol == "HTTP/2")
+	if (protocol == "HTTP/2" || protocol == "HTTP/1.0")
 		throw std::runtime_error("505");
 	if (protocol != "HTTP/1.1")
-		throw std::runtime_error("400"); // BP check for other possibilities like 1.0001 etc.
+		throw std::runtime_error("400");
 	this->_protocol = protocol;
 }
 
