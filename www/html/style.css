@@ -1,6 +1,6 @@
 :root {
     --background-image: url('assets/dark-bg.jpg');
-    --background-blur: 50px;
+    --background-blur: 80px;
     --text-color: #ffffff;
     --button-bg: rgba(0, 0, 0, 0.3);
     --button-hover-bg: rgba(183, 183, 183, 0.5);

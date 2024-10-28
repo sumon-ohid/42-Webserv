@@ -46,6 +46,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 
     LocationFinder locationFinder;
     locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
+    std::cout << locationFinder._pathToServe << std::endl;
     if (locationMatched)
     {
         if (locationFinder._redirectFound)
@@ -95,6 +96,8 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     DIR *dir;
     struct dirent *ent;
     std::ostringstream body;
+
+    std::cout << BOLD YELLOW << path << RESET << std::endl;
 
     if ((dir = opendir(path.c_str())) != NULL)
     {
@@ -175,6 +178,12 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
 
     this->setMimeType(path);
     std::ifstream file(path.c_str());
+    if (locationFinder.isDirectory(path))
+    {
+        path = path + "/";
+        handleAutoIndexOrError(locationFinder, request, client);
+        return;
+    }
     if (!file.is_open())
     {
         //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
