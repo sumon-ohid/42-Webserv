@@ -27,7 +27,6 @@ Request::Request() {
 	_response = new Response();
 	_contentLength = 0;
 	_contentRead = 0;
-	_response = NULL;
 	_servConf = NULL;
 }
 
