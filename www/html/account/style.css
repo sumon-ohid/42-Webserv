@@ -142,6 +142,10 @@ body {
     font-size: .7em;
 }
 
+.button-container .button:hover {
+    background: var(--button-hover-bg);
+}
+
 /* form button */
 .button-form
 {
