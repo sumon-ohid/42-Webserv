@@ -13,9 +13,11 @@ class Response {
 	private:
 		int 			_socketFd;
 		bool			_isChunk;
-		unsigned long	_bytesSent;
+		bool			_headerSent;
+		bool			_finishedSending;
+		unsigned long	_bytesSentOfBody;
+		std::string		_header;
 		std::string		_message;
-		// std::string chunk;
 		std::string		_mimeType;
 
 
@@ -30,7 +32,7 @@ class Response {
 		bool	getIsChunk();
 
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
-		std::string	createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode);
+		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode);
 
 		void	header(int socketFd, Request& request, std::string& body);
 		void	headerAndBody(int socketFd, Request& request, std::string& body);

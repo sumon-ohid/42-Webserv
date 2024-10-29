@@ -84,7 +84,7 @@ void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
         }
     }
 
-    std::map<std::string, std::string>::const_iterator it;
+    std::map<std::string, std::string>::const_iterator it; // BP:: I also have this same block - maybe create Helper function
 	it = Helper::statusCodes.find(statusCode);
 	std::string statusMessage;
 	if (it == Helper::statusCodes.end()) {

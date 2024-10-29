@@ -12,21 +12,22 @@
 #include "../includes/Request.hpp"
 #include "../includes/Helper.hpp"
 
-Response::Response() : _socketFd(-1), _isChunk(false), _bytesSent(0), _message(""), _mimeType("") {}
+Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _bytesSentOfBody(0), _header(""), _message(""), _mimeType("") {}
 
-Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk), _bytesSent(other._bytesSent), _message(other._message), _mimeType(other._mimeType) {
-	(void) other;
-}
+Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  _headerSent(other._headerSent), _finishedSending(other._finishedSending), _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _message(other._message), _mimeType(other._mimeType) {}
 
 Response& Response::operator=(const Response& other) {
 	if (this == &other)
 		return *this;
 
-	this->_socketFd = other._socketFd;
-	this->_isChunk = other._isChunk;
-	this->_bytesSent = other._bytesSent;
-	this->_message = other._message;
-	this->_mimeType = other._mimeType;
+	_socketFd = other._socketFd;
+	_isChunk = other._isChunk;
+	_headerSent = other._headerSent;
+	_finishedSending = other._finishedSending;
+	_bytesSentOfBody = other._bytesSentOfBody;
+	_header = other._header;
+	_message = other._message;
+	_mimeType = other._mimeType;
 	return *this;
 }
 
@@ -40,10 +41,9 @@ bool	Response::getIsChunk() {
 	return _isChunk;
 }
 
-std::string Response::createHeaderString(Request& request, const std::string& body, std::string statusCode) {
-	std::stringstream ss;
+// to check if the statusCode exists - else respond with internal server error
+static void	checkStatus(std::string& statusCode, std::string& statusMessage) {
 	std::map<std::string, std::string>::const_iterator it;
-	std::string statusMessage;
 
 	it = Helper::statusCodes.find(statusCode);
 	if (it == Helper::statusCodes.end()) {
@@ -52,7 +52,13 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	} else {
 		statusMessage = it->second;
 	}
+}
 
+std::string Response::createHeaderString(Request& request, const std::string& body, std::string statusCode) {
+	std::stringstream ss;
+	std::string statusMessage;
+
+	checkStatus(statusCode, statusMessage);
 	if (request.hasMethod())
 		ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\r\n";
 	else
@@ -66,32 +72,32 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	if (this->getIsChunk())
 		ss << "Transfer-Encoding: chunked\r\n";
 	else
-		ss << "Content-Length: " << (body.size() + 1) << "\r\n"; // + 1 plus additional \r\n at the end?
-	ss << "Connection: " << "connectionClosedOrNot" << "\r\n";
+		ss << "Content-Length: " << (body.size() + 1) << "\r\n"; // BP: + 1 plus additional \r\n at the end?
+	ss << "Connection: " << "connectionClosedOrNot" << "\r\n"; // BP: to check
+	ss << "\r\n";
 
 	return ss.str();
 }
 
-std::string Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode) {
+void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
-	ss << createHeaderString(request, body, statusCode) << "\n";
-	ss << body << "\n"; //BP: \n at the end - do we need this?
-
-	return ss.str();
+	_header = createHeaderString(request, body, statusCode);
+	_message = body + "\r\n";
 }
 
-void	Response::header(int socketFd, Request& request, std::string& body) {
+void	Response::header(int socketFd, Request& request, std::string& body) { // BP check if used
 	std::string headString = createHeaderString(request, body, "200");
-	write(socketFd , headString.c_str(), headString.size());
+	send(socketFd , headString.c_str(), headString.size(), 0);
 }
 
 void	Response::headerAndBody(int socketFd, Request& request, std::string& body) { // BP: change name to sendHeaderAndBody?
-	if (body.size() > CHUNK_SIZE) {
+	if (_isChunk || body.size() > CHUNK_SIZE) {
 		sendWithChunkEncoding(socketFd, request, body);
 	} else {
-		std::string totalString = createHeaderAndBodyString(request, body, "200");
+		createHeaderAndBodyString(request, body, "200");
 		// std::cout << totalString << std::endl;
-		write(socketFd , totalString.c_str(), totalString.size());
+		send(socketFd , _header.c_str(), _header.size(), 0);
+		send(socketFd , _message.c_str(), _message.size(), 0);
 	}
 }
 
@@ -115,9 +121,10 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 	ss << "</body>\r\n</html>\r\n";
 
 	std::string body = ss.str();
-	std::string totalString = createHeaderAndBodyString(request, body, statusCode);
-	ssize_t writeReturn = write(socketFd, totalString.c_str(), totalString.size());
-	if (writeReturn == -1)
+	createHeaderAndBodyString(request, body, statusCode);
+	ssize_t bytesSent = send(socketFd , _header.c_str(), _header.size(), 0);
+	bytesSent = send(socketFd , _message.c_str(), _message.size(), 0);
+	if (bytesSent == -1)
 		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 	else
 		std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
@@ -139,20 +146,23 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 	std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
 	if (errorPages.find(statusCode) != errorPages.end() || errorPages.empty())
 	{
-		ssize_t writeReturn = 0;
+		ssize_t bytesSent = 0;
 		try
 		{
 			ErrorHandle errorHandle;
 			errorHandle.prepareErrorPage(client, statusCode);
 			if (request.hasMethod())
 				request.setMethodMimeType(errorHandle.getNewErrorFile());
+			std::cout << "mime-type: "<< request.getMethodMimeType() << std::endl;
+			std::cout << "file: "<< errorHandle.getNewErrorFile() << std::endl;
 			//-- this will create a new error file, error code will be the file name
 			//-- this will modify the error page replacing the status code, message and page title
 			//-- this will return the modified error page as a string
 			std::string errorBody = errorHandle.modifyErrorPage();
-			std::string totalString = createHeaderAndBodyString(request, errorBody, statusCode);
-			writeReturn = write(socketFd, totalString.c_str(), totalString.size());
-			if (writeReturn == -1)
+			createHeaderAndBodyString(request, errorBody, statusCode);
+			bytesSent = send(socketFd , _header.c_str(), _header.size(), 0);
+			bytesSent = send(socketFd , _message.c_str(), _message.size(), 0);
+			if (bytesSent == -1)
 				throw std::runtime_error("Error writing to socket in Response::error!!");
 			else
 				std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
@@ -172,7 +182,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 	else
 	{
 		try {
-			fallbackError(socketFd, request, statusCode); //BP: shouldn't it be our nice standard error page not the fallback?
+			fallbackError(socketFd, request, statusCode);
 		}
 		catch (std::exception &e) {
 			std::cerr << BOLD RED << e.what() << RESET << std::endl;
@@ -184,18 +194,25 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 #include <unistd.h>
 
 long	Response::sendChunks(int socketFd, std::string chunkString) {
-	std::ostringstream ss;
-	ss << std::hex << chunkString.size() << "\r\n";
+	if (chunkString.size() == 0) {
+		// send(socketFd, "0\r\n\r\n", 5, 0); // BP: add this ev. when changing to epoll version
+		return 0;
+	}
+	usleep(100000); // change to epoll
+	std::ostringstream ss1;
+	ss1 << std::hex << chunkString.size() << "\r\n";
 	// unsigned long int hexSize = ss.str().size();
-	ss << chunkString << "\r\n";
-	long bytesSent = send(socketFd, ss.str().c_str(), ss.str().size(), 0);
+	long bytesSent = send(socketFd, ss1.str().c_str(), ss1.str().size(), 0);
+	if (bytesSent < 0)
+		return bytesSent;
+	std::ostringstream ss2;
+	ss2 << chunkString << "\r\n";
+	bytesSent = send(socketFd, ss2.str().c_str(), ss2.str().size(), 0);
 
-	usleep(100000); // change to
-	return bytesSent;
+	return bytesSent - 2;
 }
 
 void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string& body) {
-	(void) request;
 	_isChunk = true;
 	long bytesSent;
 
@@ -208,12 +225,18 @@ void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string
 
 	for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent
 		bytesSent = sendChunks(socketFd, body.substr(i, CHUNK_SIZE));
+		_bytesSentOfBody += bytesSent;
+		std::cout << "bytes sent: " << _bytesSentOfBody<< std::endl;
 		if (bytesSent < 0) {
-			std::cerr << "Error sending chunked message" << std::endl;
+			std::cerr << "Connection closed by client" << std::endl; // BP: ev. other message?
 			break;
 		}
-		// check whats better chunk loop or always go back to epoll loop
+		// change to implement: go back to epoll loop instead of for-loop
 	}
 	if (bytesSent >= 0)
-		send(socketFd, "0\r\n\r\n", 5, 0);
+		send(socketFd, "0\r\n\r\n", 5, 0); // for ending chunk encoding
+
+	(void) request;
 }
+
+// EPolloutFlag setzen und am Ende Epol in setzen

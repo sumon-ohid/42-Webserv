@@ -144,7 +144,7 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
         }
     }
 
-    std::cout << BOLD YELLOW << "Redirecting to: " << url << RESET << std::endl;
+    std::cout << BOLD YELLOW << "Redirecting to: " << url << RESET << std::endl; // BP: maybe move this part to response class
     std::ostringstream redirectHeader;
     redirectHeader << "HTTP/1.1 " << redirectCode << " " << redirectCodes[redirectCode] << "\r\n"
                    << "Location: " << url << "\r\n"
