@@ -5,6 +5,7 @@
 #include <iostream>
 #include <errno.h>
 #include <sys/types.h>
+#include <vector>
 
 #include "../includes/Request.hpp"
 #include "../includes/Client.hpp"
@@ -26,6 +27,7 @@ Request::Request() {
 	_response = new Response();
 	_contentLength = 0;
 	_contentRead = 0;
+	_servConf = NULL;
 }
 
 Request::Request(const Request& other) {
@@ -38,10 +40,15 @@ Request::Request(const Request& other) {
 		_method = other._method->clone();
 	else
 	 	_method = NULL;
-	_response = other._response->clone();
+	if (other._response)
+		_response = other._response->clone();
+	else
+	 	_response = NULL;
 	_headerMap = other._headerMap;
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
+	_host = other._host;
+	_servConf = other._servConf;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -58,10 +65,14 @@ Request&	Request::operator=(const Request& other) {
 	if (other._method)
 		_method = other._method->clone();
 	delete _response;
-	_response = other._response->clone();
+	_response = NULL;
+	if (other._response)
+		_response = other._response->clone();
 	_headerMap = other._headerMap;
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
+	_host = other._host;
+	_servConf = other._servConf;
 	return *this;
 }
 
@@ -75,12 +86,14 @@ bool		Request::operator==(const Request& other) const
 			_method == other._method &&
 			_headerMap == other._headerMap &&
 			_contentLength == other._contentLength &&
-			_contentRead == other._contentRead);
+			_contentRead == other._contentRead &&
+			_host == other._host &&
+			_servConf == other._servConf);
 }
 
 Request::~Request() {
-	delete this->_method;
-	delete this->_response;
+	delete _method;
+	delete _response;
 }
 
 bool	Request::hasMethod() const {
@@ -293,22 +306,23 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 // 	storeHeadersInMap(strLine);
 // }
 
-void	Request::checkHost(ServerConfig& config) const {
-	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host"); // BP: lower/uppercase check?
+void	Request::checkHost(Client* client) {
+	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400");
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
-	std::cout << "host: $" << host << "$, fromServer: $" << config.getServerName() << "$" << std::endl;
-	if (host != config.getServerName())
+	_servConf = client->_socket->getConfig(host);
+	if (!_servConf)
 		throw std::runtime_error("404"); // BP: to check if correct value
+	_host = host;
 }
 
 //-- SUMON: I am working on this function
 void	Request::executeMethod(int socketFd, Client *client)
 {
-	// this->checkHost(config); // BP: first check which hostname else it would use the standardhostname
+	this->checkHost(client); // BP: first check which hostname else it would use the standardhostname
 	this->_method->executeMethod(socketFd, client, *this);
 }
 
@@ -406,11 +420,15 @@ int	Request::clientRequest(Client* client)
 
 
 void	Request::requestReset() {
-	_type = -1;
-	_firstLineChecked = false;
-	_headerChecked = false;
-	_readingFinished = false;
-	delete _method;
-	_method = NULL;
-	_headerMap.clear();
+	this->_type = -1;
+	this->_firstLineChecked = false;
+	this->_readingFinished = false;
+	delete this->_method;
+	this->_method = NULL;
+	this->_headerMap.clear();
+}
+
+std::string	Request::getHost() const
+{
+	return (_host);
 }
