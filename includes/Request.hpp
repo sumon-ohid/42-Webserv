@@ -26,8 +26,8 @@ class Request {
 		std::size_t	_contentRead;
 
 		std::string	_host;
-
-		void	storeHeadersInMap(const std::string& oneLine);
+		void	storeOneHeaderInMap(const std::string& oneLine);
+		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
 
 	public:
 		std::string	_requestBody;
@@ -52,12 +52,11 @@ class Request {
 		std::map<std::string, std::string> getHeaderMap() const;
 		std::string getHost() const;
 
-		void	checkSentAtOnce(const std::string& strLine, std::size_t spacePos1, std::size_t spacePos2);
 		void	setMethodMimeType(std::string path);
-		void	storeRequestBody(const std::string& strLine, std::size_t pos, std::size_t endPos);
+		void	storeRequestBody(const std::string& strLine, std::size_t endPos);
 		void	extractHttpMethod(std::string&);
 		void	createHttpMethod(const std::string&);
-		void	checkFirstLine(std::vector<char>& line);
+		void	checkFirstLine(std::string& strLine, std::size_t& endPos);
 
 		void	checkLine(std::vector<char>& line);
 		void	checkHost(Client*);

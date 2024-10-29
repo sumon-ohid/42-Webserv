@@ -145,12 +145,12 @@ void Request::setMethodMimeType(std::string path) {
 
 
 
-static void	checkLineLastChars(std::string& line) {
-	if (!line.empty() && line[line.size() - 1] == '\n')
-		line.resize(line.size() - 1);
-	if (!line.empty() && line[line.size() - 1] == '\r')
-		line.resize(line.size() - 1);
-}
+// static void	checkLineLastChars(std::string& line) {
+// 	if (!line.empty() && line[line.size() - 1] == '\n')
+// 		line.resize(line.size() - 1);
+// 	if (!line.empty() && line[line.size() - 1] == '\r')
+// 		line.resize(line.size() - 1);
+// }
 
 
 static void	checkTelnetInterruption(std::vector<char>& line) {
@@ -161,7 +161,7 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 	}
 }
 
-void Request::storeHeadersInMap(const std::string& oneLine) {
+void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	std::size_t pos = oneLine.find(":");
 	if (pos == std::string::npos)
 		return;
@@ -170,46 +170,81 @@ void Request::storeHeadersInMap(const std::string& oneLine) {
 	while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
 		value.erase(0, 1);
 	}
-	if (_headerMap.find(key) != _headerMap.end())
+	if (_headerMap.find(key) == _headerMap.end()) {
 		_headerMap[key] = value;
+		// std::cout << "$" << key << "$" << value << "$" << std::endl;
+	}
 	else
 		_headerMap[key] += value; // BP: to test
 }
 
-void	Request::storeRequestBody(const std::string& strLine, std::size_t pos, std::size_t endPos) {
-	pos = strLine.find("filename=");
+void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
+	if (endPos > 0)
+		endPos += 2;
+	std::size_t pos = strLine.find("\r\n", endPos);
+	std::size_t pos2 = endPos;
+
+	endPos = strLine.find("\r\n\r\n", 0);
+	if (strLine.size() == 2 && strLine.find("\r\n") != std::string::npos) {
+		_headerChecked = true;
+		if (_method->getName() == "GET")
+			_readingFinished = true;
+		return;
+	}
+	// std::cout << endPos << std::endl;
+	if (endPos == std::string::npos) {
+		storeOneHeaderInMap(strLine.substr(0));
+		return;
+	} else {
+		_headerChecked = true;
+		if (_method->getName() == "GET")
+			_readingFinished = true;
+	}
+	while (pos < endPos) {
+		storeOneHeaderInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
+		pos2 = pos;
+		pos = strLine.find("\r\n", pos2 + 1);
+	}
+
+	(void) pos;
+	(void) pos2;
+
+	// std::size_t pos = oneLine.find(":");
+	// if (pos == std::string::npos)
+	// 	return;
+	// std::string	key = oneLine.substr(0, pos);
+	// std::string value = oneLine.substr(pos + 1);
+	// while (!value.empty() && value[0] == ' ') { //BP: maybe also on the end?
+	// 	value.erase(0, 1);
+	// }
+	// if (_headerMap.find(key) != _headerMap.end())
+	// 	_headerMap[key] = value;
+	// else
+	// 	_headerMap[key] += value; // BP: to test
+}
+
+
+void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
+	std::size_t pos = strLine.find("filename=");
 
 	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
 	pos = strLine.find("\r\n\r\n", endPos + 4);
+	// std::cout << "rnrn: " << pos << std::endl;
 	// std::cout << "$" << _postFilename << "$" << std::endl;
 	std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
-	// std::cout << it->second << std::endl;
+	// std::cout << "content: " << it->second << std::endl;
 	std::string boundary;
 	if (it != _headerMap.end()) {
 		boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
+		endPos = strLine.find(boundary, pos + 4);
+		_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
 	}
+	_readingFinished = true;
 	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
 	// std::string end =  strLine.rfind();
-	endPos = strLine.find(boundary, pos + 4);
-	_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
 	// std::cout << "$" << _requestBody << "$" << std::endl;
 }
 
-void	Request::checkSentAtOnce(const std::string& strLine, std::size_t pos1, std::size_t pos2) {
-		this->_method->setProtocol(strLine.substr(pos1 + 1, pos2 - (pos1 + 1)));
-		std::size_t pos = strLine.find("\r\n", pos2 + 1);
-		std::size_t endPos = strLine.find("\r\n\r\n", pos2 + 1);
-		while (pos < endPos) {
-			storeHeadersInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
-			pos2 = pos;
-			pos = strLine.find("\r\n", pos2 + 1);
-		}
-
-		if (this->_method->getName() == "POST") {
-			storeRequestBody(strLine, pos, endPos);
-		}
-		// _readingFinished = true;
-}
 
 void	Request::extractHttpMethod(std::string& requestLine)
 {
@@ -240,49 +275,37 @@ void Request::createHttpMethod(const std::string& method) {
 	_method->setName(method);
 }
 
-void	Request::checkFirstLine(std::vector<char>& line) {
-	// this->_method = new GetMethod(); // BP: only to not segfault when we have to escape earlier
-	checkTelnetInterruption(line);
-	std::string strLine(line.begin(), line.end());
-	checkLineLastChars(strLine);
+void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
+	// checkLineLastChars(strLine);
 	if (strLine.length() == 0) {
 		return;
 	}
 	extractHttpMethod(strLine);
-	// std::size_t spacePos = strLine.find(" ", 0);
-	// std::string	methodName = strLine.substr(0, spacePos);
-	// if (spacePos == std::string::npos)
-	// 	throw std::runtime_error("400");
-	// delete this->_method;
-	// this->_method = new GetMethod();
-	// // check which method
-
-	// this->_method->setName(methodName);
 
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
 	this->_method->setPath(strLine.substr(0, spacePos2));
 
-	std::size_t spacePos3 = strLine.find("\r\n", spacePos2 + 1);
-	if (spacePos3 == std::string::npos)
+	endPos = strLine.find("\r\n", spacePos2 + 1);
+	if (endPos == std::string::npos)
 		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
 	else {
-		checkSentAtOnce(strLine, spacePos2, spacePos3);
+		this->_method->setProtocol(strLine.substr(spacePos2 + 1, endPos - (spacePos2 + 1)));
 	}
 	_firstLineChecked = true;
 }
 
-void	Request::checkLine(std::vector<char>& line) {
-	checkTelnetInterruption(line);
-	std::string strLine(line.begin(), line.end());
-	checkLineLastChars(strLine);
-	if (strLine.length() == 0) {
-		this->_readingFinished = true;
-		return;
-	}
-	storeHeadersInMap(strLine);
-}
+// void	Request::checkLine(std::vector<char>& line) {
+// 	checkTelnetInterruption(line);
+// 	std::string strLine(line.begin(), line.end());
+// 	checkLineLastChars(strLine);
+// 	if (strLine.length() == 0) {
+// 		this->_readingFinished = true;
+// 		return;
+// 	}
+// 	storeHeadersInMap(strLine);
+// }
 
 void	Request::checkHost(Client* client) {
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
@@ -323,22 +346,22 @@ int	Request::emptyRequest(Client* client)
 
 void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request)
 {
+	std::size_t endPos = 0;
 	(void) serv;
-	// std::cout << "test1: " << request.getFirstLineChecked() << std::endl;
+
 	buffer.resize(count);
-	// if (_buffer.size() == 5)
-	// std::cout << (int) (unsigned char)_buffer[0] << " & " << (int) (unsigned char)_buffer[1] << " & " << (int) (unsigned char)_buffer[2] << " & " << (int) (unsigned char)_buffer[3] << " & " << (int) (unsigned char)_buffer[4] << " & " << _buffer.size() << std::endl;
+	checkTelnetInterruption(buffer);
+	std::string strLine(buffer.begin(), buffer.end());
 	if(!request.getFirstLineChecked()) {
-		checkFirstLine(buffer);
+		checkFirstLine(strLine, endPos);
 	}
-	if (request.getFirstLineChecked() && !request._headerChecked) {
-		// storeHeadersInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
+	if (request.getFirstLineChecked() && !request._headerChecked && endPos != std::string::npos) {
+		storeHeadersInMap(strLine, endPos);
 	}
-	if (request._firstLineChecked && request._headerChecked) {
-		request.checkLine(buffer);
-		// if (this->_method->getName() == "POST") {
-		// 	storeRequestBody(strLine, pos, endPos);
-		// }
+	if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
+		if (this->_method->getName() == "POST") {
+			storeRequestBody(strLine, endPos);
+		}
 	}
 }
 
@@ -369,27 +392,30 @@ int	Request::clientRequest(Client* client)
 			} else {
 				Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
 			}
-			std::cout << "exception: " << e.what() << std::endl;
+			std::cerr << "exception: " << e.what() << std::endl;
 			writeFlag = true;
 			return OK;
 		}
 	// }
-	if (!writeFlag)
+	// std::cout << _readingFinished << std::endl;
+	if (!writeFlag && _readingFinished)
 	{
 		try {
 			client->_request.executeMethod(event_fd, client);
+			// std::cout << client->_request.getHeaderMap().size() << std::endl;
+			client->_request.requestReset();
 		}
 		catch (std::exception &e) {
 			Response::error(event_fd, client->_request, static_cast<std::string>(e.what()), client);
+			client->_request.requestReset();
 		}
 
 	}
 	(void) count;
 	writeFlag = false;
 	// std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
-	std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
+	// std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
 	std::cout << "-------------------------------------" << std::endl;
-	client->_request.requestReset();
 	return (0);
 }
 
