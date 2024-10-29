@@ -1,23 +1,31 @@
+
+/* dark mode */
 :root {
-    --background-image: url('dark-bg.jpg');
-    --background-blur: 80px;
+    --background-image: url('../assets/dark-bg.jpg');
+    --background-blur: 50px;
     --text-color: #ffffff;
     --button-bg: rgba(0, 0, 0, 0.3);
-    --button-hover-bg: rgba(178, 36, 255, 0.7);
+    --button-hover-bg:  rgba(166, 0, 255, 0.7);
     --container-bg: rgba(255, 255, 255, 0.1);
     --container-border: rgba(255, 255, 255, 0.18);
-    --nav-bg: rgba(226, 214, 214, 0.3);
+    --neon-glow-color: rgba(166, 0, 255, 0.5);
+    --neon-glow-hover-color: rgba(166, 0, 255, 0.7);
+    --button-hover-signup: rgba(166, 0, 255, 0.5);
+    --welcome-image : url('welcome-dark.svg');
 }
 
 body.light-mode {
-    --background-image: url('light-bg.jpg');
+    --background-image: url('../assets/light-bg.jpg');
     --background-blur: 10px;
     --text-color: #000000;
     --button-bg: rgba(255, 255, 255, 0.3);
     --button-hover-bg: rgba(0, 166, 255, 0.7);
     --container-bg: rgba(0, 0, 0, 0.1);
     --container-border: rgba(0, 0, 0, 0.18);
-    --nav-bg: rgba(255, 255, 255, 0.3);
+    --neon-glow-color: rgba(0, 166, 255, 0.5);
+    --neon-glow-hover-color: rgba(0, 166, 255, 0.7);
+    --button-hover-signup: rgba(0, 166, 255, 0.5);
+    --welcome-image : url('welcome-light.svg');
 }
 
 body {
@@ -114,6 +122,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column; /* Stack buttons vertically */
+    gap: 20px;
 }
 
 .button-container .button {
@@ -133,8 +142,26 @@ body {
     font-size: .7em;
 }
 
-.button-container .button:hover {
-    background: var(--button-hover-bg);
+/* form button */
+.button-form
+{
+    padding: 10px 20px;
+    background: var(--button-bg);
+    border: 1px solid rgba(24, 20, 20, 0.18);
+    border-radius: 10px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background 0.3s ease;
+    width: 250px; /* Fixed width */
+    height: 15px; /* Fixed height */
+    line-height: 10px; /* Center text vertically */
+    text-align: center; /* Center text horizontally */
+    font-size: .7em;
+}
+
+.button-form:active
+{
+    border: 11px solid rgb(22, 22, 22);
 }
 
 .mode-switch {
@@ -220,4 +247,57 @@ body {
 .nav-toggle.container {
     background: var(--button-hover-bg);
     
+}
+
+
+/* option in between login and signup*/
+.option {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column; /* Stack buttons vertically */
+    position: absolute;
+    font-size: .4em;
+    bottom: 25%;
+    gap: 1px;
+}
+/* signup button */
+.signup {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px 20px;
+    background: var(--button-bg);
+    border: 1px solid rgba(24, 20, 20, 0.18);
+    border-radius: 15px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background 0.3s ease;
+    width: 100px; /* Fixed width */
+    height: auto; /* Fixed height */
+    line-height: auto; /* Center text vertically */
+    text-align: center; /* Center text horizontally */
+    font-size: .7em;
+    position: absolute;
+    bottom: 155px;
+    z-index: 3;
+}
+
+.signup:hover {
+    background: var(--button-hover-signup);
+    border: 1px solid rgb(54, 54, 54);
+    box-shadow: 0 0 10px var(--neon-glow-hover-color), 0 0 20px var(--neon-glow-hover-color), 0 0 30px var(--neon-glow-hover-color), 0 0 50px var(--neon-glow-hover-color);
+    text-shadow: 0 0 10px var(--neon-glow-hover-color), 0 0 20px var(--neon-glow-hover-color), 0 0 30px var(--neon-glow-hover-color);
+}
+
+/* welcome message */
+.welcome {
+    position: absolute;
+    top: 80px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 2em;
+    text-align: center;
+    color: var(--text-color);
+    font-weight: bolder;
+    z-index: 3;
+    opacity: 0.7;
 }
