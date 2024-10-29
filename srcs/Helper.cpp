@@ -99,6 +99,18 @@ std::string Helper::getActualTimeStringGMT() {
 	return ss.str();
 }
 
+void	Helper::checkStatus(std::string& statusCode, std::string& statusMessage) {
+	std::map<std::string, std::string>::const_iterator it;
+
+	it = Helper::statusCodes.find(statusCode);
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
+}
+
 void	Helper::modifyEpollEvent(Epoll &epoll, Client *client, uint32_t events)
 {
 	struct	epoll_event	event;

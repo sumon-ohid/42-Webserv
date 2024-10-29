@@ -84,15 +84,8 @@ void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
         }
     }
 
-    std::map<std::string, std::string>::const_iterator it; // BP:: I also have this same block - maybe create Helper function
-	it = Helper::statusCodes.find(statusCode);
-	std::string statusMessage;
-	if (it == Helper::statusCodes.end()) {
-		statusCode = "500";
-		statusMessage = "Internal Server Error";
-	} else {
-		statusMessage = it->second;
-	}
+    std::string statusMessage = "";
+    Helper::checkStatus(statusCode, statusMessage);
 
     errorFile = errorPage;
     errorStatusCode = statusCode;

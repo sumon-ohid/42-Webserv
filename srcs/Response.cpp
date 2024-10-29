@@ -43,23 +43,12 @@ bool	Response::getIsChunk() {
 }
 
 // to check if the statusCode exists - else respond with internal server error
-static void	checkStatus(std::string& statusCode, std::string& statusMessage) {
-	std::map<std::string, std::string>::const_iterator it;
-
-	it = Helper::statusCodes.find(statusCode);
-	if (it == Helper::statusCodes.end()) {
-		statusCode = "500";
-		statusMessage = "Internal Server Error";
-	} else {
-		statusMessage = it->second;
-	}
-}
 
 std::string Response::createHeaderString(Request& request, const std::string& body, std::string statusCode) {
 	std::stringstream ss;
-	std::string statusMessage;
+	std::string statusMessage = "";
 
-	checkStatus(statusCode, statusMessage);
+	Helper::checkStatus(statusCode, statusMessage);
 	if (request.hasMethod())
 		ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\r\n";
 	else
@@ -116,16 +105,9 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 	if (request.hasMethod())
 		request.setMethodMimeType("fallback.html");
 
+	std::string statusMessage = "";
 	std::stringstream ss;
-	std::map<std::string, std::string>::const_iterator it;
-	it = Helper::statusCodes.find(statusCode);
-	std::string statusMessage;
-	if (it == Helper::statusCodes.end()) {
-		statusCode = "500";
-		statusMessage = "Internal Server Error";
-	} else {
-		statusMessage = it->second;
-	}
+	Helper::checkStatus(statusCode, statusMessage);
 
 	ss << "<!DOCTYPE html>\r\n<html>\r\n";
 	ss << "<head><title>" << statusCode << " " << statusMessage << "</title></head>\r\n";
