@@ -126,7 +126,11 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 {
 	signal(SIGPIPE, SIG_IGN);
 
-	std::map<std::string, std::string> errorPages = client->_server->_serverConfig.getErrorPages();
+	std::map<std::string, std::string> errorPages;
+	if (request._servConf)
+		errorPages = request._servConf->getErrorPages();
+	else
+		errorPages = client->_server->getServerConfig().getErrorPages();
 	if (errorPages.find(statusCode) != errorPages.end() || errorPages.empty())
 	{
 		ssize_t writeReturn = 0;

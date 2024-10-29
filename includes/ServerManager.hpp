@@ -3,18 +3,22 @@
 #include "Epoll.hpp"
 #include "Server.hpp"
 #include "ServerConfig.hpp"
+#include <utility>
 #include <vector>
 
 #define LOCATION_CONFIG_FILE "./webserv.conf"
 
-typedef std::vector<Server>			vSrv;
-typedef std::vector<ServerConfig>	vSrvConf;
+typedef std::vector<Server> vSrv;
+typedef std::vector<ServerConfig> vSrvConf;
+typedef	std::map<std::pair<std::string, int>, Socket> mpIpPortSocket;
+
 
 class ServerManager
 {
 private:
 	ServerConfig			_generalConfig;
-	std::vector<Server>		_servers;
+	vSrv					_servers;
+	mpIpPortSocket			_ipPortSocket;
 	Epoll					_epoll;
 
 	// calls the config file parsing and the server setUp
@@ -39,4 +43,12 @@ public:
 	void	shutdownServer(Server&);
 	// shuts down all servers and close all fds
 	void	shutdown();
+
+	bool	ipPortCombinationNonExistent(const std::string&, std::string&, int, ServerConfig);
+
+	void	addNewSocketIpCombination(Socket&, std::string&);
+
+
+
+	void printConfigs();
 };

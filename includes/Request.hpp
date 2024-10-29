@@ -24,13 +24,15 @@ class Request {
 		std::map<std::string, std::string> _headerMap;
 		std::size_t	_contentLength;
 		std::size_t	_contentRead;
+
+		std::string	_host;
 		void	storeOneHeaderInMap(const std::string& oneLine);
 		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
 
 	public:
 		std::string	_requestBody;
 		std::string	_postFilename;
-
+		ServerConfig*	_servConf;
 		Response*	_response;
 
 		Request();
@@ -48,6 +50,7 @@ class Request {
 		bool		getFirstLineChecked() const;
 		bool		getReadingFinished() const;
 		std::map<std::string, std::string> getHeaderMap() const;
+		std::string getHost() const;
 
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t endPos);
@@ -56,7 +59,7 @@ class Request {
 		void	checkFirstLine(std::string& strLine, std::size_t& endPos);
 
 		void	checkLine(std::vector<char>& line);
-		void	checkHost(ServerConfig& config) const;
+		void	checkHost(Client*);
 		void	executeMethod(int socketFd, Client *client);
 
 		int		clientRequest(Client* client);
@@ -66,5 +69,4 @@ class Request {
 		int		emptyRequest(Client*);
 
 		void	requestReset();
-
 };

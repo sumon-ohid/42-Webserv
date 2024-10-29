@@ -1,23 +1,24 @@
 #pragma once
 
 #include <sys/epoll.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <list>
+#include <vector>
 
 #include "Client.hpp"
-#include "Socket.hpp"
 #include "./Request.hpp"
 
-#define	MAX_EVENTS					100000
-
-typedef std::list<Socket>			lstSocs;
-typedef std::vector<int> 			vecInt;
-typedef std::vector<Server>			vSrv;
-typedef std::pair<Server, Client>	prSerCl;
-
+// Forward declaration of Server
 class Server;
+class Socket;
+
+#define MAX_EVENTS 100000
+
+typedef std::list<Socket> lstSocs;
+typedef std::vector<int> vecInt;
+typedef std::vector<Server> vSrv;
+typedef std::pair<Server, Client> prSerCl;
 
 class Epoll
 {
