@@ -2,6 +2,7 @@
 #include "../includes/ServerConfig.hpp"
 
 #include <cerrno>
+#include <exception>
 #include <netinet/in.h>
 #include <cstring>
 #include <netdb.h>
@@ -16,13 +17,14 @@ Socket::Socket() : _fd(-1), _port(-1) {}
 Socket::Socket(int port) : _fd(-1), _port(port)
 {}
 Socket::~Socket(){}
-Socket::Socket(const Socket &orig) : _fd(orig._fd), _port(orig._port), _addrlen(orig._addrlen), _address(orig._address), _configs(orig._configs)
+Socket::Socket(const Socket &orig) : _fd(orig._fd), _ip(orig._ip), _port(orig._port), _addrlen(orig._addrlen), _address(orig._address), _configs(orig._configs)
 {}
 Socket&	Socket::operator=(const Socket &rhs)
 {
 	if (this != &rhs)
 	{
 		_fd = rhs._fd;
+		_ip = rhs._ip;
 		_port = rhs._port;
 		_addrlen = rhs._addrlen;
 		_address = rhs._address;
@@ -41,6 +43,7 @@ bool	operator==(const sockaddr_in& lhs, const sockaddr_in& rhs)
 bool	Socket::operator==(const Socket& other) const
 {
 	return (_fd == other._fd &&
+			_ip == other._ip &&
 			_port == other._port &&
 			_addrlen == other._addrlen &&
 			_address == other._address) &&
@@ -50,21 +53,23 @@ bool	Socket::operator==(const Socket& other) const
 bool 	Socket::operator<(const Socket& other) const
 {
 	if (_fd != other._fd)
-		return _fd < other._fd;
+		return (_fd < other._fd);
+	if (_ip != other._ip)
+		return (_ip != other._ip);
 	if (_port != other._port)
-		return _port < other._port;
+		return (_port < other._port);
 	if (_addrlen != other._addrlen)
-		return _addrlen < other._addrlen;
+		return (_addrlen < other._addrlen);
 	if (_address.sin_addr.s_addr != other._address.sin_addr.s_addr)
-		return _address.sin_addr.s_addr < other._address.sin_addr.s_addr;
-	return _address.sin_port < other._address.sin_port;
+		return (_address.sin_addr.s_addr < other._address.sin_addr.s_addr);
+	return (_address.sin_port < other._address.sin_port);
 }
 
 // Functions
 
-void	Socket::setUpSocket(const std::string& hostname, ServerConfig& servConf, ServerManager& sm)
+void	Socket::setUpSocket(const std::string& hostname, Server& server, ServerManager& sm)
 {
-	socketSetUpAddress(hostname, servConf, sm);
+	socketSetUpAddress(hostname, server, sm);
 }
 
 void	Socket::createSocket(struct addrinfo* p)
@@ -95,12 +100,12 @@ void	Socket::bindToSocketAndListen(struct addrinfo* p)
 		throw std::runtime_error("socket - listen failed");
 }
 
-void	Socket::addConfig(const std::string& hostIp, ServerConfig& locConf)
+void	Socket::addConfig(const std::string& hostname, ServerConfig servConf)
 {
-	_configs.insert(std::make_pair(hostIp, locConf));
+	_configs.insert(std::make_pair(hostname, servConf));
 }
 
-void	Socket::socketSetUpAddress(const std::string& hostname, ServerConfig& servConf, ServerManager& sm)
+void	Socket::socketSetUpAddress(const std::string& hostname, Server& server, ServerManager& sm)
 {
     struct addrinfo hints, *res;
 
@@ -114,10 +119,18 @@ void	Socket::socketSetUpAddress(const std::string& hostname, ServerConfig& servC
 	std::string portStr = portStream.str();
 
 	// Resolve the hostname
-	int status = getaddrinfo(hostname.c_str(), portStr.c_str(), &hints, &res);
-	if (status != 0)
-		throw std::runtime_error(gai_strerror(status));
-	createSocketForAddress(hostname, res, servConf, sm);
+	try 
+	{
+		int status = getaddrinfo(hostname.c_str(), portStr.c_str(), &hints, &res);
+		if (status != 0)
+			throw std::runtime_error(gai_strerror(status));
+		createSocketForAddress(hostname, res, server, sm);
+	} 
+	catch (std::exception &e) 
+	{
+		freeaddrinfo(res);
+		throw;
+	}
 	// Create a listening socket
 }
 
@@ -131,18 +144,19 @@ std::string ipToString(struct sockaddr_in* addr) {
     return oss.str();
 }
 
-void	Socket::createSocketForAddress(const std::string& hostname, struct addrinfo* res, ServerConfig& servConf, ServerManager& sm)
+void	Socket::createSocketForAddress(const std::string& hostname, struct addrinfo* res, Server& server, ServerManager& sm)
 {
 	for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
 	{
 		struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(p->ai_addr);
-		std::string ipHost = ipToString(addr);
-		if (sm.IpPortCombinationNonExistent(hostname, ipHost, _port, servConf)) //otherwise add to existing one inside IpPort... the Location File with this Hostname
+		_ip = ipToString(addr);
+		if (sm.ipPortCombinationNonExistent(hostname, _ip, _port, server.getServerConfig()) && server.ipPortCombinationNonExistent(hostname, _ip, _port)) //otherwise add to existing one inside IpPort... the Location File with this Hostname
 		{
 			createSocket(p);
 			bindToSocketAndListen(p);
-			sm.addNewSocketIpCombination(*this, ipHost);
-			_configs.insert(std::make_pair(hostname, servConf));
+			// sm.addNewSocketIpCombination(*this, _ip);
+			if (_configs.find(hostname) == _configs.end())
+				_configs.insert(std::make_pair(hostname, server.getServerConfig()));
 		}
 	}
 	freeaddrinfo(res);
@@ -171,6 +185,11 @@ sockaddr_in	Socket::getAddress(void) const
 sockaddr_in&	Socket::getAddress()
 {
 	return (_address);
+}
+
+std::string		Socket::getIp() const
+{
+	return (_ip);
 }
 
 // ostream

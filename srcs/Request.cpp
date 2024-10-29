@@ -41,7 +41,10 @@ Request::Request(const Request& other) {
 		_method = other._method->clone();
 	else
 	 	_method = NULL;
-	_response = other._response->clone();
+	if (other._response)
+		_response = other._response->clone();
+	else
+	 	_response = NULL;
 	_headerMap = other._headerMap;
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
@@ -63,7 +66,9 @@ Request&	Request::operator=(const Request& other) {
 	if (other._method)
 		_method = other._method->clone();
 	delete _response;
-	_response = other._response->clone();
+	_response = NULL;
+	if (other._response)
+		_response = other._response->clone();
 	_headerMap = other._headerMap;
 	_contentLength = other._contentLength;
 	_contentRead = other._contentRead;
@@ -88,8 +93,8 @@ bool		Request::operator==(const Request& other) const
 }
 
 Request::~Request() {
-	delete this->_method;
-	delete this->_response;
+	delete _method;
+	delete _response;
 }
 
 bool	Request::hasMethod() const {
@@ -286,31 +291,9 @@ void	Request::checkHost(Client* client) {
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
-	// if (host != config.getServerName())
-	// 	throw std::runtime_error("404"); // BP: to check if correct value
-	if (client->_socket->getConfigSize())
-	{
-		mHstConfs	configs;
-		for (mHstConfs::iterator it = configs.begin(); it != configs.end(); ++it)
-		{
-			if (host == it->first)
-			{
-				_host = host;
-				_servConf = &it->second;
-			}
-		}
-	}
-	else {
-		std::vector<std::string> serverNames = client->_server->_serverConfig.getServerNames();
-		for (std::vector<std::string>::iterator it = serverNames.begin(); it != serverNames.end(); ++it)
-		{
-			if (*it == host)
-			{
-				_host = host;
-				_servConf = &client->_server->_serverConfig;
-			}
-		}
-	}
+	_servConf = client->_socket->getConfig(host);
+	if (!_servConf)
+		throw std::runtime_error("404"); // BP: to check if correct value
 	_host = host;
 }
 

@@ -100,8 +100,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
 {
     std::string requestPath;
     socketFd = _socketFd;
-    locationsVector = client->_server->_serverConfig.getLocations();
-
+    locationsVector = client->_request._servConf->getLocations();
 
     //-- Remove the last slash from the path to avoid mismatch.
     if (path != "/" && path[path.size() - 1] == '/')

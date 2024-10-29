@@ -22,6 +22,7 @@ class Socket
 {
 private:
 	int				_fd;
+	std::string		_ip;
 	int				_port;
 	socklen_t		_addrlen;
 	sockaddr_in		_address;
@@ -54,10 +55,10 @@ private:
  	* - Clears the padding field.
  	* - Logs the port number.
  	*/
-	void			socketSetUpAddress(const std::string&, ServerConfig&, ServerManager&);
+	void			socketSetUpAddress(const std::string&, Server&, ServerManager&);
 	void			hostnameResolveError();
-	bool			IpPortCombinationNonExistent(std::string&, ServerManager&, ServerConfig&);
-	void			createSocketForAddress(const std::string&, struct addrinfo*, ServerConfig&, ServerManager&);
+	bool			IpPortCombinationNonExistent(std::string&, ServerManager&, Server&);
+	void			createSocketForAddress(const std::string&, struct addrinfo*, Server&, ServerManager&);
 
 public:
 	Socket();
@@ -71,9 +72,9 @@ public:
 
 	// ------------- Socket setup -------------
 	// sets up a socket to use at a specified port
-	void			setUpSocket(const std::string&, ServerConfig&, ServerManager&);
+	void			setUpSocket(const std::string&, Server&, ServerManager&);
 
-	void			addConfig(const std::string&, ServerConfig&);
+	void			addConfig(const std::string&, ServerConfig);
 	// ------------- Getters -------------
 	// returns the fd of the socket
 	int				getFdSocket(void) const;
@@ -85,6 +86,7 @@ public:
 	sockaddr_in		getAddress(void) const;
 	// returns the a reference to the address
 	sockaddr_in&	getAddress(void);
+	std::string		getIp(void) const;
 	ServerConfig*	getConfig(std::string&);
 	int				getConfigSize() const;
 };
