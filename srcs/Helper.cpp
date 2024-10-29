@@ -58,10 +58,11 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".png"] = "image/png";
 	mimes[".gif"] = "image/gif";
 	mimes[".pdf"] = "application/pdf";
-	mimes[".mp4"] = "video/mp4"; // BP why without dot?
+	mimes[".mp4"] = "video/mp4";
 	mimes[".xml"] = "application/xml";
 	mimes[".json"] = "application/json";
 	mimes[".svg"] = "image/svg+xml";
+	// BP: don't forget the point when adding a new mimetype - example: ".css"
 	return mimes;
 }
 

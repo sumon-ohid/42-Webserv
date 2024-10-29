@@ -108,14 +108,17 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 		statusMessage = it->second;
 	}
 
-	ss << "<!DOCTYPE html>\n<html>\n<head><title>" << statusCode << " " << statusMessage << "</title></head>\n";
-	ss << "<body>\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\n";
-	ss << "<hr><center>" << "webserv 1.0" << "</center>\n</body>\n</html>\n";
+	ss << "<!DOCTYPE html>\r\n<html>\r\n";
+	ss << "<head><title>" << statusCode << " " << statusMessage << "</title></head>\r\n";
+	ss << "<body>\r\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\r\n";
+	ss << "<hr><center>" << "webserv 1.0" << "</center>\r\n";
+	ss << "</body>\r\n</html>\r\n";
+
 	std::string body = ss.str();
 	std::string totalString = createHeaderAndBodyString(request, body, statusCode);
 	ssize_t writeReturn = write(socketFd, totalString.c_str(), totalString.size());
 	if (writeReturn == -1)
-		throw std::runtime_error("Error writing to socket in Response::fallbackError!!");
+		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 	else
 		std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
 }
@@ -180,37 +183,37 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 
 #include <unistd.h>
 
-void	Response::sendChunks(int socketFd, std::string chunkString) {
+long	Response::sendChunks(int socketFd, std::string chunkString) {
 	std::ostringstream ss;
 	ss << std::hex << chunkString.size() << "\r\n";
-	unsigned long int hexSize = ss.str().size();
+	// unsigned long int hexSize = ss.str().size();
 	ss << chunkString << "\r\n";
-	ssize_t bytesSent = send(socketFd, ss.str().c_str(), ss.str().size(), 0);
-	// check if -1 or 0 => error
-	bytesSent -= hexSize;
-	// move message
-	// if (message.empty())
-		//send(socketFd, "0\r\n\r\n", 5, 0);
+	long bytesSent = send(socketFd, ss.str().c_str(), ss.str().size(), 0);
 
 	usleep(100000); // change to
-
+	return bytesSent;
 }
 
 void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string& body) {
 	(void) request;
 	_isChunk = true;
-	std::string chunkStartHeader = createHeaderString(request, body, "200") + "\r\n";
-	// "HTTP/1.1 200 OK\r\n"
-    //                       "Content-Type: video/mp4\r\n"
-    //                       "Transfer-Encoding: chunked\r\n"
-    //                       "\r\n";
-	//ChunkStartHeaderSent false? then:
-	send(socketFd, chunkStartHeader.c_str(), chunkStartHeader.size(), 0);
+	long bytesSent;
 
+	std::string chunkStartHeader = createHeaderString(request, body, "200") + "\r\n"; // BP: createHeader ev. without body - and
+	bytesSent = send(socketFd, chunkStartHeader.c_str(), chunkStartHeader.size(), 0);
+	if (bytesSent < 0) {
+		std::cerr << "Error sending response header" << std::endl;
+		return;
+	}
 
 	for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent
-		sendChunks(socketFd, body.substr(i, CHUNK_SIZE));
+		bytesSent = sendChunks(socketFd, body.substr(i, CHUNK_SIZE));
+		if (bytesSent < 0) {
+			std::cerr << "Error sending chunked message" << std::endl;
+			break;
+		}
 		// check whats better chunk loop or always go back to epoll loop
 	}
-	send(socketFd, "0\r\n\r\n", 5, 0);
+	if (bytesSent >= 0)
+		send(socketFd, "0\r\n\r\n", 5, 0);
 }
