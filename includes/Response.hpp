@@ -15,11 +15,11 @@ class Response {
 		bool			_isChunk;
 		bool			_headerSent;
 		bool			_finishedSending;
+		bool			_closeConnection;
 		unsigned long	_bytesSentOfBody;
 		std::string		_header;
 		std::string		_message;
 		std::string		_mimeType;
-
 
 	public:
 		Response();

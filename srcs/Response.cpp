@@ -12,9 +12,9 @@
 #include "../includes/Request.hpp"
 #include "../includes/Helper.hpp"
 
-Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _bytesSentOfBody(0), _header(""), _message(""), _mimeType("") {}
+Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false), _bytesSentOfBody(0), _header(""), _message(""), _mimeType("") {}
 
-Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  _headerSent(other._headerSent), _finishedSending(other._finishedSending), _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _message(other._message), _mimeType(other._mimeType) {}
+Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  _headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection), _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _message(other._message), _mimeType(other._mimeType) {}
 
 Response& Response::operator=(const Response& other) {
 	if (this == &other)
@@ -24,6 +24,7 @@ Response& Response::operator=(const Response& other) {
 	_isChunk = other._isChunk;
 	_headerSent = other._headerSent;
 	_finishedSending = other._finishedSending;
+	_closeConnection = other._closeConnection;
 	_bytesSentOfBody = other._bytesSentOfBody;
 	_header = other._header;
 	_message = other._message;
@@ -73,11 +74,18 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 		ss << "Transfer-Encoding: chunked\r\n";
 	else
 		ss << "Content-Length: " << (body.size() + 1) << "\r\n"; // BP: + 1 plus additional \r\n at the end?
-	ss << "Connection: " << "connectionClosedOrNot" << "\r\n"; // BP: to check
+	if (_closeConnection)
+		ss << "Connection: " << "close" << "\r\n"; // BP: to check
+	else
+		ss << "Connection: " << "keep-alive" << "\r\n";
 	ss << "\r\n";
 
 	return ss.str();
 }
+
+// Connection: keep-alive
+// Connection: Transfer-Encoding
+
 
 void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode) {
 	std::stringstream ss;
@@ -96,12 +104,17 @@ void	Response::headerAndBody(int socketFd, Request& request, std::string& body) 
 	} else {
 		createHeaderAndBodyString(request, body, "200");
 		// std::cout << totalString << std::endl;
-		send(socketFd , _header.c_str(), _header.size(), 0);
-		send(socketFd , _message.c_str(), _message.size(), 0);
+		std::string total = _header + _message;
+		send(socketFd , total.c_str(), total.size(), 0);
+		// send(socketFd , _message.c_str(), _message.size(), 0);
 	}
 }
 
 void	Response::fallbackError(int socketFd, Request& request, std::string statusCode) {
+	_closeConnection = true;
+
+	if (request.hasMethod())
+		request.setMethodMimeType("fallback.html");
 
 	std::stringstream ss;
 	std::map<std::string, std::string>::const_iterator it;
@@ -116,14 +129,14 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 
 	ss << "<!DOCTYPE html>\r\n<html>\r\n";
 	ss << "<head><title>" << statusCode << " " << statusMessage << "</title></head>\r\n";
-	ss << "<body>\r\n<center><h1>" << statusCode << " " << statusMessage << "</h1></center>\r\n";
+	ss << "<body>\r\n<center><h1>" << statusCode << " - " << statusMessage << "</h1></center>\r\n";
 	ss << "<hr><center>" << "webserv 1.0" << "</center>\r\n";
 	ss << "</body>\r\n</html>\r\n";
 
 	std::string body = ss.str();
 	createHeaderAndBodyString(request, body, statusCode);
-	ssize_t bytesSent = send(socketFd , _header.c_str(), _header.size(), 0);
-	bytesSent = send(socketFd , _message.c_str(), _message.size(), 0);
+	std::string total = _header + _message;
+	ssize_t bytesSent = send(socketFd , total.c_str(), total.size(), 0);
 	if (bytesSent == -1)
 		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 	else
@@ -152,16 +165,17 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 			ErrorHandle errorHandle;
 			errorHandle.prepareErrorPage(client, statusCode);
 			if (request.hasMethod())
-				request.setMethodMimeType(errorHandle.getNewErrorFile());
-			std::cout << "mime-type: "<< request.getMethodMimeType() << std::endl;
-			std::cout << "file: "<< errorHandle.getNewErrorFile() << std::endl;
+				request.setMethodMimeType(errorHandle.getNewErrorFile()); // BP: no mime type here, maybe just set it to HTML?
+			// std::cout << "mime-type: "<< request.getMethodMimeType() << std::endl;
+			// std::cout << "file: "<< errorHandle.getNewErrorFile() << std::endl;
 			//-- this will create a new error file, error code will be the file name
 			//-- this will modify the error page replacing the status code, message and page title
 			//-- this will return the modified error page as a string
 			std::string errorBody = errorHandle.modifyErrorPage();
 			createHeaderAndBodyString(request, errorBody, statusCode);
-			bytesSent = send(socketFd , _header.c_str(), _header.size(), 0);
-			bytesSent = send(socketFd , _message.c_str(), _message.size(), 0);
+
+			std::string total = _header + _message;
+			bytesSent = send(socketFd , total.c_str(), total.size(), 0);
 			if (bytesSent == -1)
 				throw std::runtime_error("Error writing to socket in Response::error!!");
 			else
