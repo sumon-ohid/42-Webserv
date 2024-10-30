@@ -12,6 +12,7 @@
 
 class Server;
 class Response;
+class Client;
 
 class Request {
 	private:
@@ -63,7 +64,7 @@ class Request {
 		void	executeMethod(int socketFd, Client *client);
 
 		int		clientRequest(Client* client);
-		void	validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request);
+		void	validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request, Client* client);
 		void	validRequest(std::vector<char>, ssize_t, Request&);
 		int		invalidRequest(Client*);
 		int		emptyRequest(Client*);

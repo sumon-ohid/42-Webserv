@@ -207,9 +207,12 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 
 
 void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
-	std::size_t pos = strLine.find("filename=");
+	std::size_t pos = strLine.find("filename=", endPos);
+	if (pos == std::string::npos)
+		return;
 
 	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
+	// std::cout << _postFilename << "\n\n" << std::endl;
 	pos = strLine.find("\r\n\r\n", endPos + 4);
 	// std::cout << "rnrn: " << pos << std::endl;
 	// std::cout << "$" << _postFilename << "$" << std::endl;
@@ -278,17 +281,6 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	_firstLineChecked = true;
 }
 
-// void	Request::checkLine(std::vector<char>& line) {
-// 	checkTelnetInterruption(line);
-// 	std::string strLine(line.begin(), line.end());
-// 	checkLineLastChars(strLine);
-// 	if (strLine.length() == 0) {
-// 		this->_readingFinished = true;
-// 		return;
-// 	}
-// 	storeHeadersInMap(strLine);
-// }
-
 void	Request::checkHost(Client* client) {
 
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
@@ -303,7 +295,7 @@ void	Request::checkHost(Client* client) {
 	_host = host;
 }
 
-//-- SUMON: I am working on this function
+
 void	Request::executeMethod(int socketFd, Client *client)
 {
 	this->checkHost(client); // BP: first check which hostname else it would use the standardhostname
@@ -327,7 +319,7 @@ int	Request::emptyRequest(Client* client)
 	return (-1); // Move to the next event
 }
 
-void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request)
+void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request, Client* client)
 {
 	std::size_t endPos = 0;
 	(void) serv;
@@ -366,7 +358,7 @@ int	Request::clientRequest(Client* client)
 			else if (count == 0)
 				return (emptyRequest(client));
 			else
-				validRequest(client->_server, buffer, count, client->_request);
+				validRequest(client->_server, buffer, count, client->_request, client);
 		}
 		catch (std::exception &e)
 		{
