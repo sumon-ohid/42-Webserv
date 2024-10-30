@@ -60,7 +60,7 @@ void	Epoll::registerLstnSockets(vSrv& servers)
 		for (lstSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
 		{
 			registerSocket(it->getFdSocket(), EPOLLIN);
-			std::cout << BOLD BLUE "registered at port:\thttp://" << it->_configs.begin()->first << ":" << it->getPort() << RESET <<  std::endl;
+			std::cout << BOLD BLUE "registered at port:\thttp://" << it->getIp() << ":" << it->getPort() << RESET <<  std::endl;
 		}
 		i++;
 	}

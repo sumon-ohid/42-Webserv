@@ -178,8 +178,8 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 }
 
 void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
-	if (endPos > 0)
-		endPos += 2;
+	// if (endPos > 0)
+	// 	endPos += 2;
 	std::size_t pos = strLine.find("\r\n", endPos);
 	std::size_t pos2 = endPos;
 
@@ -307,15 +307,31 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 // }
 
 void	Request::checkHost(Client* client) {
+
+	std::cout << "printing header map:" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it =_headerMap.begin(); it != _headerMap.end(); ++it)
+		std::cout << it->first << ":" << it->second << std::endl;
+
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400");
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
+	std::cout << "print host:\t" << host << std::endl;
 	_servConf = client->_socket->getConfig(host);
+
+	std::cout << "printing configs:" << std::endl;
+	for (mHstConfs::iterator it2 = client->_socket->_configs.begin(); it2 != client->_socket->_configs.end(); ++it2)
+		std::cout << "hostname stored to retrieve config:\t" << it2->first << std::endl;
+
+
+	std::cout << "\n\noutput:" << (client->_socket->_configs.begin())->first << std::endl;
+
 	if (!_servConf)
-		throw std::runtime_error("404"); // BP: to check if correct value
+		_servConf = &(client->_socket->_configs.begin())->second;
+
+
 	_host = host;
 }
 

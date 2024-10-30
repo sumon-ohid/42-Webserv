@@ -46,7 +46,7 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 	{
 		for (size_t i = 0; i < ports.size(); ++i)
 		{
-			
+
 			Socket	tmp(ports[i]);
 			try
 			{
