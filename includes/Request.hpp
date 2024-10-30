@@ -12,6 +12,7 @@
 
 class Server;
 class Response;
+class Client;
 
 class Request {
 	private:
