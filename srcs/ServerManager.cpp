@@ -36,14 +36,11 @@ void	ServerManager::setUp(int argc, char **argv)
 		_generalConfig = ServerConfig(argv[1]);
 	else
 	 	_generalConfig = ServerConfig(LOCATION_CONFIG_FILE);
-	//-- Display the config for debugging
-	//_generalConfig.displayConfig();
-
 	setUpServers();
 }
 
 void	ServerManager::setUpServers()
-{	
+{
 	vSrvConf	servConf = _generalConfig.getServers();
 	for (vSrvConf::iterator it = servConf.begin(); it != servConf.end(); it++)
 	{
@@ -61,7 +58,6 @@ void	ServerManager::setUpServers()
 	// check if there is at least one listening socket
 	if (_servers.empty())
 		throw std::runtime_error("couldn't create any servers");
-	printConfigs();
 }
 
 void	ServerManager::printConfigs()

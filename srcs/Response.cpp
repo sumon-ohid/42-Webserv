@@ -229,7 +229,6 @@ void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string
 	// for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent
 	bytesSent = sendChunks(socketFd, body.substr(_bytesSentOfBody, CHUNK_SIZE));
 	_bytesSentOfBody += bytesSent;
-	std::cout << "bytes sent: " << _bytesSentOfBody<< std::endl;
 	if (bytesSent < 0) {
 		std::cerr << "Connection closed by client" << std::endl; // BP: ev. other message?
 		return;
