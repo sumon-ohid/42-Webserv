@@ -1,9 +1,9 @@
 #include "../includes/Client.hpp"
 
 // ------------- Coplien's Form -------------
-Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _server(NULL) {};
-Client::Client(int fd, int port, Server *serv) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _server(serv) {}
-Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _server(orig._server), _request(orig._request) {}
+Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _server(NULL), _socket(NULL) {};
+Client::Client(int fd, int port, Server *serv, Socket* socket) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _server(serv), _socket(socket) {}
+Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _server(orig._server), _request(orig._request), _socket(orig._socket) {}
 Client::~Client() {}
 Client&	Client::operator=(const Client& rhs)
 {
@@ -15,6 +15,7 @@ Client&	Client::operator=(const Client& rhs)
 		_lastActive = rhs._lastActive;
 		_numRequests = rhs._numRequests;
 		_server = rhs._server;
+		_socket = rhs._socket;
 	}
 	return (*this);
 }
@@ -25,7 +26,8 @@ bool	Client::operator==(const Client& other) const
 			_lastActive == other._lastActive &&
 			_numRequests == other._lastActive &&
 			_server == other._server &&
-			_request == other._request);
+			_request == other._request &&
+			_socket == other._socket);
 }
 
 

@@ -1,21 +1,23 @@
 :root {
-    --background-image: url('assets/dark-bg.jpg');
+    --background-image: url('dark-bg.jpg');
     --background-blur: 80px;
     --text-color: #ffffff;
     --button-bg: rgba(0, 0, 0, 0.3);
-    --button-hover-bg: rgba(183, 183, 183, 0.5);
+    --button-hover-bg: rgba(178, 36, 255, 0.7);
     --container-bg: rgba(255, 255, 255, 0.1);
     --container-border: rgba(255, 255, 255, 0.18);
+    --nav-bg: rgba(226, 214, 214, 0.3);
 }
 
 body.light-mode {
-    --background-image: url('assets/light-bg.jpg');
+    --background-image: url('light-bg.jpg');
     --background-blur: 10px;
     --text-color: #000000;
     --button-bg: rgba(255, 255, 255, 0.3);
-    --button-hover-bg: rgba(215, 215, 215, 0.5);
+    --button-hover-bg: rgba(0, 166, 255, 0.7);
     --container-bg: rgba(0, 0, 0, 0.1);
     --container-border: rgba(0, 0, 0, 0.18);
+    --nav-bg: rgba(255, 255, 255, 0.3);
 }
 
 body {
@@ -56,8 +58,8 @@ body {
     position: absolute;
     width: 40px;
     height: 40px;
-    bottom: 5%;
-    left: 5%;
+    bottom: 1%;
+    right : 2%;
     opacity: 0.6;
 }
 
@@ -150,4 +152,72 @@ body {
 
 .mode-switch:hover {
     background: var(--button-hover-bg);
+}
+
+/*footer*/
+
+.footer {
+    position: fixed;
+    bottom: 2%;
+    left: 4%;
+    right: 0;
+    color: var(--text-color);
+    font-size: 0.6em;
+    opacity: 0.2;
+}
+
+/* Navigation button */
+.nav_container
+{
+    position: fixed;
+    background: linear-gradient(135deg, var(--container-bg), rgba(255, 255, 255, 0));
+    backdrop-filter: blur(100px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px 20px 20px 20px;
+    border: 1px solid var(--container-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    margin-top: 100px; /* Adjust this value based on the height of the header */
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20px;
+    top : 300px;
+    left : -70px;
+    rotate: 90deg;
+    gap : 10px;
+}
+.nav-toggle {
+    height: 40px;
+    width: 40px;
+    background: var(--button-bg);
+    border: 1px solid rgba(24, 20, 20, 0.18);
+    border-radius: 100px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background 0.3s ease;
+    z-index: 3;
+    rotate: -90deg;
+}
+
+.nav-toggle:hover {
+    background: var(--button-hover-bg);
+}
+
+.nav-toggle1:hover {
+    background: var(--button-hover-bg);
+}
+
+.nav-toggle2:hover {
+    background: var(--button-hover-bg);
+}
+
+.nav-toggle3:hover {
+    background: var(--button-hover-bg);
+}
+
+.nav-toggle.container {
+    background: var(--button-hover-bg);
+    
 }

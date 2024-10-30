@@ -4,23 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>42-webserv</title>
-    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <!-- Navigation bar -->
+    <!-- Navigation bar -->
     <div class="nav_container">
-        <a href="index.html">
+        <a href="../index.html">
             <button id="nav-toggle" class="nav-toggle">
                 <i class="fa-solid fa-house"></i>
             </button>
         </a>
-        <a href="./account/login.html">
+        <a href="login.html">
             <button id="nav-toggle" class="nav-toggle">
                 <i class="fa-solid fa-user"></i>
             </button>
         </a>
-        <a href="gallery/gallery.html">
+        <a href="../gallery/gallery.html">
             <button id="nav-toggle" class="nav-toggle">
                 <i class="fa-solid fa-image"></i>
             </button>
@@ -35,11 +36,13 @@
     <div class="small-text">
     </div>
     <!-- Header -->
+    <!--
     <div>
         <a href="index.html" class="logo">
             <h1 class="highlight">Webserv</h1>
         </a>
     </div>
+    -->
     <!-- 42 icon -->
     <div class="icon" >
         <img src="https://simpleicons.org/icons/42.svg" alt="42">
@@ -48,17 +51,22 @@
     <!-- Main container -->
     <div class="container">
         <div class="button-container">
-            <a href="./about/index.html" class="button">ABOUT</a>
-            <a href="/html" class="button">AUTOINDEX</a>
-            <a href="/redirect/" class="button">REDIRECT</a>
-            <a href="/42/" class="button">REDIRECT TO URL</a>
-            <a href="/cgi-bin/" class="button">CGI-BIN</a>
-            <a href="./upload/index.html" class="button">POST</a>
-            <a href="home.html" class="button">GET</a>
-            <a href="/404" class="button">404</a>
+            <!-- Login form -->
+            <!-- action will be defined later for now login.py -->
+            <form action="login.py" method="POST" class="button-container">
+                <input type="text" class="button-form" name="login" placeholder="username" required>
+                <input type="password" class="button-form" name="passwd" placeholder="password" required>
+                <button class="button" type="submit">Login</button>
+            </form>
+            <div class="option">
+                <div>if you don't have an account</div>
+                <div>please sign up here</div>
+            </div>
         </div>
+        <div class="welcome"> WELCOME </div>
     </div>
-    <script src="./assets/script.js"></script>
+    <button class="signup" onclick="location.href='signup.html'">Sign Up</button>
+    <script src="../assets/script.js"></script>
 </body>
 <footer>
     <!-- copyright -->

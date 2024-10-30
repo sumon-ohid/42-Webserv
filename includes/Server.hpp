@@ -3,13 +3,18 @@
 #include "Client.hpp"
 #include "Epoll.hpp"
 #include "ServerConfig.hpp"
+#include "ServerManager.hpp"
 #include "Socket.hpp"
 #include <list>
+
+class Socket;
 
 typedef std::list<Socket> lstSocs;
 typedef std::map<int, Client> mpCl;
 
 class Client;
+class ServerManager;
+class Epoll;
 
 class Server
 {
@@ -19,6 +24,7 @@ private:
 	lstSocs			_listenSockets;
 	// stores clients
 	mpCl			_clients;
+	ServerConfig	_serverConfig;
 	// handles the event monitoring
 	// removes all client fds from epoll and _clnts and closes the fds
 	void	disconnectClients(void);
@@ -26,8 +32,6 @@ private:
 	void	disconnectLstnSockets(void);
 	// DISCUSS: not sure if the shutdown should be specific to a certain address:port combination to be able to shut down a specific server
 public:
-	std::string		_configFile;
-	ServerConfig	_serverConfig;
 	Epoll*			_epoll;
 
 	// Coplien's form
@@ -38,9 +42,11 @@ public:
 	Server&	operator=(const Server&);
 	bool operator==(const Server& other) const;
 
+
 	// ------------- Listen Sockets -------------
 	// creates a socket to listen on for all the IP, port combinations requested
-	void	setUpLstnSockets();
+	void	setUpLstnSockets(ServerManager&);
+	bool	ipPortCombinationNonExistent(const std::string&, std::string&, int);
 
 	// ------------- Client handling -------------
 	// adds a client's fd to _clnts
@@ -67,4 +73,8 @@ public:
 	lstSocs&		getLstnSockets(void);
 	// returns a pointer to a client if the client is found connected to the server; otherwise NULL
 	Client*			getClient(int fd);
+
+	ServerConfig	getServerConfig() const;
+
+	Socket*			getSocket(int port);
 };

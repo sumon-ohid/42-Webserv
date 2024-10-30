@@ -6,6 +6,8 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
+#include <netdb.h>
+#include <stdexcept>
 #include <sys/epoll.h>
 #include <sys/types.h>
 #include <vector>
@@ -54,8 +56,13 @@ void	Epoll::registerLstnSockets(vSrv& servers)
 		// Retrieve the list of listening sockets from the server
 		const lstSocs&	sockets = it->getLstnSockets();
 		// Iterate over each listening socket
+		static int i = 1;
 		for (lstSocs::const_iterator it = sockets.begin(); it != sockets.end(); ++it)
+		{
 			registerSocket(it->getFdSocket(), EPOLLIN);
+			std::cout << BOLD BLUE "registered at port:\thttp://" << it->getIp() << ":" << it->getPort() << RESET <<  std::endl;
+		}
+		i++;
 	}
 }
 
@@ -132,19 +139,21 @@ bool	Epoll::NewClient(vSrv &servers, int event_fd) // possible change: implement
 bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 {
 	// Get the length of the address associated with the current listening socket
-	socklen_t _addrlen = sockIt->getAddressLen();
+	socklen_t _addrlen = sizeof(sockIt->getAddress()); //implement function in Socket: setAddrlen
+	// sockIt->getAddressLen();
 	// Accept a new client connection on the listening socket
 	_connSock = accept4(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if (_connSock < 0)
 	{
-		std::cerr << "Error:\taccept4 failed" << std::endl;
-		return (false);  // Skip to the next socket if accept fails
+		std::cerr << gai_strerror(_connSock);
+		throw std::runtime_error("Error:\taccept4 failed");
+		  // Skip to the next socket if accept fails
 	}
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
-	Client	tmp(_connSock, sockIt->getPort(), &serv);
+	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt));
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);

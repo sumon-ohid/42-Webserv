@@ -46,7 +46,6 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 
     LocationFinder locationFinder;
     locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
-    std::cout << locationFinder._pathToServe << std::endl;
     if (locationMatched)
     {
         if (locationFinder._redirectFound)
@@ -96,8 +95,6 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     DIR *dir;
     struct dirent *ent;
     std::ostringstream body;
-
-    std::cout << BOLD YELLOW << path << RESET << std::endl;
 
     if ((dir = opendir(path.c_str())) != NULL)
     {

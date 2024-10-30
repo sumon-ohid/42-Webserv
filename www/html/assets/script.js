@@ -19,3 +19,8 @@ if (document.body.classList.contains('light-mode')) {
     modeSwitchIcon.classList.remove('fa-sun');
     modeSwitchIcon.classList.add('fa-moon');
 }
+
+document.getElementById('nav-toggle').addEventListener('click', function() {
+    const navList = document.getElementById('nav-list');
+    navList.style.display = navList.style.display === 'flex' ? 'none' : 'flex';
+});

@@ -4,23 +4,24 @@
 #include "../includes/ServerConfig.hpp"
 
 #include <cstddef>
-#include <stdexcept>
+#include <exception>
+#include <netdb.h>
 #include <utility>
 #include <vector>
+#include <cerrno>
 
 // ------------- Coplien's form -------------
 
-Server::Server() : _configFile("none"), _epoll(NULL) {}
+Server::Server() : _epoll(NULL) {}
 Server::Server(ServerConfig conf) : _serverConfig(conf), _epoll(NULL) {}
 Server::~Server() {}
-Server::Server(const Server &orig) : _listenSockets(orig._listenSockets), _clients(orig._clients), _configFile(orig._configFile), _serverConfig(orig._serverConfig), _epoll((orig._epoll)) {}
+Server::Server(const Server &orig) : _listenSockets(orig._listenSockets), _clients(orig._clients), _serverConfig(orig._serverConfig), _epoll((orig._epoll)) {}
 Server&	Server::operator=(const Server &rhs)
 {
 	if (this != &rhs)
 	{
 		_listenSockets = rhs._listenSockets;
 		_clients = rhs._clients;
-		_configFile = rhs._configFile;
 		_serverConfig = rhs._serverConfig;
 		_epoll = rhs._epoll;
 	}
@@ -31,28 +32,75 @@ bool Server::operator==(const Server& other) const
 {
 	return (_listenSockets == other._listenSockets &&
 			_clients == other._clients &&
-			_configFile == other._configFile &&
 			_serverConfig == other._serverConfig &&
 			_epoll == other._epoll);
 }
 // ------------- Sockets -------------
 
-void	Server::setUpLstnSockets()
+void	Server::setUpLstnSockets(ServerManager& sm)
 {
-	std::vector<int> ports = this->_serverConfig.getListenPorts();
-	for (size_t i = 0; i < ports.size(); ++i)
+	std::vector<std::string> hostnames = _serverConfig.getServerNames();
+	std::vector<int> ports = _serverConfig.getListenPorts();
+
+	for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
 	{
-		int port = ports[i];
-        // create a temporary socket instance which will listen to a specific port
-		Socket	tmp(port);
-		tmp.setUpSocket();
-        // store the socket in a vector to keep track of all listening sockets if the socket was created successfully
-		if (tmp.getFdSocket() != -1)
-			_listenSockets.push_back(tmp);
+		for (size_t i = 0; i < ports.size(); ++i)
+		{
+
+			Socket	tmp(ports[i]);
+			try
+			{
+				tmp.setUpSocket(*hostname, *this, sm);
+				if (tmp.getFdSocket() != -1)
+					_listenSockets.push_back(tmp);
+			}
+			catch (std::exception &e)
+			{
+				if (tmp.getFdSocket() != -1)
+					close (tmp.getFdSocket());
+				std::cerr << e.what() << std::endl;
+				std::cerr << "Couldn't create a socket that listens at host " << *hostname << " at port:\t" << ports[i] << std::endl;
+				if (std::string(e.what()) == "Name or service not known")
+					break;
+			}
+		}
 	}
-	// check if there is at least one listening socket
-	if (_listenSockets.empty())
-		throw std::runtime_error("couldn't create any listen socket");
+	if (hostnames.empty())
+	{
+		std::string hostname = "0.0.0.0";
+		for (size_t i = 0; i < ports.size(); ++i)
+		{
+			Socket	tmp(ports[i]);
+			try
+			{
+				tmp.setUpSocket(hostname, *this, sm);
+				if (tmp.getFdSocket() != -1)
+					_listenSockets.push_back(tmp);
+			}
+			catch (std::exception &e)
+			{
+				if (tmp.getFdSocket() != -1)
+					close (tmp.getFdSocket());
+				std::cerr << e.what() << std::endl;
+				std::cerr << "Couldn't create a socket that listens at host " << hostname << " at port:\t" << ports[i] << std::endl;
+				if (std::string(e.what()) == "Name or service not known")
+					break;
+			}
+		}
+	}
+}
+
+bool	Server::ipPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, int port)
+{
+	for (lstSocs::iterator socIt = _listenSockets.begin(); socIt != _listenSockets.end(); ++socIt)
+	{
+		if (socIt->getIp() == IpHost && socIt->getPort() == port)
+		{
+			socIt->addConfig(hostname, _serverConfig);
+			return (false);
+		}
+	}
+	return (true);
 }
 
 // ------------- Clients -------------
@@ -148,4 +196,17 @@ Client*	Server::getClient(int fd)
 	if (it != _clients.end())
 		return (&it->second);
 	return (NULL);
+}
+
+Socket*	Server::getSocket(int port)
+{
+	for (lstSocs::iterator it = _listenSockets.begin(); it != _listenSockets.end(); ++it)
+		if (port == it->getPort())
+			return (&(*it));
+	return (NULL);
+}
+
+ServerConfig	Server::getServerConfig() const
+{
+	return (_serverConfig);
 }

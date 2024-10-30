@@ -46,6 +46,9 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
         {
             std::string key = line.substr(0, pos);
             std::string value = line.substr(pos + 1);
+            if (key == "autoindex")
+                if (checkAutoIndex(value) == false)
+                    throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
             if (key == "allowed_methods")
                 checkAllowedMethods(value, locationConfig.getPath());
             if (key == "return")
@@ -59,6 +62,17 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
         i++;
     }
     server.locations.push_back(locationConfig);
+}
+
+bool ServerConfig::checkAutoIndex(std::string line)
+{
+    size_t pos = line.find_first_not_of(" ");
+    size_t end = line.find_last_not_of(" ");
+    std::string temp = line.substr(pos, end + 1);
+
+    if (temp != "on" && temp != "off")
+        return false;
+    return true;
 }
 
 void ServerConfig::checkRedirect(std::string value)
