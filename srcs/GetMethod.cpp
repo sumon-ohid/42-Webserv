@@ -193,6 +193,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     std::string body = buffer.str();
     file.close();
     request._response->headerAndBody(client, socketFd, request, body);
+    std::cout << request.getMethodName() << " " << request.getMethodPath() << RESET << std::endl;
     std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 }
 
