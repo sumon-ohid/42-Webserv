@@ -85,11 +85,11 @@ void HandleCgi::proccessCGI(Client* client, int nSocket, Request &request)
 {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1)
-        throw std::runtime_error("Pipe failed !!"); // BP: maybe 500 or where catch it throw 500
+        throw std::runtime_error("500");
 
     pid_t pid = fork();
     if (pid < 0)
-        throw std::runtime_error("Fork failed !!"); // BP: maybe 500 or where catch it throw 500
+        throw std::runtime_error("500");
     else if (pid == 0)
         handleChildProcess(pipe_fd, locationPath);
     else
@@ -104,12 +104,12 @@ std::string HandleCgi::getExecutable(const std::string &locationPath)
     if (pos != std::string::npos)
         extension = locationPath.substr(pos);
     else
-        throw std::runtime_error("Invalid file extension !!");
+        throw std::runtime_error("403"); //-- NOT SURE IF 403 IS THE RIGHT ERROR CODE
 
     std::string executable;
     executable = Helper::executableMap.find(extension)->second;
     if (executable.empty())
-        throw std::runtime_error("This file extension is not supported !!");
+        throw std::runtime_error("403"); //-- NOT SURE IF 403 IS THE RIGHT ERROR CODE
 
     return executable;
 }
@@ -119,8 +119,8 @@ void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPa
 {
     //--- Redirect stdout to the pipe's write end
     dup2(pipe_fd[1], STDOUT_FILENO);
-    close(pipe_fd[0]); //--- Close unused read end
-    close(pipe_fd[1]); //--- Close write end after redirection
+    close(pipe_fd[0]);
+    close(pipe_fd[1]);
 
     std::string executable = getExecutable(locationPath);
 
@@ -146,42 +146,58 @@ void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPa
 //----- Function to handle the parent process
 void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2], pid_t pid, Request &request)
 {
-    (void)request;
-    close(pipe_fd[1]); //--- Close unused write end
+    close(pipe_fd[1]); //--- Close unused write fd
 
     //--- Read CGI output from the pipe
-    std::vector<char> cgiOutput(SOCKET_BUFFER_SIZE);
-    waitpid(pid, NULL, 0); //--- Wait for the child process to finish
+    std::vector<char> cgiOutput(6400000);
+    waitpid(pid, NULL, 0);
     ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
     if (n < 0)
     {
         close(pipe_fd[0]);
-        throw std::runtime_error("Read failed at CGI !!");
+        throw std::runtime_error("500");
     }
     else if (n == 0)
     {
         close(pipe_fd[0]);
-        throw std::runtime_error("No data received from CGI script !!");
+        throw std::runtime_error("500");
     }
 
     cgiOutput.resize(n);
 
-    std::string body = xto_string(cgiOutput.data());
+    std::string body(cgiOutput.data(), n);
 
     //*** This is to handle mime types for cgi scripts
-    // size_t pos = body.find("Content-Type:");
-    // std::string mimeType = body.substr(pos + 14, body.find("\n", pos) - pos - 14);
-    // std::ostringstream httpRequest;
-    // httpRequest << "HTTP/1.1 200 OK\nContent-Type: "<< mimeType <<"\nContent-Length: " << n << "\n\n";
+    size_t pos = body.find("Content-Type:");
+    std::string mimeType = body.substr(pos + 14, body.find("\r\n", pos) - pos - 14);
+    std::string setMime;
 
-    // //--- Send the HTTP request
-    // send(nSocket, httpRequest.str().c_str(), httpRequest.str().size(), 0);
-    // //--- Send the CGI output
-    // send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
+    std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
+    std::map<std::string, std::string>::iterator it;
+    for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
+    {
+        if (mimeType == it->second)
+        {
+            setMime = it->first;
+            break;
+        }
+    }
 
-    request._response->headerAndBody(client, nSocket, request, body);
+    //-- If no mime types found set it to default
+    if (setMime.empty())
+        setMime = ".html";
+    size_t bodyStart = body.find("\r\n\r\n");
+    if (bodyStart != std::string::npos)
+    {
+        bodyStart += 5;
+        cgiOutput.erase(cgiOutput.begin(), cgiOutput.begin() + bodyStart);
+    }
 
-    close(pipe_fd[0]); //--- Close read end
+    std::string bodyNoheader(cgiOutput.data(), cgiOutput.size());
+    request.setMethodMimeType(setMime);
+    request._response->headerAndBody(client, nSocket, request, bodyNoheader);
+
+    close(pipe_fd[0]); //--- Close read fd
 }
 
 HandleCgi::~HandleCgi()
