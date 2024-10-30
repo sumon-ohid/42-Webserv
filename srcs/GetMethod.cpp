@@ -118,7 +118,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         return;
     }
     std::string bodyStr = body.str();
-    request._response->headerAndBody(socketFd, request, bodyStr);
+    request._response->headerAndBody(client, socketFd, request, bodyStr);
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
 
@@ -192,7 +192,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     buffer << file.rdbuf();
     std::string body = buffer.str();
     file.close();
-    request._response->headerAndBody(socketFd, request, body);
+    request._response->headerAndBody(client, socketFd, request, body);
     std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 }
 

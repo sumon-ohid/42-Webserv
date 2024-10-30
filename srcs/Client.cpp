@@ -1,9 +1,9 @@
 #include "../includes/Client.hpp"
 
 // ------------- Coplien's Form -------------
-Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _server(NULL), _socket(NULL) {};
-Client::Client(int fd, int port, Server *serv, Socket* socket) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _server(serv), _socket(socket) {}
-Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _server(orig._server), _request(orig._request), _socket(orig._socket) {}
+Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _epoll(NULL), _server(NULL), _socket(NULL) {};
+Client::Client(int fd, int port, Server *serv, Socket* socket, Epoll* epoll) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _epoll(epoll), _server(serv), _socket(socket) {}
+Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _epoll(orig._epoll), _server(orig._server), _socket(orig._socket), _request(orig._request) {}
 Client::~Client() {}
 Client&	Client::operator=(const Client& rhs)
 {
@@ -11,11 +11,12 @@ Client&	Client::operator=(const Client& rhs)
 	{
 		_fd = rhs._fd;
 		_port = rhs._port;
-		_request = rhs._request;
 		_lastActive = rhs._lastActive;
 		_numRequests = rhs._numRequests;
+		_epoll = rhs._epoll;
 		_server = rhs._server;
 		_socket = rhs._socket;
+		_request = rhs._request;
 	}
 	return (*this);
 }
@@ -25,9 +26,10 @@ bool	Client::operator==(const Client& other) const
 			_port == other._port &&
 			_lastActive == other._lastActive &&
 			_numRequests == other._lastActive &&
+			_epoll == other._epoll &&
 			_server == other._server &&
-			_request == other._request &&
-			_socket == other._socket);
+			_socket == other._socket &&
+			_request == other._request);
 }
 
 

@@ -386,7 +386,8 @@ int	Request::clientRequest(Client* client)
 		try {
 			client->_request.executeMethod(event_fd, client);
 			// std::cout << client->_request.getHeaderMap().size() << std::endl;
-			client->_request.requestReset();
+			if (!this->_response->getIsChunk())
+				client->_request.requestReset();
 		}
 		catch (std::exception &e) {
 			client->_request._response->error(event_fd, client->_request, static_cast<std::string>(e.what()), client);

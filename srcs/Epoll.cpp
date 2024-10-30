@@ -153,7 +153,7 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
-	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt));
+	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt), this);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);
@@ -189,7 +189,7 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	(void)client;
+	client->_request._response->sendWithChunkEncoding(client, client->getFd(), client->_request);
 }
 
 void	Epoll:: removeClientEpoll(int fd)

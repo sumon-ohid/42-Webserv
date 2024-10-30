@@ -75,13 +75,13 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
         return;
     }
     if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == location + index)
-        proccessCGI(nSocket, request);
+        proccessCGI(&client, nSocket, request);
     else
         throw std::runtime_error("404");
 }
 
 //--- Main function to process CGI
-void HandleCgi::proccessCGI(int nSocket, Request &request)
+void HandleCgi::proccessCGI(Client* client, int nSocket, Request &request)
 {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1)
@@ -93,7 +93,7 @@ void HandleCgi::proccessCGI(int nSocket, Request &request)
     else if (pid == 0)
         handleChildProcess(pipe_fd, locationPath);
     else
-        handleParentProcess(nSocket, pipe_fd, pid, request);
+        handleParentProcess(client, nSocket, pipe_fd, pid, request);
 }
 
 //-- Function to determine the executable based on the file extension
@@ -144,7 +144,7 @@ void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPa
 }
 
 //----- Function to handle the parent process
-void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid, Request &request)
+void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2], pid_t pid, Request &request)
 {
     (void)request;
     close(pipe_fd[1]); //--- Close unused write end
@@ -179,7 +179,7 @@ void HandleCgi::handleParentProcess(int nSocket, int pipe_fd[2], pid_t pid, Requ
     // //--- Send the CGI output
     // send(nSocket, cgiOutput.data(), cgiOutput.size(), 0);
 
-    request._response->headerAndBody(nSocket, request, body);
+    request._response->headerAndBody(client, nSocket, request, body);
 
     close(pipe_fd[0]); //--- Close read end
 }

@@ -35,11 +35,11 @@ class Response {
 		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode);
 
 		void	header(int socketFd, Request& request, std::string& body);
-		void	headerAndBody(int socketFd, Request& request, std::string& body);
+		void	headerAndBody(Client*, int socketFd, Request& request, std::string& body);
 		void	fallbackError(int socketFd, Request& request, std::string statusCode);
 
 		void	error(int socketFd, Request& request, std::string statusCode, Client *client);
 
 		long	sendChunks(int socketFd, std::string chunkString);
-		void	sendWithChunkEncoding(int socketFd, Request& request, std::string& body);
+		void	sendWithChunkEncoding(Client*, int socketFd, Request& request);
 };

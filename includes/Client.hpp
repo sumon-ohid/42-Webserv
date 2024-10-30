@@ -1,10 +1,12 @@
 #pragma once
 
 #include <ctime>
+#include "Epoll.hpp"
 #include "Request.hpp"
 
-class Server;
-class Socket;
+class	Server;
+class	Socket;
+class	Epoll;
 
 class Client
 {
@@ -15,13 +17,14 @@ private:
 	unsigned		_numRequests;
 
 public:
+	Epoll*			_epoll;
 	Server*			_server;
-	Request			_request; // BP: can there be one or multiple requests at the same time
 	Socket*			_socket;
+	Request			_request; // BP: can there be one or multiple requests at the same time
 
 	// Coplien's form
 	Client();
-	Client(int, int, Server*, Socket*);
+	Client(int, int, Server*, Socket*, Epoll*);
 	~Client();
 	Client(const Client&);
 	Client&	operator=(const Client&);
