@@ -184,18 +184,17 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 	endPos = strLine.find("\r\n\r\n", 0);
 	if (strLine.size() == 2 && strLine.find("\r\n") != std::string::npos) {
 		_headerChecked = true;
-		if (_method->getName() == "GET")
+		if (_method->getName() == "GET" || "DELETE")
 			_readingFinished = true;
 		return;
 	}
-
 	if (endPos == std::string::npos) {
 		// for request via telnet:
 		storeOneHeaderInMap(strLine.substr(0));
 		return;
 	} else {
 		_headerChecked = true;
-		if (_method->getName() == "GET")
+		if (_method->getName() == "GET" || "DELETE")
 			_readingFinished = true;
 	}
 	while (pos < endPos) {
@@ -263,7 +262,6 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 		return;
 	}
 	extractHttpMethod(strLine);
-
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("400");
