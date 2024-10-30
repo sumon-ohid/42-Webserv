@@ -319,7 +319,7 @@ int	Request::emptyRequest(Client* client)
 	return (-1); // Move to the next event
 }
 
-void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request, Client* client)
+void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count, Request& request)
 {
 	std::size_t endPos = 0;
 	(void) serv;
@@ -358,7 +358,7 @@ int	Request::clientRequest(Client* client)
 			else if (count == 0)
 				return (emptyRequest(client));
 			else
-				validRequest(client->_server, buffer, count, client->_request, client);
+				validRequest(client->_server, buffer, count, client->_request);
 		}
 		catch (std::exception &e)
 		{
