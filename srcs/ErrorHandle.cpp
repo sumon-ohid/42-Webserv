@@ -44,7 +44,7 @@ std::string ErrorHandle::modifyErrorPage()
         }
     }
     else
-        throw std::runtime_error("No error file found in Config!!");
+        throw std::runtime_error("No error file found in Config!!"); // BP: this error is thrown with favicon
 
     newErrorFile.close();
     defaultErrorFile.close();
@@ -89,15 +89,8 @@ void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
         }
     }
 
-    std::map<std::string, std::string>::const_iterator it;
-	it = Helper::statusCodes.find(statusCode);
-	std::string statusMessage;
-	if (it == Helper::statusCodes.end()) {
-		statusCode = "500";
-		statusMessage = "Internal Server Error";
-	} else {
-		statusMessage = it->second;
-	}
+    std::string statusMessage = "";
+    Helper::checkStatus(statusCode, statusMessage);
 
     errorFile = errorPage;
     errorStatusCode = statusCode;

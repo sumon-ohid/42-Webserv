@@ -18,6 +18,7 @@ class Helper {
 		static const std::map<std::string, std::string> mimeTypes;
 		static const std::map<std::string, std::string> redirectCodes;
 
-		static std::string getActualTimeStringGMT();
+		static std::string	getActualTimeStringGMT();
+		static void			checkStatus(std::string& statusCode, std::string& statusMessage);
 		static void			modifyEpollEvent(Epoll&, Client*, uint32_t);
 };

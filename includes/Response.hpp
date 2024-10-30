@@ -13,11 +13,13 @@ class Response {
 	private:
 		int 			_socketFd;
 		bool			_isChunk;
-		unsigned long	_bytesSent;
+		bool			_headerSent;
+		bool			_finishedSending;
+		bool			_closeConnection;
+		unsigned long	_bytesSentOfBody;
+		std::string		_header;
 		std::string		_message;
-		// std::string chunk;
 		std::string		_mimeType;
-
 
 	public:
 		Response();
@@ -27,12 +29,17 @@ class Response {
 
 		Response* clone() const;
 
-		static void header(int socketFd, Request& request, std::string& body);
-		static void	headerAndBody(int socketFd, Request& request, std::string& body);
-		static void fallbackError(int socketFd, Request& request, std::string statusCode);
+		bool	getIsChunk();
 
-		static void error(int socketFd, Request& request, std::string statusCode, Client *client);
+		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
+		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode);
 
-		static void	sendChunks(int socketFd, std::string chunkString);
-		static void	sendWithChunkEncoding(int socketFd, Request& request, std::string& body);
+		void	header(int socketFd, Request& request, std::string& body);
+		void	headerAndBody(int socketFd, Request& request, std::string& body);
+		void	fallbackError(int socketFd, Request& request, std::string statusCode);
+
+		void	error(int socketFd, Request& request, std::string statusCode, Client *client);
+
+		long	sendChunks(int socketFd, std::string chunkString);
+		void	sendWithChunkEncoding(int socketFd, Request& request, std::string& body);
 };

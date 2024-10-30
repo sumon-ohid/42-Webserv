@@ -58,10 +58,11 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".png"] = "image/png";
 	mimes[".gif"] = "image/gif";
 	mimes[".pdf"] = "application/pdf";
-	mimes["mp4"] = "video/mp4";
-	mimes["xml"] = "application/xml";
-	mimes["json"] = "application/json";
-	mimes["svg"] = "image/svg+xml";
+	mimes[".mp4"] = "video/mp4";
+	mimes[".xml"] = "application/xml";
+	mimes[".json"] = "application/json";
+	mimes[".svg"] = "image/svg+xml";
+	// BP: don't forget the point when adding a new mimetype - example: ".css"
 	return mimes;
 }
 
@@ -96,6 +97,18 @@ std::string Helper::getActualTimeStringGMT() {
 	ss << std::setfill('0') << std::setw(2) << localNow->tm_min << ":";
 	ss << std::setfill('0') << std::setw(2) << localNow->tm_sec << " GMT";
 	return ss.str();
+}
+
+void	Helper::checkStatus(std::string& statusCode, std::string& statusMessage) {
+	std::map<std::string, std::string>::const_iterator it;
+
+	it = Helper::statusCodes.find(statusCode);
+	if (it == Helper::statusCodes.end()) {
+		statusCode = "500";
+		statusMessage = "Internal Server Error";
+	} else {
+		statusMessage = it->second;
+	}
 }
 
 void	Helper::modifyEpollEvent(Epoll &epoll, Client *client, uint32_t events)
