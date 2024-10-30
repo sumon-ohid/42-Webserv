@@ -419,12 +419,22 @@ int	Request::clientRequest(Client* client)
 
 
 void	Request::requestReset() {
-	this->_type = -1;
-	this->_firstLineChecked = false;
-	this->_readingFinished = false;
+	_type = -1;
+	_firstLineChecked = false;
+	_headerChecked = false;
+	_readingFinished = false;
 	delete this->_method;
-	this->_method = NULL;
-	this->_headerMap.clear();
+	_method = NULL;
+	_headerMap.clear();
+	_isChunked = false;
+	_contentLength = 0;
+	_contentRead = 0;
+	_host = "";
+	_requestBody = "";
+	_postFilename = "";
+	_servConf = NULL;
+	delete _response;
+	_response = new Response();
 }
 
 std::string	Request::getHost() const
