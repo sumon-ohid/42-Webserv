@@ -124,7 +124,7 @@ void	Response::fallbackError(int socketFd, Request& request, std::string statusC
 	if (bytesSent == -1)
 		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 	else
-		std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
+		std::cerr << BOLD RED << "Error: " + statusCode << ", method: " << request.getMethodName() << ", path: " << request.getMethodPath() << RESET << std::endl;
 }
 
 //hardcoding of internal server Error (check case stringsteam fails)
@@ -167,7 +167,7 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 			if (bytesSent == -1)
 				throw std::runtime_error("Error writing to socket in Response::error!!");
 			else
-				std::cerr << BOLD RED << "Error: " + statusCode << RESET << std::endl;
+				std::cerr << BOLD RED << "Error: " + statusCode << ", method: " << request.getMethodName() << ", path: " << request.getMethodPath() << RESET << std::endl;
 			// NOTE: sometimes write fails, subject says errno is forbidden for read and write
 			// SUB : You must never do a read or a write operation without going through poll() (or equivalent).
 		}
@@ -218,7 +218,7 @@ void	Response::sendWithChunkEncoding(Client *client, int socketFd, Request& requ
 
 	if (!_headerSent) {
 		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
-		std::string chunkStartHeader = createHeaderString(request, _message, "200") + "\r\n"; // BP: createHeader ev. without body - and
+		std::string chunkStartHeader = createHeaderString(request, _message, "200"); // BP: createHeader ev. without body - and
 		bytesSent = send(socketFd, chunkStartHeader.c_str(), chunkStartHeader.size(), 0);
 		if (bytesSent < 0) {
 			std::cerr << "Error sending response header" << std::endl;
