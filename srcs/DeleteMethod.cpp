@@ -55,7 +55,7 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 	{
 		//-- headerAndBody is always 200, but we need for different codes as well.
 		std::string body = "<html><body><h1>File Deleted Successfully!</h1></body></html>";
-		request._response->headerAndBody(socketFd, request, body);
+		request._response->headerAndBody(client, socketFd, request, body);
 	}
 	else
 		request._response->error(socketFd, request, _statusCode, client);

@@ -83,7 +83,7 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     }
 
     std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
-    request._response->headerAndBody(socketFd, request, body);
+    request._response->headerAndBody(client, socketFd, request, body);
 
     std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
     std::cout << BOLD BLUE "File : " << fileName << RESET << std::endl;

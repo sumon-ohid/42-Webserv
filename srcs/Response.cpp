@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <signal.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
@@ -87,9 +88,10 @@ void	Response::header(int socketFd, Request& request, std::string& body) { // BP
 	send(socketFd , headString.c_str(), headString.size(), 0);
 }
 
-void	Response::headerAndBody(int socketFd, Request& request, std::string& body) { // BP: change name to sendHeaderAndBody?
+void	Response::headerAndBody(Client* client, int socketFd, Request& request, std::string& body) { // BP: change name to sendHeaderAndBody?
+	_message = body;
 	if (_isChunk || body.size() > CHUNK_SIZE) {
-		sendWithChunkEncoding(socketFd, request, body);
+		sendWithChunkEncoding(client, socketFd, request);
 	} else {
 		createHeaderAndBodyString(request, body, "200");
 		// std::cout << totalString << std::endl;
@@ -191,14 +193,12 @@ void	Response::error(int socketFd, Request& request, std::string statusCode, Cli
 
 }
 
-#include <unistd.h>
 
 long	Response::sendChunks(int socketFd, std::string chunkString) {
 	if (chunkString.size() == 0) {
 		// send(socketFd, "0\r\n\r\n", 5, 0); // BP: add this ev. when changing to epoll version
 		return 0;
 	}
-	usleep(100000); // change to epoll
 	std::ostringstream ss1;
 	ss1 << std::hex << chunkString.size() << "\r\n";
 	// unsigned long int hexSize = ss.str().size();
@@ -212,12 +212,13 @@ long	Response::sendChunks(int socketFd, std::string chunkString) {
 	return bytesSent - 2;
 }
 
-void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string& body) {
+void	Response::sendWithChunkEncoding(Client *client, int socketFd, Request& request) {
 	_isChunk = true;
 	long bytesSent;
 
 	if (!_headerSent) {
-		std::string chunkStartHeader = createHeaderString(request, body, "200") + "\r\n"; // BP: createHeader ev. without body - and
+		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
+		std::string chunkStartHeader = createHeaderString(request, _message, "200") + "\r\n"; // BP: createHeader ev. without body - and
 		bytesSent = send(socketFd, chunkStartHeader.c_str(), chunkStartHeader.size(), 0);
 		if (bytesSent < 0) {
 			std::cerr << "Error sending response header" << std::endl;
@@ -227,7 +228,7 @@ void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string
 	}
 
 	// for (unsigned long i = 0; i < body.size(); i += CHUNK_SIZE) { // add bytesSent
-	bytesSent = sendChunks(socketFd, body.substr(_bytesSentOfBody, CHUNK_SIZE));
+	bytesSent = sendChunks(socketFd, _message.substr(_bytesSentOfBody, CHUNK_SIZE));
 	_bytesSentOfBody += bytesSent;
 	if (bytesSent < 0) {
 		std::cerr << "Connection closed by client" << std::endl; // BP: ev. other message?
@@ -238,6 +239,8 @@ void	Response::sendWithChunkEncoding(int socketFd, Request& request, std::string
 	if (bytesSent == 0) {
 		send(socketFd, "0\r\n\r\n", 5, 0); // for ending chunk encoding
 		_finishedSending = true;
+		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
+		client->_request.requestReset();
 	}
 
 	(void) request;
