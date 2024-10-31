@@ -144,28 +144,41 @@ void HandleCgi::handleChildProcess(int pipe_fd[2], const std::string &locationPa
 }
 
 //----- Function to handle the parent process
+//--- NOTE: This should go through epoll
+//--- read there from pipe_fd[0] and write to the client socket
 void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2], pid_t pid, Request &request)
 {
     close(pipe_fd[1]); //--- Close unused write fd
-
     //--- Read CGI output from the pipe
-    std::vector<char> cgiOutput(6400000);
-    waitpid(pid, NULL, 0);
-    ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
-    if (n < 0)
+
+    std::ostringstream bodyStr;
+    int status;
+    std::vector<char> cgiOutput(64000); //-- Buffer size of 64 KB
+
+    while (true)
     {
-        close(pipe_fd[0]);
-        throw std::runtime_error("500");
-    }
-    else if (n == 0)
-    {
-        close(pipe_fd[0]);
-        throw std::runtime_error("500");
+        ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
+        if (n > 0)
+            bodyStr.write(cgiOutput.data(), n);
+        else if (n == 0)
+            break;
+        else
+        {
+            close(pipe_fd[0]);
+            throw std::runtime_error("500");
+        }
+
+        //-- Check if the child process has exited
+        if (waitpid(pid, &status, WNOHANG) == pid)
+        {
+            if (WIFEXITED(status))
+                std::cout << BOLD BLUE << "Process completed with exit code: " << WEXITSTATUS(status) << RESET << std::endl;
+            break;
+        }
     }
 
-    cgiOutput.resize(n);
-
-    std::string body(cgiOutput.data(), n);
+    close(pipe_fd[0]); //-- Close read end of the pipe
+    std::string body = bodyStr.str();
 
     //*** This is to handle mime types for cgi scripts
     size_t pos = body.find("Content-Type:");
@@ -190,14 +203,11 @@ void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2],
     if (bodyStart != std::string::npos)
     {
         bodyStart += 5;
-        cgiOutput.erase(cgiOutput.begin(), cgiOutput.begin() + bodyStart);
+        body.erase(0, bodyStart);
     }
-
-    std::string bodyNoheader(cgiOutput.data(), cgiOutput.size());
+    std::string bodyNoheader(body.data(), body.size());
     request.setMethodMimeType(setMime);
     request._response->headerAndBody(client, nSocket, request, bodyNoheader);
-
-    close(pipe_fd[0]); //--- Close read fd
 }
 
 HandleCgi::~HandleCgi()
