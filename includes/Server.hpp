@@ -12,6 +12,9 @@ class Socket;
 typedef std::list<Socket> lstSocs;
 typedef std::map<int, Client> mpCl;
 
+#define	LISTEN_ON_ALL_AVAILABLE_NETWORK_INTERFACES	"0.0.0.0"
+#define	DEFAULT_PORT								8080
+
 class Client;
 class ServerManager;
 class Epoll;
@@ -46,6 +49,8 @@ public:
 	// ------------- Listen Sockets -------------
 	// creates a socket to listen on for all the IP, port combinations requested
 	void	setUpLstnSockets(ServerManager&);
+	void	createPorts(ServerManager& sm, const std::string& = LISTEN_ON_ALL_AVAILABLE_NETWORK_INTERFACES);
+	bool	createSockets(ServerManager&, const std::string&, int = DEFAULT_PORT);
 	bool	ipPortCombinationNonExistent(const std::string&, std::string&, int);
 
 	// ------------- Client handling -------------
