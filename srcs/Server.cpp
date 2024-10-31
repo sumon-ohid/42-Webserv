@@ -40,7 +40,6 @@ bool Server::operator==(const Server& other) const
 void	Server::setUpLstnSockets(ServerManager& sm)
 {
 	std::vector<std::string> hostnames = _serverConfig.getServerNames();
-	std::cout << "hostnames size:\t" << hostnames.size() << std::endl;
 	for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
 		createPorts(sm, *hostname);
 	if (hostnames.empty())
@@ -49,9 +48,7 @@ void	Server::setUpLstnSockets(ServerManager& sm)
 
 void	Server::createPorts(ServerManager& sm, const std::string& hostname)
 {
-	std::cout << "hostname:\t" << hostname << std::endl;
 	std::vector<int> ports = _serverConfig.getListenPorts();
-	std::cout << "ports size:\t" << ports.size() << std::endl;
 	for (size_t i = 0; i < ports.size(); ++i)
 	
 		if (!createSockets(sm, hostname, ports[i]))
@@ -62,7 +59,6 @@ void	Server::createPorts(ServerManager& sm, const std::string& hostname)
 
 bool	Server::createSockets(ServerManager& sm, const std::string& hostname, int port)
 {
-	std::cout << "port:\t" << port << std::endl;
 	Socket	tmp(port);
 	try
 	{

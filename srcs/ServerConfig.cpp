@@ -378,6 +378,7 @@ void ServerConfig::displayConfig()
 void ServerConfig::makePortVector()
 {
     std::vector<int> tempPorts;
+    std::set<int> portSet; //-- Set to check duplicate ports
     std::string ports = getListenPort();
 
     while (!ports.empty())
@@ -388,7 +389,10 @@ void ServerConfig::makePortVector()
         int port;
         ss >> port;
         if (port < 0 || port > 65535)
-            throw std::runtime_error("Invalid port number !!");
+            throw std::runtime_error("Invalid port number !! [KO] [RANGE : 0 - 65535]");
+        if (portSet.find(port) != portSet.end())
+            throw std::runtime_error("Duplicate listen port number found [KO]");
+        portSet.insert(port);
         tempPorts.push_back(port);
         if (pos == std::string::npos)
             break;
@@ -401,12 +405,16 @@ void ServerConfig::makePortVector()
 void ServerConfig::makeServerNameVector()
 {
     std::vector<std::string> tempServerNames;
+    std::set<std::string> serverNameSet;
     std::string serverNamesStr = getServerName();
 
     while (!serverNamesStr.empty())
     {
         size_t pos = serverNamesStr.find(" ");
         std::string temp = serverNamesStr.substr(0, pos);
+        if (serverNameSet.find(temp) != serverNameSet.end())
+            throw std::runtime_error("Duplicate server_name found: [ " + temp + " ] [KO]");
+        serverNameSet.insert(temp);
         tempServerNames.push_back(temp);
         if (pos == std::string::npos)
             break;
