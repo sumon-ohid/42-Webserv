@@ -119,6 +119,8 @@ bool	ServerManager::ipPortCombinationNonExistent(const std::string& hostname, st
 		{
 			if (IpHost == socIt->getIp() && socIt->getPort() == port)
 			{
+				if (hostname == socIt->_configs.begin()->first)
+					throw std::runtime_error("ip:port combination with the same hostname is already used by another server");
 				socIt->addConfig(hostname, servConf);
 				return (false);
 			}
