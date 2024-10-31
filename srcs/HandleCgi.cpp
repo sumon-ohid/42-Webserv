@@ -169,6 +169,7 @@ void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2],
         }
 
         //-- Check if the child process has exited
+        //-- WNOHANG: return immediately if no child has exited
         if (waitpid(pid, &status, WNOHANG) == pid)
         {
             if (WIFEXITED(status))

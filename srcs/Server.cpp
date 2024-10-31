@@ -59,7 +59,6 @@ void	Server::createPorts(ServerManager& sm, const std::string& hostname)
 
 bool	Server::createSockets(ServerManager& sm, const std::string& hostname, int port)
 {
-	std::cout << "port:\t" << port << std::endl;
 	Socket	tmp(port);
 	try
 	{
