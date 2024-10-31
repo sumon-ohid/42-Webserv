@@ -52,7 +52,7 @@ void	ServerManager::setUpServers()
 		}
 		catch (std::exception &e)
 		{
-			std::cout << "Error:\t" << e.what() << std::endl;
+			std::cerr << "Error:\t" << e.what() << std::endl;
 		}
 	}
 	// check if there is at least one listening socket

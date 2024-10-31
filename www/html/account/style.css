@@ -115,6 +115,8 @@ body {
     width: 60%;
     height: 60%; /* Ensure the container takes full height */
     z-index: 2;
+    top : 300px;
+    left : -70px;
 }
 
 .button-container {
@@ -282,8 +284,8 @@ body {
     text-align: center; /* Center text horizontally */
     font-size: .7em;
     position: absolute;
-    bottom: 155px;
     z-index: 3;
+    top : 75%;
 }
 
 .signup:hover {
