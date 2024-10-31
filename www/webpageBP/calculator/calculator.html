@@ -1,56 +1,72 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Taschenrechner</title>
-    <base href="/calculator/">
-    <link rel="stylesheet" href="calculator.css">
+    <base href="/calculator/" />
+    <link rel="stylesheet" href="calculator.css" />
     <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet"> -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="../assets/favicons/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../assets/favicons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="../assets/favicons/favicon-16x16.png"
+    />
+    <link rel="manifest" href="../assets/favicons/site.webmanifest" />
+  </head>
+  <body>
+    <div id="whole-calculator">
+      <div id="result-area"></div>
 
-</head>
-<body>
-    <div id= "whole-calculator">
-    <div id="result-area"></div>
-
-    <table>
+      <table>
         <tr>
-            <td onclick="appendOperation('(', false)" class="highlight">(</td>
-            <td onclick="appendOperation(')', false)" class="highlight">)</td>
-            <td onclick="deleteLast()" class="highlight">DEL</td>
-            <td onclick="deleteAll()" class="highlight">CLEAR</td>
+          <td onclick="appendOperation('(', false)" class="highlight">(</td>
+          <td onclick="appendOperation(')', false)" class="highlight">)</td>
+          <td onclick="deleteLast()" class="highlight">DEL</td>
+          <td onclick="deleteAll()" class="highlight">CLEAR</td>
         </tr>
         <tr>
-            <td onclick="appendOperation(7, false)">7</td>
-            <td onclick="appendOperation(8, false)">8</td>
-            <td onclick="appendOperation(9, false)">9</td>
-            <td class="highlight" onclick="appendOperation(' / ', true)">/</td>
+          <td onclick="appendOperation(7, false)">7</td>
+          <td onclick="appendOperation(8, false)">8</td>
+          <td onclick="appendOperation(9, false)">9</td>
+          <td class="highlight" onclick="appendOperation(' / ', true)">/</td>
         </tr>
         <tr>
-            <td onclick="appendOperation(4, false)">4</td>
-            <td onclick="appendOperation(5, false)">5</td>
-            <td onclick="appendOperation(6, false)">6</td>
-            <td class="highlight" onclick="appendOperation(' * ', true)">x</td>
+          <td onclick="appendOperation(4, false)">4</td>
+          <td onclick="appendOperation(5, false)">5</td>
+          <td onclick="appendOperation(6, false)">6</td>
+          <td class="highlight" onclick="appendOperation(' * ', true)">x</td>
         </tr>
         <tr>
-            <td onclick="appendOperation(1, false)">1</td>
-            <td onclick="appendOperation(2, false)">2</td>
-            <td onclick="appendOperation(3, false)">3</td>
-            <td class="highlight" onclick="appendOperation(' + ', true)">+</td>
+          <td onclick="appendOperation(1, false)">1</td>
+          <td onclick="appendOperation(2, false)">2</td>
+          <td onclick="appendOperation(3, false)">3</td>
+          <td class="highlight" onclick="appendOperation(' + ', true)">+</td>
         </tr>
         <tr>
-            <td onclick="appendOperation(0, false)">0</td>
-            <td onclick="kommaCheck('.')">,</td>
-            <td id="result" onclick="calculateResult()">=</td>
-            <td class="highlight" onclick="appendOperation(' - ', true)">-</td>
+          <td onclick="appendOperation(0, false)">0</td>
+          <td onclick="kommaCheck('.')">,</td>
+          <td id="result" onclick="calculateResult()">=</td>
+          <td class="highlight" onclick="appendOperation(' - ', true)">-</td>
         </tr>
-    </table>
-
+      </table>
     </div>
 
     <script src="calculator.js"></script>
-</body>
+  </body>
 </html>
