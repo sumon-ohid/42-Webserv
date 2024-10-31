@@ -1,40 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>42-webserv</title>
-    <link rel="stylesheet" href="./style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
+    <link rel="stylesheet" href="./style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="../assets/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../assets/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="../assets/favicon-16x16.png"
+    />
+    <link rel="manifest" href="../assets/site.webmanifest" />
+  </head>
+  <body>
     <!-- Navigation bar -->
     <!-- Navigation bar -->
     <div class="nav_container">
-        <a href="../index.html">
-            <button id="nav-toggle" class="nav-toggle">
-                <i class="fa-solid fa-house"></i>
-            </button>
-        </a>
-        <a href="login.html">
-            <button id="nav-toggle" class="nav-toggle">
-                <i class="fa-solid fa-user"></i>
-            </button>
-        </a>
-        <a href="../gallery/gallery.html">
-            <button id="nav-toggle" class="nav-toggle">
-                <i class="fa-solid fa-image"></i>
-            </button>
-        </a>
-
-        <!-- Mode switch -->
-        <button id="mode-switch" class="nav-toggle">
-            <i class="fas fa-moon"></i>
+      <a href="../index.html">
+        <button id="nav-toggle" class="nav-toggle">
+          <i class="fa-solid fa-house"></i>
         </button>
+      </a>
+      <a href="login.html">
+        <button id="nav-toggle" class="nav-toggle">
+          <i class="fa-solid fa-user"></i>
+        </button>
+      </a>
+      <a href="../gallery/gallery.html">
+        <button id="nav-toggle" class="nav-toggle">
+          <i class="fa-solid fa-image"></i>
+        </button>
+      </a>
+
+      <!-- Mode switch -->
+      <button id="mode-switch" class="nav-toggle">
+        <i class="fas fa-moon"></i>
+      </button>
     </div>
     <!-- small texts -->
-    <div class="small-text">
-    </div>
+    <div class="small-text"></div>
     <!-- Header -->
     <!--
     <div>
@@ -44,32 +64,53 @@
     </div>
     -->
     <!-- 42 icon -->
-    <div class="icon" >
-        <img src="https://simpleicons.org/icons/42.svg" alt="42">
+    <div class="icon">
+      <img src="https://simpleicons.org/icons/42.svg" alt="42" />
     </div>
 
     <!-- Main container -->
     <div class="container">
-        <div class="button-container">
-            <!-- Login form -->
-            <!-- action will be defined later for now login.py -->
-            <form action="login.py" method="POST" class="button-container">
-                <input type="email" class="button-form" name="email" placeholder="email" required>
-                <input type="text" class="button-form" name="login" placeholder="username" required>
-                <input type="password" class="button-form" name="passwd" placeholder="password" required>
-                <button class="button" type="submit">Sign up</button>
-            </form>
-        </div>
-        <div class="welcome"> Create Account </div>
+      <div class="button-container">
+        <!-- Login form -->
+        <!-- action will be defined later for now login.py -->
+        <form action="login.py" method="POST" class="button-container">
+          <input
+            type="email"
+            class="button-form"
+            name="email"
+            placeholder="email"
+            required
+          />
+          <input
+            type="text"
+            class="button-form"
+            name="login"
+            placeholder="username"
+            required
+          />
+          <input
+            type="password"
+            class="button-form"
+            name="passwd"
+            placeholder="password"
+            required
+          />
+          <button class="button" type="submit">Sign up</button>
+        </form>
+      </div>
+      <div class="welcome">Create Account</div>
     </div>
     <script src="../assets/script.js"></script>
-</body>
-<footer>
+  </body>
+  <footer>
     <!-- copyright -->
     <div class="footer">
-        <p>© 2024 
-            <a href="https://profile.intra.42.fr/users/msumon" class="highlight">msumon</a>
-        </p>
+      <p>
+        © 2024
+        <a href="https://profile.intra.42.fr/users/msumon" class="highlight"
+          >msumon</a
+        >
+      </p>
     </div>
-</footer>
+  </footer>
 </html>

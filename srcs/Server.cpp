@@ -40,55 +40,43 @@ bool Server::operator==(const Server& other) const
 void	Server::setUpLstnSockets(ServerManager& sm)
 {
 	std::vector<std::string> hostnames = _serverConfig.getServerNames();
-	std::vector<int> ports = _serverConfig.getListenPorts();
-
 	for (std::vector<std::string>::iterator hostname = hostnames.begin(); hostname != hostnames.end(); ++hostname)
-	{
-		for (size_t i = 0; i < ports.size(); ++i)
-		{
-
-			Socket	tmp(ports[i]);
-			try
-			{
-				tmp.setUpSocket(*hostname, *this, sm);
-				if (tmp.getFdSocket() != -1)
-					_listenSockets.push_back(tmp);
-			}
-			catch (std::exception &e)
-			{
-				if (tmp.getFdSocket() != -1)
-					close (tmp.getFdSocket());
-				std::cerr << e.what() << std::endl;
-				std::cerr << "Couldn't create a socket that listens at host " << *hostname << " at port:\t" << ports[i] << std::endl;
-				if (std::string(e.what()) == "Name or service not known")
-					break;
-			}
-		}
-	}
+		createPorts(sm, *hostname);
 	if (hostnames.empty())
-	{
-		std::string hostname = "0.0.0.0";
-		for (size_t i = 0; i < ports.size(); ++i)
-		{
-			Socket	tmp(ports[i]);
-			try
-			{
-				tmp.setUpSocket(hostname, *this, sm);
-				if (tmp.getFdSocket() != -1)
-					_listenSockets.push_back(tmp);
-			}
-			catch (std::exception &e)
-			{
-				if (tmp.getFdSocket() != -1)
-					close (tmp.getFdSocket());
-				std::cerr << e.what() << std::endl;
-				std::cerr << "Couldn't create a socket that listens at host " << hostname << " at port:\t" << ports[i] << std::endl;
-				if (std::string(e.what()) == "Name or service not known")
-					break;
-			}
-		}
-	}
+		createPorts(sm);
 }
+
+void	Server::createPorts(ServerManager& sm, const std::string& hostname)
+{
+	std::vector<int> ports = _serverConfig.getListenPorts();
+	for (size_t i = 0; i < ports.size(); ++i)
+		if (createSockets(sm, hostname, ports[i]))
+			break;
+	if (ports.empty())
+		createSockets(sm, hostname);
+}
+
+bool	Server::createSockets(ServerManager& sm, const std::string& hostname, int port)
+{
+	Socket	tmp(port);
+	try
+	{
+		tmp.setUpSocket(hostname, *this, sm);
+		if (tmp.getFdSocket() != -1)
+			_listenSockets.push_back(tmp);
+	}
+	catch (std::exception &e)
+	{
+		if (tmp.getFdSocket() != -1)
+			close (tmp.getFdSocket());
+		std::cerr << e.what() << std::endl;
+		std::cerr << "Couldn't create a socket that listens at host " << hostname << " at port:\t" << port << std::endl;
+		if (std::string(e.what()) == "Name or service not known")
+			return (false);
+	}
+	return (true);
+}
+
 
 bool	Server::ipPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, int port)
 {
