@@ -149,7 +149,7 @@ void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2],
     close(pipe_fd[1]); //--- Close unused write fd
 
     //--- Read CGI output from the pipe
-    std::vector<char> cgiOutput(6400000);
+    std::vector<char> cgiOutput(640000);
     waitpid(pid, NULL, 0);
     ssize_t n = read(pipe_fd[0], cgiOutput.data(), cgiOutput.size());
     if (n < 0)
