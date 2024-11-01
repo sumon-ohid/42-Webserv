@@ -221,3 +221,10 @@ body {
     background: var(--button-hover-bg);
     
 }
+
+
+/* If signup success */
+
+.success_con {
+    gap : 1px;
+}

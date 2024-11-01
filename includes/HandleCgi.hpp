@@ -30,8 +30,8 @@ class HandleCgi : public ServerConfig
 
         void initEnv(Request &request);
         void proccessCGI(Client*, int nSocket, Request &request);
-        void handleParentProcess(Client*, int nSocket, int pipe_fd[2], pid_t pid, Request &request);
-        void handleChildProcess(int pipe_fd[2], const std::string &locationPath);
+        void handleParentProcess(Client*, int nSocket, int pipe_in[2], int pipe_out[2], pid_t pid, Request &request);
+        void handleChildProcess(int pipe_in[2], int pipe_out[2] ,const std::string &locationPath, Request &request);
         std::string getExecutable(const std::string &locationPath);
 
         // Function template to convert various types to string

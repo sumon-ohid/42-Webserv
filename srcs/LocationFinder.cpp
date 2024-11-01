@@ -183,7 +183,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
 
             if (requestPath.find("cgi-bin") != std::string::npos)
                 _cgiFound = true;
-
+            
             _pathToServe = _root + tempPath + "/" + _index;
             _locationPath = tempPath;
 
@@ -193,7 +193,7 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         }
     }
     _root = locationsVector[0].getLocationMap().find("root")->second;
-    _pathToServe = _root + _locationPath + path;
+    _pathToServe = _root + _locationPath + path;    
     if (isDirectory(_pathToServe))
     {
         searchIndexHtml(_pathToServe, _pathToServe);

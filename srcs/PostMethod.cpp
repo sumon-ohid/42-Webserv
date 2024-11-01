@@ -4,6 +4,7 @@
 #include "../includes/Response.hpp"
 #include "../includes/Client.hpp"
 #include "../includes/LocationFinder.hpp"
+#include "../includes/HandleCgi.hpp"
 
 #include <string>
 #include <fstream>
@@ -33,14 +34,32 @@ PostMethod::~PostMethod() {}
 //-- Execute the POST method
 void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
 {
+    std::string body = request._requestBody;
+    std::string requestPath = request.getMethodPath();
+
+    if (requestPath.find("/cgi-bin") != std::string::npos)
+    {
+        try
+        {
+            HandleCgi cgi(requestPath, socketFd, *client, request);
+            std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
+        }
+        catch (std::exception &e)
+        {
+            request._response->error(socketFd, request, e.what(), client);
+        }
+        return;
+    }
+
     bool isLocation = false;
     LocationFinder locationFinder;
     isLocation = locationFinder.locationMatch(client, request.getMethodPath(), socketFd);
-    if (!isLocation)
-    {
-        request._response->error(socketFd, request, "404", client);
-        return;
-    }
+    //-- SUMON I think this is not needed
+    // if (!isLocation)
+    // {
+    //     request._response->error(socketFd, request, "404", client);
+    //     return;
+    // }
 
     //-- Check if the allowed methods include POST
     if (isLocation && locationFinder._allowedMethodFound)
@@ -52,8 +71,6 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         }
     }
 
-    std::string body = request._requestBody;
-    std::string requestPath = request.getMethodPath();
     this->socketFd = socketFd;
     this->root = locationFinder._root;
     this->locationPath = locationFinder._locationPath;
