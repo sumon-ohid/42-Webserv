@@ -3,6 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // Check if the user is logged in
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+    
+        //If not logged in, redirect to the login page
+        if (!isLoggedIn) {
+          window.location.href = "./account/login.html";
+        }
+      });
+    </script>
     <title>42-webserv</title>
     <link rel="stylesheet" href="./assets/style.css" />
     <link
@@ -46,6 +57,22 @@
           <i class="fa-solid fa-image"></i>
         </button>
       </a>
+      <a href="#" onclick="logout()">
+          <button id="nav-toggle" class="nav-toggle">
+              <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+      </a>
+      
+      <script>
+          function logout() {
+              // Clear the session and localStorage
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("username");
+              document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              // Redirect to the login page
+              window.location.href = "./account/login.html";
+          }
+      </script>
 
       <!-- Mode switch -->
       <button id="mode-switch" class="nav-toggle">
