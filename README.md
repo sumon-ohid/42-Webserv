@@ -14,3 +14,9 @@ curl -F "file=@testUpload.txt" http://localhost:8000/
 ```
 lsof -t -i :PORT
 ```
+
+# Siege Stress Test
+
+```
+siege -c 256 -r 1000 http://localhost:8000
+```
