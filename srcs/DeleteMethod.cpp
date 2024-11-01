@@ -30,7 +30,7 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 
 	if (locationFinder._cgiFound)
 	{
-		request._response->error(socketFd, request, "405", client);
+		request._response->error(request, "405", client);
 		return;
     }
 
@@ -39,7 +39,7 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
     {
         if (locationFinder._allowed_methods.find("DELETE") == std::string::npos)
         {
-            request._response->error(socketFd, request, "405", client);
+            request._response->error(request, "405", client);
             return;
         }
     }
@@ -55,10 +55,10 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 	{
 		//-- headerAndBody is always 200, but we need for different codes as well.
 		std::string body = "<html><body><h1>File Deleted Successfully!</h1></body></html>";
-		request._response->headerAndBody(client, socketFd, request, body);
+		request._response->createHeaderAndBodyString(request, body, "204", client);
 	}
 	else
-		request._response->error(socketFd, request, _statusCode, client);
+		request._response->error(request, _statusCode, client);
 }
 
 void	DeleteMethod::deleteObject()
