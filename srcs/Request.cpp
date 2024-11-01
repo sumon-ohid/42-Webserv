@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <algorithm>
@@ -138,6 +139,12 @@ std::map<std::string, std::string> Request::getHeaderMap() const {
 	return this->_headerMap;
 }
 
+std::string Request::getHeaderFromHeaderMap(std::string headerName) const {
+	if (_headerMap.find(headerName) == _headerMap.end())
+		return "";
+	return _headerMap.find(headerName)->second;
+}
+
 void Request::setMethodMimeType(std::string path) {
 	this->_method->setMimeType(path);
 }
@@ -184,7 +191,7 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 	endPos = strLine.find("\r\n\r\n", 0);
 	if (strLine.size() == 2 && strLine.find("\r\n") != std::string::npos) {
 		_headerChecked = true;
-		if (_method->getName() == "GET" || "DELETE")
+		if (_method->getName() == "GET" || _method->getName() == "DELETE")
 			_readingFinished = true;
 		return;
 	}
@@ -194,7 +201,7 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 		return;
 	} else {
 		_headerChecked = true;
-		if (_method->getName() == "GET" || "DELETE")
+		if (_method->getName() == "GET" || _method->getName() == "DELETE")
 			_readingFinished = true;
 	}
 	while (pos < endPos) {
@@ -207,6 +214,13 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 
 void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	std::size_t pos = strLine.find("filename=", endPos);
+	char* end;
+	unsigned long num = strtoul(getHeaderFromHeaderMap("Content-Length").c_str(), &end, 10);
+	// std::atoi(getHeaderFromHeaderMap("Content-Length").c_str())
+	if (pos == std::string::npos && num > strLine.substr(endPos).size() ) {
+		return;
+	}
+
 	//-- SUMON commented this out to handle post without filename
 	if (pos == std::string::npos)
 	{
@@ -242,6 +256,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	// std::cout << "content: " << it->second << std::endl;
 	std::string boundary;
 	if (it != _headerMap.end()) {
+		// BP: check when there is no boundary
 		boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
 		endPos = strLine.find(boundary, pos + 4);
 		_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
