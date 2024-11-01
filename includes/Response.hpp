@@ -18,7 +18,7 @@ class Response {
 		bool			_closeConnection;
 		unsigned long	_bytesSentOfBody;
 		std::string		_header;
-		std::string		_message;
+		std::string		_body;
 		std::string		_mimeType;
 
 	public:
@@ -32,14 +32,13 @@ class Response {
 		bool	getIsChunk();
 
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
-		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode);
+		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client);
 
-		void	header(int socketFd, Request& request, std::string& body);
-		void	headerAndBody(Client*, int socketFd, Request& request, std::string& body);
-		void	fallbackError(int socketFd, Request& request, std::string statusCode);
+		void	sendResponse(Client* client, int socketFd, Request& request);
 
-		void	error(int socketFd, Request& request, std::string statusCode, Client *client);
+		void	fallbackError(Request& request, std::string statusCode, Client* client);
+		void	error(Request& request, std::string statusCode, Client *client);
 
+		void	sendChunkHeader(Client*, int socketFd, Request& request);
 		long	sendChunks(int socketFd, std::string chunkString);
-		void	sendWithChunkEncoding(Client*, int socketFd, Request& request);
 };

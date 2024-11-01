@@ -189,7 +189,7 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	client->_request._response->sendWithChunkEncoding(client, client->getFd(), client->_request);
+	client->_request._response->sendResponse(client, client->getFd(), client->_request);
 }
 
 void	Epoll:: removeClientEpoll(int fd)
