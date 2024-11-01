@@ -2,6 +2,7 @@
 #include "../includes/Server.hpp"
 #include "../includes/Response.hpp"
 
+#include <cstdint>
 #include <iostream>
 #include <cerrno>
 #include <cstddef>
@@ -10,6 +11,7 @@
 #include <stdexcept>
 #include <sys/epoll.h>
 #include <sys/types.h>
+#include <utility>
 #include <vector>
 #include <cstring>
 
@@ -91,7 +93,7 @@ void Epoll::Monitoring(vSrv& servers)
 			break;
 		for (int i = 0; i < _nfds; ++i)
 			// Handle events on existing client connections
-			if (!NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
+			if (!cgi(_events[i].events, _events[i].data.fd) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
 				existingClient(servers, _events[i].events, _events[i].data.fd);
 	}
 }
@@ -107,6 +109,22 @@ int	Epoll::checkEpollWait(int epollWaitReturn)
 			throw std::runtime_error("epoll_wait failed");
 	}
 	return (_nfds);
+}
+
+void	Epoll::cgi(int eventFd, uint32_t events)
+{
+	if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+		return (cgiErrorOrHungUp(eventFd));
+	if (events & EPOLLIN)
+		
+	if (events & EPOLLOUT)
+
+}
+
+void	Epoll::cgiErrorOrHungUp(int cgiFd)
+{
+	std::cerr << "Error or cgi hung up on fd: " << cgiFd << std::endl;
+	removeCgiClientFromEpoll(cgiFd);
 }
 
 Client*	Epoll::retrieveClient(vSrv& servers, int event_fd)
@@ -191,6 +209,19 @@ void	Epoll::clientResponse(Client* client)
 {
 	client->_request._response->sendWithChunkEncoding(client, client->getFd(), client->_request);
 }
+
+void	Epoll::addCgiClientToEpoll(int pipeFd, Client* client)
+{
+	_mpCgiClient.insert(std::make_pair(pipeFd, client));
+}
+
+void	Epoll::removeCgiClientFromEpoll(int pipeFd)
+{
+	std::map<int, Client*>::iterator it = _mpCgiClient.find(pipeFd);
+	_mpCgiClient.erase(it);
+	removeClientEpoll(pipeFd);
+}
+
 
 void	Epoll:: removeClientEpoll(int fd)
 {

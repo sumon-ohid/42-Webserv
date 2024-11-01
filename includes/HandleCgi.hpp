@@ -17,22 +17,26 @@
 class HandleCgi : public ServerConfig
 {
     private:
-        std::string locationPath;
-        std::string method;
-        std::string postBody;
-        std::string fileName;
-        std::map<std::string, std::string> env;
+        std::string		_locationPath;
+        std::string		_method;
+        std::string		_postBody;
+        std::string		_fileName;
+        int				_pipeIn[2];
+		int				_pipeOut[2];
+		ssize_t			_byteTracker;
+        std::map<std::string, std::string> _env;
 
     public:
         HandleCgi();
         HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request);
         ~HandleCgi();
 
-        void initEnv(Request &request);
-        void proccessCGI(Client*, int nSocket, Request &request);
-        void handleParentProcess(Client*, int nSocket, int pipe_in[2], int pipe_out[2], pid_t pid, Request &request);
-        void handleChildProcess(int pipe_in[2], int pipe_out[2] ,const std::string &locationPath, Request &request);
-        std::string getExecutable(const std::string &locationPath);
+        void	initEnv(Request &request);
+        void	proccessCGI(Client*, int nSocket, Request &request);
+        void	handleParentProcess(Client* client, int nSocket, pid_t pid, Request &request);
+		void	writeToChildFd(Client* client, int childFd);
+        void	handleChildProcess(const std::string &_locationPath, Request &request);
+        std::string	getExecutable(const std::string &locationPath);
 
         // Function template to convert various types to string
         template <typename T>

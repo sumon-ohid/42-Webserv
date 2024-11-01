@@ -28,6 +28,7 @@ private:
 	int						_nfds;
 	struct epoll_event 		_ev;
 	struct epoll_event		_events[MAX_EVENTS];
+	std::map<int, Client*>	_mpCgiClient;
 
 	// ------------- Epoll setup -------------
     // Initializes the epoll file descriptor with EPOLL_CLOEXEC.
@@ -37,11 +38,6 @@ private:
  	* Retrieves the list of sockets from the Server and sets them for EPOLLIN monitoring.
  	*/
 	void	registerLstnSockets(vSrv&);
-	/**
-	 * Registers a socket for monitoring with epoll.
-	 * Sets the event flag to EPOLLIN for incoming data; closes the socket if registration fails.
-	 */
-	bool	registerSocket(int, uint32_t);
 	/**
 	 * Monitors events on the epoll instance in an infinite loop.
 	 * Processes new client connections and events on existing clients.
@@ -92,12 +88,21 @@ public:
 	Epoll(const Epoll &);
 	Epoll&	operator=(const Epoll&);
 
+	/**
+	 * Registers a socket for monitoring with epoll.
+	 * Sets the event flag to EPOLLIN for incoming data; closes the socket if registration fails.
+	 */
+	bool	registerSocket(int, uint32_t);
+
 	// ------------- Routine -------------
 	/**
 	 * Initializes the epoll instance, registers listening sockets,
 	 * and enters the monitoring loop to handle incoming events.
 	 */
 	void	Routine(vSrv&);
+
+	void	addCgiClientToEpoll(int, Client*);
+	void	removeCgiClientFromEpoll(int);
 
 	// ------------- Cleanup -------------
 	// removes the fd from epoll and closes the fd
