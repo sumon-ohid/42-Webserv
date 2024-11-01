@@ -1,9 +1,11 @@
 #include "../includes/Helper.hpp"
 
+#include <cstddef>
 #include <iomanip>
 #include <sstream>
 #include <ctime>
 #include <sys/epoll.h>
+#include <sstream>
 
 
 Helper::Helper() {}
@@ -122,4 +124,34 @@ void	Helper::modifyEpollEvent(Epoll &epoll, Client *client, uint32_t events)
 		// then remove client (?)
 		epoll.removeClient(client);
 	}
+}
+
+std::string Helper::decodeUrl(std::string url)
+{
+    std::string decodedUrl;
+    std::stringstream ss;
+
+    for (size_t i = 0; i < url.length(); i++)
+	{
+		if (url[i] == '%')
+		{
+            if (i + 2 < url.length())
+			{
+                std::string temp = url.substr(i + 1, 2);
+                int decimal;
+                ss.clear();
+                ss.str(temp);
+                ss >> std::hex >> decimal;
+                decodedUrl += static_cast<char>(decimal);
+                i += 2;
+			}
+            else
+                decodedUrl += '%';
+        }
+		else if (url[i] == '+')
+			decodedUrl += ' ';
+		else
+            decodedUrl += url[i];
+    }
+    return decodedUrl;
 }
