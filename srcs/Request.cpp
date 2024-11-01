@@ -207,8 +207,31 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 
 void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	std::size_t pos = strLine.find("filename=", endPos);
+	//-- SUMON commented this out to handle post without filename
 	if (pos == std::string::npos)
+	{
+		//-- Find the start of the Content-Type header
+		//-- It is useful to know if we have to decode URL
+		std::string contentTypeHeader = "Content-Type: ";
+		std::size_t contentTypePos = strLine.find(contentTypeHeader);
+		if (contentTypePos != std::string::npos)
+		{
+			//-- Extract the Content-Type value
+			std::size_t start = contentTypePos + contentTypeHeader.length();
+			std::size_t end = strLine.find("\r\n", start);
+			std::string contentType = strLine.substr(start, end - start);
+		}
+
+		//-- Find the start of the body (after the double CRLF)
+		std::string bodyDelimiter = "\r\n\r\n";
+		std::size_t bodyPos = strLine.find(bodyDelimiter);
+		if (bodyPos != std::string::npos) {
+			//-- Body starts after the double CRLF
+			_requestBody = strLine.substr(bodyPos + bodyDelimiter.length());
+		}
+		_readingFinished = true;
 		return;
+	}
 
 	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
 	// std::cout << _postFilename << "\n\n" << std::endl;
@@ -223,6 +246,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		endPos = strLine.find(boundary, pos + 4);
 		_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
 	}
+
 	_readingFinished = true;
 	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
 	// std::string end =  strLine.rfind();
@@ -325,13 +349,21 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	buffer.resize(count);
 	checkTelnetInterruption(buffer);
 	std::string strLine(buffer.begin(), buffer.end());
+
+	std::vector<char> str = buffer;
 	if(!request.getFirstLineChecked()) {
 		checkFirstLine(strLine, endPos);
 	}
 	if (request.getFirstLineChecked() && !request._headerChecked && endPos != std::string::npos) {
 		storeHeadersInMap(strLine, endPos);
 	}
-	if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
+	//-- SUMON commented
+	// if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
+	// 	if (this->_method->getName() == "POST") {
+	// 		storeRequestBody(strLine, endPos);
+	// 	}
+	// }
+	if (request._firstLineChecked && request._headerChecked && endPos != std::string::npos) {
 		if (this->_method->getName() == "POST") {
 			storeRequestBody(strLine, endPos);
 		}

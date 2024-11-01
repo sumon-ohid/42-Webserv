@@ -23,7 +23,6 @@ class Request {
 		int		_type; // request or response
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
-		std::size_t	_contentLength;
 		std::size_t	_contentRead;
 
 		std::string	_host;
@@ -31,6 +30,7 @@ class Request {
 		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
 
 	public:
+		std::size_t	_contentLength;
 		std::string	_requestBody;
 		std::string	_postFilename;
 		ServerConfig*	_servConf;
