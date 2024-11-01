@@ -208,7 +208,8 @@ void HandleCgi::handleParentProcess(Client* client, int nSocket, int pipe_fd[2],
     }
     std::string bodyNoheader(body.data(), body.size());
     request.setMethodMimeType(setMime);
-    request._response->headerAndBody(client, nSocket, request, bodyNoheader);
+    request._response->createHeaderAndBodyString(request, bodyNoheader, "200", client);
+    (void) nSocket; // BP: remove this
 }
 
 HandleCgi::~HandleCgi()
