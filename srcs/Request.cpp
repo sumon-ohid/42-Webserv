@@ -461,3 +461,15 @@ std::string	Request::getHost() const
 {
 	return (_host);
 }
+
+//-- BONUS : cookies
+std::string Request::getSessionId() const
+{
+	std::string cookie = getHeaderFromHeaderMap("Cookie:");
+	std::size_t pos = cookie.find("session=");
+	if (pos == std::string::npos)
+		return ("");
+	std::size_t end = cookie.find(";", pos);
+	std::string _sessionId = cookie.substr(pos + 10, end - pos - 10);
+	return (_sessionId);
+}

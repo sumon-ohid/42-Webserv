@@ -24,7 +24,7 @@ class Request {
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
 		std::size_t	_contentRead;
-
+		
 		std::string	_host;
 		void	storeOneHeaderInMap(const std::string& oneLine);
 		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
@@ -53,7 +53,7 @@ class Request {
 		std::map<std::string, std::string> getHeaderMap() const;
 		std::string getHeaderFromHeaderMap(std::string headerName) const; // BP: to create
 		std::string getHost() const;
-
+		std::string getSessionId() const; //-- BONUS : cookies
 
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t endPos);
