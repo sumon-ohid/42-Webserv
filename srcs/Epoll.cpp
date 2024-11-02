@@ -210,7 +210,7 @@ void	Epoll::clientResponse(Client* client)
 	client->_request._response->sendWithChunkEncoding(client, client->getFd(), client->_request);
 }
 
-void	Epoll::addCgiClientToEpoll(int pipeFd, Client* client)
+void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)
 {
 	_mpCgiClient.insert(std::make_pair(pipeFd, client));
 }

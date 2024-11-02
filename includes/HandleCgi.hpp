@@ -17,14 +17,15 @@
 class HandleCgi : public ServerConfig
 {
     private:
-        std::string		_locationPath;
-        std::string		_method;
-        std::string		_postBody;
-        std::string		_fileName;
-        int				_pipeIn[2];
-		int				_pipeOut[2];
-		ssize_t			_byteTracker;
-        std::map<std::string, std::string> _env;
+        std::string							_locationPath;
+        std::string							_method;
+        std::string							_postBody;
+        std::string							_fileName;
+        int									_pipeIn[2];
+		int									_pipeOut[2];
+		ssize_t								_byteTracker;
+		std::vector<char>					_response;
+        std::map<std::string, std::string>	_env;
 
     public:
         HandleCgi();
@@ -34,7 +35,8 @@ class HandleCgi : public ServerConfig
         void	initEnv(Request &request);
         void	proccessCGI(Client*, int nSocket, Request &request);
         void	handleParentProcess(Client* client, int nSocket, pid_t pid, Request &request);
-		void	writeToChildFd(Client* client, int childFd);
+		void	writeToChildFd(Client* client);
+		void	readFromChildFd(Client* client);
         void	handleChildProcess(const std::string &_locationPath, Request &request);
         std::string	getExecutable(const std::string &locationPath);
 

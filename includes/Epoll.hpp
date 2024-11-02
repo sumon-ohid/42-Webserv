@@ -101,7 +101,7 @@ public:
 	 */
 	void	Routine(vSrv&);
 
-	void	addCgiClientToEpoll(int, Client*);
+	void	addCgiClientToEpollMap(int, Client*);
 	void	removeCgiClientFromEpoll(int);
 
 	// ------------- Cleanup -------------
