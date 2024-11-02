@@ -51,7 +51,9 @@ class Request {
 		bool		getFirstLineChecked() const;
 		bool		getReadingFinished() const;
 		std::map<std::string, std::string> getHeaderMap() const;
+		std::string getHeaderFromHeaderMap(std::string headerName) const; // BP: to create
 		std::string getHost() const;
+
 
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t endPos);
@@ -61,6 +63,7 @@ class Request {
 
 		void	checkLine(std::vector<char>& line);
 		void	checkHost(Client*);
+
 		void	executeMethod(int socketFd, Client *client);
 
 		int		clientRequest(Client* client);

@@ -8,7 +8,6 @@
 
 #include <string>
 #include <fstream>
-#include <algorithm>
 
 PostMethod::PostMethod() : socketFd(-1)
 {
@@ -46,7 +45,7 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         }
         catch (std::exception &e)
         {
-            request._response->error(socketFd, request, e.what(), client);
+            request._response->error(request, e.what(), client);
         }
         return;
     }
@@ -66,7 +65,7 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
     {
         if (locationFinder._allowed_methods.find("POST") == std::string::npos)
         {
-            request._response->error(socketFd, request, "405", client);
+            request._response->error(request, "405", client);
             return;
         }
     }
@@ -95,12 +94,12 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     else
     {
         std::cerr << BOLD RED << "Error: Could not open file for writing" << RESET << std::endl;
-        request._response->error(socketFd, request, "500", client);
+        request._response->error(request, "500", client);
         return;
     }
 
     std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
-    request._response->headerAndBody(client, socketFd, request, body);
+    request._response->createHeaderAndBodyString(request, body, "200", client);
 
     std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
     std::cout << BOLD BLUE "File : " << fileName << RESET << std::endl;

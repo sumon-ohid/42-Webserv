@@ -341,9 +341,39 @@ void	HandleCgi::readFromChildFd(Client* client)
         }
     }
 
-    close(_pipeOut[0])
-}
+    close(pipe_out[0]); //-- Close read end after reading data
+    std::string body = bodyStr.str();
 
+    //*** This is to handle mime types for cgi scripts
+    size_t pos = body.find("Content-Type:");
+    std::string mimeType = body.substr(pos + 14, body.find("\r\n", pos) - pos - 14);
+    std::string setMime;
+
+    std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
+    std::map<std::string, std::string>::iterator it;
+    for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
+    {
+        if (mimeType == it->second)
+        {
+            setMime = it->first;
+            break;
+        }
+    }
+
+    //-- If no mime types found set it to default
+    if (setMime.empty())
+        setMime = ".html";
+    size_t bodyStart = body.find("\r\n\r\n");
+    if (bodyStart != std::string::npos)
+    {
+        bodyStart += 5;
+        body.erase(0, bodyStart);
+    }
+    std::string bodyNoheader(body.data(), body.size());
+    request.setMethodMimeType(setMime);
+    request._response->createHeaderAndBodyString(request, bodyNoheader, "200", client);
+    (void) nSocket; // BP: remove this
+}
 
 HandleCgi::~HandleCgi()
 {
