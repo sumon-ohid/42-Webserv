@@ -263,7 +263,8 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		if (boundaryPos != std::string::npos) {
 			boundary = "--" + contentType.substr(boundaryPos + 9);
 	
-			//-- Find the start and end positions of the file data
+			//-- SUMON :
+			//-- first find the start and end positions of the file data
 			//-- In the previous implementation, we used the boundary to find the start and end positions
 			//-- So some sections after boundary were included in the file data
 			//-- Which caused the file to be corrupted
@@ -417,9 +418,8 @@ int Request::clientRequest(Client* client)
             ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
             if (count == -1)
 			{
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    continue;
-                return invalidRequest(client);
+                //-- Thorben, please help to use epoll event here;
+				continue;
 			}
             else if (count == 0)
                 return emptyRequest(client);
