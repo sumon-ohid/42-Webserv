@@ -12,7 +12,8 @@
 
 #include "Request.hpp"
 #include "ServerConfig.hpp"
-#include "Server.hpp"
+
+class Client;
 
 class HandleCgi : public ServerConfig
 {
@@ -24,7 +25,10 @@ class HandleCgi : public ServerConfig
         int									_pipeIn[2];
 		int									_pipeOut[2];
 		ssize_t								_byteTracker;
+		ssize_t								_totalBytesSent;
 		std::vector<char>					_response;
+		std::string							_responseStr;
+		bool								_mimeCheckDone;
         std::map<std::string, std::string>	_env;
 
     public:
@@ -32,13 +36,15 @@ class HandleCgi : public ServerConfig
         HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request);
         ~HandleCgi();
 
-        void	initEnv(Request &request);
-        void	proccessCGI(Client*, int nSocket, Request &request);
-        void	handleParentProcess(Client* client, int nSocket, pid_t pid, Request &request);
-		void	writeToChildFd(Client* client);
-		void	readFromChildFd(Client* client);
-        void	handleChildProcess(const std::string &_locationPath, Request &request);
-        std::string	getExecutable(const std::string &locationPath);
+        void			initEnv(Request &request);
+        void			proccessCGI(Client*, int nSocket, Request &request);
+        void			handleChildProcess(const std::string &_locationPath, Request &request);
+        std::string		getExecutable(const std::string &locationPath);
+        void			handleParentProcess(Client* client, int nSocket, pid_t pid, Request &request);
+		void			writeToChildFd(Client* client);
+		void			readFromChildFd(Client* client);
+		void			MimeTypeCheck(Client *client);
+		
 
         // Function template to convert various types to string
         template <typename T>

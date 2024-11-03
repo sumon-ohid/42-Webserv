@@ -52,6 +52,10 @@ private:
  	* Returns true if a new client connection was accepted, otherwise false.
  	*/
 	int		checkEpollWait(int);
+
+	bool	cgi(int eventFd, uint32_t events);
+
+	void	cgiErrorOrHungUp(int cgiFd);
 	// ------------- Client Handling -------------
 	bool	NewClient(vSrv&, int); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
 	/**

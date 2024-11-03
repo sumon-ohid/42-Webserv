@@ -1,7 +1,9 @@
 #pragma once
 
 // #include "Request.hpp"
+#include <cstddef>
 #include <string>
+#include <sys/types.h>
 
 #include "ErrorHandle.hpp"
 
@@ -20,6 +22,8 @@ class Response {
 		std::string		_header;
 		std::string		_body;
 		std::string		_mimeType;
+		ssize_t			_bytesSent;
+		size_t			_totalBytesSent;
 
 	public:
 		Response();
@@ -41,4 +45,7 @@ class Response {
 
 		void	sendChunkHeader(Client*, int socketFd, Request& request);
 		long	sendChunks(int socketFd, std::string chunkString);
+
+		void	setIsChunk(bool);
+		void	addToBody(const std::string&);
 };

@@ -2,7 +2,6 @@
 #include "../includes/Server.hpp"
 #include "../includes/Response.hpp"
 
-#include <cstdint>
 #include <iostream>
 #include <cerrno>
 #include <cstddef>
@@ -93,7 +92,7 @@ void Epoll::Monitoring(vSrv& servers)
 			break;
 		for (int i = 0; i < _nfds; ++i)
 			// Handle events on existing client connections
-			if (!cgi(_events[i].events, _events[i].data.fd) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
+			if (!cgi(_events[i].data.fd, _events[i].events) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
 				existingClient(servers, _events[i].events, _events[i].data.fd);
 	}
 }
@@ -111,24 +110,37 @@ int	Epoll::checkEpollWait(int epollWaitReturn)
 	return (_nfds);
 }
 
-void	Epoll::cgi(int eventFd, uint32_t events)
+bool	Epoll::cgi(int eventFd, uint32_t events)
 {
-	if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
-		return (cgiErrorOrHungUp(eventFd));
+	std::map<int, Client*>::iterator it = _mpCgiClient.find(eventFd);
+	if (it == _mpCgiClient.end())
+	{
+		// std::cout << "cgi fd " << eventFd << " NOT found in map" << std::endl;
+		return (false);
+	}
+	// std::cout << "cgi fd " << eventFd << " FOUND in map" << std::endl;
+	Client* client = it->second;
+	// if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+	// {
+	// 	std::cout << "This here is causing an issue" << std::endl;
+	// 	cgiErrorOrHungUp(eventFd);
+	// }
 	if (events & EPOLLIN)
-		
+		client->_cgi.readFromChildFd(client);
 	if (events & EPOLLOUT)
-
+		client->_cgi.writeToChildFd(client);
+	return (true);
 }
 
 void	Epoll::cgiErrorOrHungUp(int cgiFd)
 {
-	std::cerr << "Error or cgi hung up on fd: " << cgiFd << std::endl;
+	// std::cerr << "Error or cgi hung up on fd: " << cgiFd << std::endl;
 	removeCgiClientFromEpoll(cgiFd);
 }
 
 Client*	Epoll::retrieveClient(vSrv& servers, int event_fd)
 {
+	std::cout << event_fd << std::endl;
 	for (vSrv::iterator servIt = servers.begin(); servIt != servers.end(); ++servIt)
 	{
 		Client* tmp = servIt->getClient(event_fd);
@@ -212,6 +224,7 @@ void	Epoll::clientResponse(Client* client)
 
 void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)
 {
+	std::cout << "added pipeFd:\t" << pipeFd << " to Epoll map" << std::endl;
 	_mpCgiClient.insert(std::make_pair(pipeFd, client));
 }
 
@@ -220,6 +233,7 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(pipeFd);
 	_mpCgiClient.erase(it);
 	removeClientEpoll(pipeFd);
+	std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 }
 
 
