@@ -1,6 +1,7 @@
 #include "../includes/Epoll.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/Response.hpp"
+#include "../includes/Helper.hpp"
 
 #include <iostream>
 #include <cerrno>
@@ -140,7 +141,6 @@ void	Epoll::cgiErrorOrHungUp(int cgiFd)
 
 Client*	Epoll::retrieveClient(vSrv& servers, int event_fd)
 {
-	std::cout << event_fd << std::endl;
 	for (vSrv::iterator servIt = servers.begin(); servIt != servers.end(); ++servIt)
 	{
 		Client* tmp = servIt->getClient(event_fd);
@@ -220,6 +220,11 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 void	Epoll::clientResponse(Client* client)
 {
 	client->_request._response->sendResponse(client, client->getFd(), client->_request);
+	if (client->_request._response->getIsFinished())
+	{
+		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
+		client->_request.requestReset();
+	}
 }
 
 void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)

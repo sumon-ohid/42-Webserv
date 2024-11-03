@@ -34,9 +34,10 @@ class Response {
 		Response* clone() const;
 
 		bool	getIsChunk();
+		bool	getIsFinished();
 
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
-		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client);
+		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client, bool finished = true);
 
 		void	sendResponse(Client* client, int socketFd, Request& request);
 
@@ -44,7 +45,7 @@ class Response {
 		void	error(Request& request, std::string statusCode, Client *client);
 
 		void	sendChunkHeader(Client*, int socketFd, Request& request);
-		long	sendChunks(int socketFd, std::string chunkString);
+		long	sendChunks(Client* client, std::string& chunkString);
 
 		void	setIsChunk(bool);
 		void	addToBody(const std::string&);
