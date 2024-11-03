@@ -219,14 +219,6 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             if (server.cgiFile.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
-        else if (line.find("try_files") == 0)
-        {
-            size_t pos = line.find(" ");
-            if (pos != std::string::npos)
-                server.tryFiles = line.substr(pos + 1);
-            if (server.tryFiles.empty())
-                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
-        }
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
         else if (line.find("client_max_body_size") == 0)

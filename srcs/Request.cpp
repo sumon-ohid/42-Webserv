@@ -450,6 +450,15 @@ int Request::clientRequest(Client* client)
         //-- Process the request body if headers are fully checked
         if (_firstLineChecked && _headerChecked)
         {
+			//-- SUMON : Client Max Body Size check
+			//-- Need to handle for each location block
+			std::string clientMaxBodySize = client->_server->getServerConfig().getClientMaxBodySize();
+			if (clientMaxBodySize.empty())
+				clientMaxBodySize = "1";
+			size_t maxBodySize = std::atoi(clientMaxBodySize.c_str()) * 1024 * 1024;
+			if (requestBody.size() > maxBodySize)
+				throw std::runtime_error("413");
+
             if (this->_method->getName() == "POST")
                 storeRequestBody(requestBody, 0);
         }

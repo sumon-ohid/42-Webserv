@@ -8,6 +8,7 @@
 
 #include <string>
 #include <fstream>
+#include <iomanip>
 
 PostMethod::PostMethod() : socketFd(-1)
 {
@@ -101,8 +102,15 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
     request._response->createHeaderAndBodyString(request, body, "200", client);
 
-    std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
-    std::cout << BOLD BLUE "File : " << fileName << RESET << std::endl;
+    size_t fileSize = fileBody.size();
+    double fileSizeInMB = static_cast<double>(fileSize) / (1024.0 * 1024.0);
+
+    size_t pos = fileToCreate.find("//");
+    if (pos != std::string::npos)
+        fileToCreate.erase(pos, 1);
+
+    std::cout << BOLD YELLOW << "size : " << fileSize << " BYTES  |  " << fileSize / 1024 << " KB  |  "  << std::fixed << std::setprecision(1) << fileSizeInMB << " MB" << RESET << std::endl;
+    std::cout << BOLD BLUE "File : " << fileToCreate << RESET << std::endl;
     std::cout << BOLD GREEN "FILE SAVED! 💾" << RESET << std::endl;
 }
 
