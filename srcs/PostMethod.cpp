@@ -5,6 +5,7 @@
 #include "../includes/Client.hpp"
 #include "../includes/LocationFinder.hpp"
 #include "../includes/HandleCgi.hpp"
+#include "../includes/GetMethod.hpp"
 
 #include <string>
 #include <fstream>
@@ -98,16 +99,25 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
         request._response->error(request, "500", client);
         return;
     }
+   
+    std::string body =  " <html><head> <title>File uploaded</title>"
+        "  <style> body { display: flex; justify-content: center;"
+        "  align-items: center; height: 100vh; font-family: Arial, sans-serif;"
+        "  font-size: 1em; font-weight: bold; font-style: italic; } </style>"
+        "  </head> <body> <h1>File uploaded successfully!</h1><br>"
+        "  <br><a href=\"" + locationPath + "/" + fileName + "\">VIEW</a>"
+        "  </body> </html>";
 
-    std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
     request._response->createHeaderAndBodyString(request, body, "200", client);
 
-    size_t fileSize = fileBody.size();
-    double fileSizeInMB = static_cast<double>(fileSize) / (1024.0 * 1024.0);
-
+    //-- Remove the double slashes from the file path
     size_t pos = fileToCreate.find("//");
     if (pos != std::string::npos)
         fileToCreate.erase(pos, 1);
+    
+    //-- Print the file size
+    size_t fileSize = fileBody.size();
+    double fileSizeInMB = static_cast<double>(fileSize) / (1024.0 * 1024.0);
 
     std::cout << BOLD YELLOW << "size : " << fileSize << " BYTES  |  " << fileSize / 1024 << " KB  |  "  << std::fixed << std::setprecision(1) << fileSizeInMB << " MB" << RESET << std::endl;
     std::cout << BOLD BLUE "File : " << fileToCreate << RESET << std::endl;
