@@ -29,6 +29,7 @@ class HandleCgi : public ServerConfig
 		std::vector<char>					_response;
 		std::string							_responseStr;
 		bool								_mimeCheckDone;
+        bool                                _cgiDone;
         std::map<std::string, std::string>	_env;
 
     public:
@@ -44,7 +45,8 @@ class HandleCgi : public ServerConfig
 		void			writeToChildFd(Client* client);
 		void			readFromChildFd(Client* client);
 		void			MimeTypeCheck(Client *client);
-		
+
+        bool            getCgiDone() const;
 
         // Function template to convert various types to string
         template <typename T>

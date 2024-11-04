@@ -18,7 +18,7 @@
 Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false),
  _bytesSentOfBody(0), _header(""), _body(""), _mimeType(""), _bytesSent(0), _totalBytesSent(0) {}
 
-Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  
+Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),
 _headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection),
  _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _body(other._body), _mimeType(other._mimeType),
  _bytesSent(other._bytesSent), _totalBytesSent(other._totalBytesSent) {}
@@ -90,7 +90,6 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 	_body = body;
 	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
-		// _header = createHeaderString(request, _body, "200");
 	if (_header.empty())
 		_header = createHeaderString(request, body, statusCode);
 	fin = finished;
@@ -109,13 +108,11 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 	long bytesSent = 0;
-
-	static int i = 0;
-
 	if (_isChunk) {
-		if (!_headerSent) 
+		if (!_headerSent)
 		{
 			bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);
+			std::cout << "header sent; bytes sent:\t" << bytesSent << std::endl;
 			_headerSent = true;
 		}
 		else
@@ -127,26 +124,16 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 				_body.erase(0, bytesSent);
 				std::cout << "size of bytes that will be eliminated: " << bytesSent << std::endl;
 			}
-			// if (bytesSent == 0 || body.size() && cgiFinished)
-			// {
-			// 	std::cout << "printing i:\t" << i << std::endl;
-			// 	std::cout << "0 bytes" << std::endl;
-			// 	bytesSent = send(socketFd, "0\r\n\r\n", 5, 0); // for ending chunk encoding
-			// 	_finishedSending = true; // BP: is this necessary?
-			// 	Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
-			// 	request.requestReset();
-			// }
 		}
 
-		if (bytesSent < 0) 
+		if (bytesSent < 0)
 		{
-			std::cout << "printing i:\t" << i << std::endl;
 			std::cerr << "Error sending chunk response" << std::endl; // BP: client closed? change
 			Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN); // BP: check if it is protected
 			return;
 		}
 	}
-	else 
+	else
 	{
 		std::string total = _header + _body +  "\r\n";
 		bytesSent = send(socketFd , total.c_str(), total.size(), 0);
@@ -155,35 +142,38 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
 		request.requestReset();
 	}
-	i++;
 }
 
 long	Response::sendChunks(Client* client, std::string& chunkString) {
 	std::ostringstream ss1;
-	std::cout << "in sendChunks - chunkString.size():\t" << chunkString.size() << std::endl;
 	long bytesSent = 0;
-	std::vector<char> message;
+	std::cout << "in sendChunks - chunkString size:\t" << chunkString.size() << std::endl;
+	if (client->_isCgi)
+		std::cout << "in sendChunks, client is cgi" << std::endl;
+	if (client->_cgi.getCgiDone())
+		std::cout << "in sendChunks, cgi has finished" << std::endl;
 	if (!chunkString.empty())
 	{
-		ss1 << std::hex << chunkString.size() << "\r\n";
+		ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), chunkString.size()) << "\r\n";
 		std::string header = ss1.str();
-		std::cout << "print header in sendChunk:\t" << header;
-		std::cout << " with a size of " << header.size() << std::endl;
-		message = std::vector<char>(header.begin(), header.end());
-		message.insert(message.end(), chunkString.begin(), chunkString.end()); // Add chunk data
-    	message.push_back('\r'); // Append CR
-    	message.push_back('\n'); // Append LF
-		bytesSent = send(client->getFd() , message.data(), message.size(), 0);
-		std::cout << "size of bytes that were sent: " << bytesSent << std::endl;
+		std::string message = header + chunkString.substr(0, CHUNK_SIZE) + "\r\n";
+		bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
+		std::cout << "bytes sent:\t" << bytesSent << std::endl;
 		return (bytesSent - header.size() - 2);
 	}
-	else 
+	else if (client->_isCgi && client->_cgi.getCgiDone())
 	{
-		std::cout << "send 0" << std::endl;
+		std::cout << "client is cgi and cgi is done 0 byte" << std::endl;
 		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
 		_finishedSending = true; // BP: is this necessary?
-		return (0);
 	}
+	else if (!client->_isCgi)
+	{
+		std::cout << "normal 0 byte" << std::endl;
+		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		_finishedSending = true; // BP: is this necessary?
+	}
+	return (0);
 }
 
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {
@@ -271,8 +261,6 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 	}
 
 }
-
-
 
 void	Response::setIsChunk(bool setBool)
 {

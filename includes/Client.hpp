@@ -25,6 +25,7 @@ public:
 	Socket*			_socket;
 	Request			_request; // BP: can there be one or multiple requests at the same time
 	HandleCgi		_cgi;
+	bool			_isCgi;
 
 	// Coplien's form
 	Client();

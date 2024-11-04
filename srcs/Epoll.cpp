@@ -115,21 +115,30 @@ bool	Epoll::cgi(int eventFd, uint32_t events)
 {
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(eventFd);
 	if (it == _mpCgiClient.end())
-	{
-		// std::cout << "cgi fd " << eventFd << " NOT found in map" << std::endl;
 		return (false);
-	}
-	// std::cout << "cgi fd " << eventFd << " FOUND in map" << std::endl;
 	Client* client = it->second;
-	// if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+	if (events & EPOLLERR)
+		cgiErrorOrHungUp(eventFd);
+	if (events & (EPOLLHUP | EPOLLRDHUP))
+	{
+		if (client->_isCgi && !client->_cgi.getCgiDone())
+			client->_cgi.readFromChildFd(client);
+	}
+	if (client->_isCgi)
+	{
+		if (events & EPOLLIN)
+			client->_cgi.readFromChildFd(client);
+		if (events & EPOLLOUT)
+			client->_cgi.writeToChildFd(client);
+		return (true);
+	}
+	// for later when reading from bigger file
+	// else
 	// {
-	// 	std::cout << "This here is causing an issue" << std::endl;
-	// 	cgiErrorOrHungUp(eventFd);
+	// 	if (events & EPOLLIN)
+	// 		client->_request->readFile();
+	// 	return (true);
 	// }
-	if (events & EPOLLIN)
-		client->_cgi.readFromChildFd(client);
-	if (events & EPOLLOUT)
-		client->_cgi.writeToChildFd(client);
 	return (true);
 }
 
@@ -222,7 +231,7 @@ void	Epoll::clientResponse(Client* client)
 	client->_request._response->sendResponse(client, client->getFd(), client->_request);
 	if (client->_request._response->getIsFinished())
 	{
-		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
+		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN | EPOLLET);
 		client->_request.requestReset();
 	}
 }

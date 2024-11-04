@@ -25,6 +25,7 @@ HandleCgi::HandleCgi()
 	_byteTracker = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
+    _cgiDone = false;
 }
 
 //-- Function to initialize the environment variables
@@ -85,7 +86,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     //     proccessCGI(&client, nSocket, request);
     // else
     //     throw std::runtime_error("404");
-
+    client._isCgi = true;
     proccessCGI(&client, nSocket, request);
 }
 
@@ -238,7 +239,7 @@ void	HandleCgi::writeToChildFd(Client* client)
 		std::cout << "0 bytes written in cgi writeToChildFd" << std::endl;
 		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
 		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN | EPOLLET); //register child's output pipe for writtening
-    	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); // 
+    	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); //
 		_byteTracker = 0;
 		_totalBytesSent = 0;
 		_response.clear();
@@ -249,7 +250,7 @@ void	HandleCgi::writeToChildFd(Client* client)
 		std::cout << "All bytes written in cgi writeToChildFd" << std::endl;
 		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
 		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN | EPOLLET); //register child's output pipe for reading
-    	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); // 
+    	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); //
 		_byteTracker = 0;
 		_totalBytesSent = 0;
 		_response.clear();
@@ -285,28 +286,17 @@ void	HandleCgi::readFromChildFd(Client* client)
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
 		_responseStr = std::string(_response.begin(), _response.end());
-		client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client); //end the chunked encoding
+		client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+        _cgiDone = true;
 		_byteTracker = 0;
-		_response.clear();
 	}
-	// else if(static_cast<unsigned long>(_totalBytesSent) == _response.size())
-	// {
-	// 	std::cout << "All bytes read in cgi readFromChild" << std::endl;
-	// 	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
-	// 	if (!_mimeCheckDone)
-	// 		MimeTypeCheck(client);
-	// 	_responseStr = std::string(_response.data(), _byteTracker);
-	// 	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client); //end the chunked encoding
-	// 	_byteTracker = 0;
-	// 	_response.clear();
-	// }
 	if (!_mimeCheckDone)
 		MimeTypeCheck(client);
-	// client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
-	Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
+	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
 	_responseStr = std::string(_response.data(), _byteTracker);
-	std::cout << "length of response string:\t" << _responseStr.length() << std::endl; 
-	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client, false);
+	std::cout << "length of response string:\t" << _responseStr.length() << std::endl;
+	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+	// client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
 }
 
@@ -339,6 +329,11 @@ void	HandleCgi::MimeTypeCheck(Client* client)
         bodyStart += 5;
         body.erase(0, bodyStart);
     }
+}
+
+bool    HandleCgi::getCgiDone() const
+{
+    return (_cgiDone);
 }
 
 HandleCgi::~HandleCgi()
