@@ -5,7 +5,6 @@
 #include "../includes/Request.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/Helper.hpp"
-#include "../includes/PostMethod.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/LocationFinder.hpp"
 
