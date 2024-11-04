@@ -228,7 +228,8 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	client->_request._response->sendResponse(client, client->getFd(), client->_request);
+	if ((client->_isCgi && client->_request._response->getBodySize() > 0) || !client->_isCgi)
+		client->_request._response->sendResponse(client, client->getFd(), client->_request);
 	if (client->_request._response->getIsFinished())
 	{
 		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN | EPOLLET);

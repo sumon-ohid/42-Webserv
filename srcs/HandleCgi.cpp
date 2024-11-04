@@ -295,8 +295,8 @@ void	HandleCgi::readFromChildFd(Client* client)
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
 	_responseStr = std::string(_response.data(), _byteTracker);
 	std::cout << "length of response string:\t" << _responseStr.length() << std::endl;
-	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
-	// client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
+	// client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+	client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
 }
 

@@ -272,6 +272,11 @@ void	Response::addToBody(const std::string& str)
 	_body += str;
 }
 
+size_t	Response::getBodySize() const
+{
+	return (_body.size());
+}
+
 bool	Response::getIsFinished()
 {
 	return (_finishedSending);
