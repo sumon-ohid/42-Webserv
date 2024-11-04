@@ -13,9 +13,9 @@
 #include "../includes/Request.hpp"
 #include "../includes/Helper.hpp"
 
-Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false), _bytesSentOfBody(0), _header(""), _body(""), _mimeType("") {}
+Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false), _bytesSentOfBody(0), _header(""), _body(""), _mimeType(""), _sessionId("") {}
 
-Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  _headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection), _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _body(other._body), _mimeType(other._mimeType) {}
+Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  _headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection), _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _body(other._body), _mimeType(other._mimeType), _sessionId(other._sessionId) {}
 
 Response& Response::operator=(const Response& other) {
 	if (this == &other)
@@ -30,6 +30,7 @@ Response& Response::operator=(const Response& other) {
 	_header = other._header;
 	_body = other._body;
 	_mimeType = other._mimeType;
+	_sessionId = other._sessionId;
 	return *this;
 }
 
@@ -50,6 +51,13 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	std::string statusMessage = "";
 
 	Helper::checkStatus(statusCode, statusMessage);
+
+	//-- BONUS : cookies
+	_sessionId = request.getSessionId();
+	if (_sessionId.empty())
+		_sessionId = Helper::generateSessionId();
+	// std::cout << BOLD YELLOW << _sessionId << RESET << std::endl;
+
 	if (request.hasMethod())
 		ss << request.getMethodProtocol() << " " << statusCode << " " << statusMessage << "\r\n";
 	else
@@ -68,6 +76,8 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 		ss << "Connection: " << "close" << "\r\n"; // BP: to check
 	else
 		ss << "Connection: " << "keep-alive" << "\r\n";
+	if (!_sessionId.empty()) //-- BONUS : cookies
+        ss << "Set-Cookie: session=" << _sessionId << "; Path=/; HttpOnly\r\n";
 	ss << "\r\n";
 
 	return ss.str();
@@ -90,7 +100,7 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 	long bytesSent;
-
+	
 	if (_isChunk) {
 		if (!_headerSent) {
 			bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);

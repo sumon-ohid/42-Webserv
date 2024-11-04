@@ -6,7 +6,7 @@
 #include <ctime>
 #include <sys/epoll.h>
 #include <sstream>
-
+#include <cstdlib>
 
 Helper::Helper() {}
 
@@ -154,4 +154,16 @@ std::string Helper::decodeUrl(std::string url)
             decodedUrl += url[i];
     }
     return decodedUrl;
+}
+
+// BONUS : cookies
+std::string Helper::generateSessionId()
+{
+	std::string sessionId = "";
+	std::string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	for (int i = 0; i < 32; i++)
+	{
+		sessionId += chars[rand() % chars.size()];
+	}
+	return sessionId;
 }
