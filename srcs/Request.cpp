@@ -169,7 +169,7 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 
 void Request::storeOneHeaderInMap(const std::string& oneLine) {
 
-	std::cout << "$" << oneLine << "$" << std::endl;
+	// std::cout << "$" << oneLine << "$" << std::endl;
 	std::size_t pos = oneLine.find(":");
 	if (pos == std::string::npos)
 		return;
