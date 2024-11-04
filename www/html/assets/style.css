@@ -99,14 +99,14 @@ body {
     border-radius: 20px;
     border: 1px solid var(--container-border);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    margin-top: 100px; /* Adjust this value based on the height of the header */
+    margin-top: 10px; /* Adjust this value based on the height of the header */
     padding: 20px;
     text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
     width: 60%;
-    height: 60%; /* Ensure the container takes full height */
+    height: 65%; /* Ensure the container takes full height */
     z-index: 2;
 }
 
