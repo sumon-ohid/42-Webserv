@@ -168,6 +168,8 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 }
 
 void Request::storeOneHeaderInMap(const std::string& oneLine) {
+
+	// std::cout << "$" << oneLine << "$" << std::endl;
 	std::size_t pos = oneLine.find(":");
 	if (pos == std::string::npos)
 		return;
@@ -185,7 +187,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 }
 
 void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
-	std::size_t pos = strLine.find("\r\n", endPos);
+	std::size_t pos = strLine.find("\r\n", endPos + 2);
 	std::size_t pos2 = endPos;
 
 	endPos = strLine.find("\r\n\r\n", 0);
@@ -204,10 +206,11 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 		if (_method->getName() == "GET" || _method->getName() == "DELETE")
 			_readingFinished = true;
 	}
-	while (pos < endPos) {
+	while (pos <= endPos) {
+		// std:: cout << "my pos: " << pos2 << " & " << pos << std::endl;
 		storeOneHeaderInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
 		pos2 = pos;
-		pos = strLine.find("\r\n", pos2 + 1);
+		pos = strLine.find("\r\n", pos2 + 2);
 	}
 }
 
@@ -262,16 +265,16 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		size_t boundaryPos = contentType.find("boundary=");
 		if (boundaryPos != std::string::npos) {
 			boundary = "--" + contentType.substr(boundaryPos + 9);
-	
+
 			//-- SUMON :
 			//-- first find the start and end positions of the file data
 			//-- In the previous implementation, we used the boundary to find the start and end positions
 			//-- So some sections after boundary were included in the file data
 			//-- Which caused the file to be corrupted
 			size_t boundaryPos = strLine.find(boundary, pos);
-			size_t startPos = strLine.find("\r\n\r\n", boundaryPos); 
+			size_t startPos = strLine.find("\r\n\r\n", boundaryPos);
 			size_t endPos = strLine.find(boundary, startPos);
-	
+
 			_requestBody = strLine.substr(startPos + 4, endPos - startPos - 4); //-- 4 is for "\r\n\r\n" and --\r\n at the end
 		}
 	}
@@ -520,7 +523,14 @@ std::string	Request::getHost() const
 //-- BONUS : cookies
 std::string Request::getSessionId() const
 {
-	std::string cookie = getHeaderFromHeaderMap("Cookie:");
+	// std::cout << _headerMap.size() << "\n\n" << std::endl;
+	// for (std::map<std::string, std::string>::const_iterator it = _headerMap.begin(); it != _headerMap.end(); it++)
+	// {
+	// 	std::cout << "$" << it->first << ": " << it->second << "$" << std::endl;
+	// }
+
+	std::string cookie = getHeaderFromHeaderMap("Cookie");
+	std::cout << "\n\nCookie: " << cookie << std::endl;
 	std::size_t pos = cookie.find("session=");
 	if (pos == std::string::npos)
 		return ("");
@@ -528,3 +538,24 @@ std::string Request::getSessionId() const
 	std::string _sessionId = cookie.substr(pos + 10, end - pos - 10);
 	return (_sessionId);
 }
+
+
+
+
+
+// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+// Accept-Encoding: gzip, deflate, br, zstd
+// Accept-Language: en-US,en;q=0.9
+// Connection: keep-alive
+// Cookie: session=lVH6A0QDpBNrQNfXfPPCeQSj1gIuFJWQ
+// Host: 127.0.0.1:8000
+// Referer: http://127.0.0.1:8000/about/index.html
+// Sec-Fetch-Dest: document
+// Sec-Fetch-Mode: navigate
+// Sec-Fetch-Site: same-origin
+// Sec-Fetch-User: ?1
+// Upgrade-Insecure-Requests: 1
+// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36
+// sec-ch-ua: "Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"
+// sec-ch-ua-mobile: ?0
+// sec-ch-ua-platform: "Linux"

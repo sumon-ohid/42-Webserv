@@ -100,7 +100,7 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 	long bytesSent;
-	
+
 	if (_isChunk) {
 		if (!_headerSent) {
 			bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);
