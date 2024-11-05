@@ -530,7 +530,7 @@ std::string Request::getSessionId() const
 	// }
 
 	std::string cookie = getHeaderFromHeaderMap("Cookie");
-	std::cout << "\n\nCookie: " << cookie << std::endl;
+	//std::cout << "\n\nCookie: " << cookie << std::endl;
 	std::size_t pos = cookie.find("session=");
 	if (pos == std::string::npos)
 		return ("");

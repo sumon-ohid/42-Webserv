@@ -77,7 +77,7 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	else
 		ss << "Connection: " << "keep-alive" << "\r\n";
 	if (!_sessionId.empty()) //-- BONUS : cookies
-        ss << "Set-Cookie: session=" << _sessionId << "; Path=/; HttpOnly\r\n";
+        ss << "Set-Cookie: session=" << _sessionId << "; Path=/; HttpOnly; Max-Age=3600;r\n";
 	ss << "\r\n";
 
 	return ss.str();
