@@ -240,3 +240,43 @@ HandleCgi::~HandleCgi()
 {
     env.clear();
 }
+
+
+//--- Copy constructor
+HandleCgi::HandleCgi(HandleCgi &src)
+{
+    locationPath = src.locationPath;
+    method = src.method;
+    postBody = src.postBody;
+    fileName = src.fileName;
+    env = src.env;
+}
+
+//--- Assignment operator
+HandleCgi &HandleCgi::operator=(HandleCgi &src)
+{
+    if (this == &src)
+        return *this;
+    locationPath = src.locationPath;
+    method = src.method;
+    postBody = src.postBody;
+    fileName = src.fileName;
+    env = src.env;
+    return *this;
+}
+
+//--- == operator overloading
+bool HandleCgi::operator==(HandleCgi &src)
+{
+    if (locationPath != src.locationPath)
+        return false;
+    if (method != src.method)
+        return false;
+    if (postBody != src.postBody)
+        return false;
+    if (fileName != src.fileName)
+        return false;
+    if (env != src.env)
+        return false;
+    return true;
+}
