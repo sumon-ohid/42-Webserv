@@ -62,6 +62,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     _fileName = request._postFilename;
 	_byteTracker = 0;
 	_mimeCheckDone = false;
+	_cgiDone = false;
 
     if (locationFinder.isDirectory(_locationPath))
         throw std::runtime_error("404");
@@ -167,6 +168,7 @@ void HandleCgi::handleParentProcess(Client* client, int nSocket, pid_t pid, Requ
 	std::cout << _response << std::endl;
     client->_epoll->registerSocket(_pipeIn[1], EPOLLOUT);
     client->_epoll->addCgiClientToEpollMap(_pipeIn[1], client);
+	std::cout << "added fd: " << _pipeIn[1] << " toEpoll" << std::endl;
 	(void)nSocket;
 	(void)pid;
 	(void)request;
@@ -227,7 +229,9 @@ void	HandleCgi::writeToChildFd(Client* client)
     //-- Write the body to the CGI script's stdin
     // Write the body to the CGI script's stdin
 	std::cout << "cgi writing to child" << std::endl;
+	std::cout << "response: " << _response << std::endl;
 	_byteTracker = write(_pipeIn[1], _response.data() + _byteTracker, _response.size() - _byteTracker);
+	std::cout << _byteTracker << " bytes written in cgi writeToChildFd" << std::endl;
 	_totalBytesSent += _byteTracker;
 	if	(_byteTracker == -1)
     {
@@ -256,6 +260,7 @@ void	HandleCgi::writeToChildFd(Client* client)
 		_response.clear();
 		client->_request._response->setIsChunk(true);
 	}
+	_byteTracker = 0;
 	// std::cout << "Bytes written to pipe: " << bytes_written << std::endl;
     // std::cout << "Data written to pipe: " << std::string(response.begin(), response.end()) << std::endl;
 
@@ -271,8 +276,11 @@ void	HandleCgi::readFromChildFd(Client* client)
 	std::cout << "cgi reading from child" << std::endl;
 	_response.resize(64000, '\0');
 	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
-	_totalBytesSent += _byteTracker;
 	std::cout << "bytes read from child:\t" << _byteTracker << std::endl;
+	if (_byteTracker < 100)
+		std::cout << "response read from child:" << _response.data() << std::endl;
+	_totalBytesSent += _byteTracker;
+	std::cout << "cgiDone is " << (_cgiDone == true ? "true" : "false") << std::endl;
 	if	(_byteTracker == -1)
     {
         std::cout << strerror(errno) << std::endl;
@@ -286,26 +294,30 @@ void	HandleCgi::readFromChildFd(Client* client)
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
 		_responseStr = std::string(_response.begin(), _response.end());
-		client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+		client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
         _cgiDone = true;
+		std::cout << "cgiDone is " << (_cgiDone == true ? "true" : "false") << std::endl;
 		_byteTracker = 0;
+		std::cout << "\n\nDone\n" << std::endl;
 	}
+	// if (_byteTracker < 100)
+	// 	std::cout << "response read from child:" << _response << std::endl;
 	if (!_mimeCheckDone)
 		MimeTypeCheck(client);
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
-	_responseStr = std::string(_response.data(), _byteTracker);
 	std::cout << "length of response string:\t" << _responseStr.length() << std::endl;
-	// client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
-	client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
+	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+	_byteTracker = 0;
+	// client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
 }
 
 void	HandleCgi::MimeTypeCheck(Client* client)
 {
-	std::string body(_response.begin(), _response.end());
+	_responseStr = std::string(_response.data(), _byteTracker);
     //*** This is to handle mime types for cgi scripts
-    size_t pos = body.find("Content-Type:");
-    std::string mimeType = body.substr(pos + 14, body.find("\r\n", pos) - pos - 14);
+    size_t pos = _responseStr.find("Content-Type:");
+    std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
     std::string setMime;
 
     std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
@@ -323,11 +335,13 @@ void	HandleCgi::MimeTypeCheck(Client* client)
         setMime = ".html";
     client->_request.setMethodMimeType(setMime);
 	_mimeCheckDone = true;
-	size_t bodyStart = body.find("\r\n\r\n");
+	size_t bodyStart = _responseStr.find("\r\n\r\n");
+	std::cout << RED << "body start found at: " << bodyStart << std::endl;
     if (bodyStart != std::string::npos)
     {
         bodyStart += 5;
-        body.erase(0, bodyStart);
+        _responseStr.erase(0, bodyStart);
+		std::cout << BLUE "erased soemthing" << RESET << std::endl;
     }
 }
 

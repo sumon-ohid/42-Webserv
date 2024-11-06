@@ -83,27 +83,15 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 
 // Connection: keep-alive
 // Connection: Transfer-Encoding
-bool cgiFinished = false;
-bool fin;
 
 void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client, bool finished) {
-	_body = body;
 	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
 	if (_header.empty())
 		_header = createHeaderString(request, body, statusCode);
-	fin = finished;
-	if (!fin)
-	{
-		_body += body;
-	}
-	else
-	{
-		// _body = body + "\r\n";
-		cgiFinished = true;
-	}
-
+	_body += body;
 	Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
+	(void)finished;
 }
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
