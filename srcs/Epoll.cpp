@@ -70,6 +70,7 @@ void	Epoll::registerLstnSockets(vSrv& servers)
 
 bool	Epoll::registerSocket(int fd, uint32_t events)
 {
+	std::memset(&_ev, 0, sizeof(_ev));  // Zero-initialize the epoll_event structure
 	// Set the event flags to monitor for incoming connections
 	_ev.events = events;  // Set event to listen for incoming data
 	_ev.data.fd = fd;  // Set the file descriptor for the client socket
@@ -240,7 +241,7 @@ void	Epoll::clientResponse(Client* client)
 
 void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)
 {
-	std::cout << "added pipeFd:\t" << pipeFd << " to Epoll map" << std::endl;
+	//std::cout << "added pipeFd:\t" << pipeFd << " to Epoll map" << std::endl;
 	_mpCgiClient.insert(std::make_pair(pipeFd, client));
 }
 
@@ -252,7 +253,7 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 		_mpCgiClient.erase(it);
 		removeClientEpoll(pipeFd);
 	}
-	std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
+	//std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 }
 
 

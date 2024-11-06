@@ -17,6 +17,7 @@
 #include "../includes/Server.hpp"
 #include "../includes/PostMethod.hpp"
 #include "../includes/DeleteMethod.hpp"
+#include "../includes/Helper.hpp"
 
 Request::Request() {
 	_type = -1;
@@ -289,7 +290,7 @@ void	Request::extractHttpMethod(std::string& requestLine)
 	std::string	methodContainer = requestLine.substr(0, 8);
 	size_t endPos = methodContainer.find_first_of(" ");
 	if (endPos == std::string::npos)
-		throw std::runtime_error("400 a");
+		throw std::runtime_error("400"); // SUMON: sometimes this get thrown
 	std::string method = requestLine.substr(0, endPos);
 	requestLine.erase(0, endPos + 1);
 	createHttpMethod(method);
@@ -309,7 +310,7 @@ void Request::createHttpMethod(const std::string& method) {
 	else if (method == "DELETE")
 		_method = new DeleteMethod();
 	else
-		throw std::runtime_error("400 b");
+		throw std::runtime_error("400");
 	_method->setName(method);
 }
 
@@ -321,7 +322,7 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	extractHttpMethod(strLine);
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
-		throw std::runtime_error("400 c");
+		throw std::runtime_error("400");
 	this->_method->setPath(strLine.substr(0, spacePos2));
 
 	endPos = strLine.find("\r\n", spacePos2 + 1);
@@ -355,15 +356,15 @@ void	Request::executeMethod(int socketFd, Client *client)
 }
 
 //-- This is not ALLOWED
-int	Request::invalidRequest(Client* client)
-{
-	if (errno == EINTR)
-		return (-1);
-	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
-	if (errno != EAGAIN && errno != EWOULDBLOCK)
-		client->_server->_epoll->removeClient(client);  // Close the socket on other read errors
-	return (-1); // Move to the next event
-}
+// int	Request::invalidRequest(Client* client)
+// {
+// 	if (errno == EINTR)
+// 		return (-1);
+// 	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
+// 	if (errno != EAGAIN && errno != EWOULDBLOCK)
+// 		client->_server->_epoll->removeClient(client);  // Close the socket on other read errors
+// 	return (-1); // Move to the next event
+// }
 
 int	Request::emptyRequest(Client* client)
 {
@@ -402,60 +403,72 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	// }
 }
 
-//-- SUMON : trying to read the request body in chunks
+
+//-- SUMON: Moved requestBody and totalBytesRead to global scope
+//-- to handle multiple requests in the same connection
+//-- Reset the values after each request
+std::string requestBody;
+ssize_t totalBytesRead = 0;
+
 int Request::clientRequest(Client* client)
 {
     int event_fd = client->getFd();
     bool writeFlag = false;
     bool contentLengthFound = false;
-    std::string requestBody;
 
     std::vector<char> buffer(SOCKET_BUFFER_SIZE);
-    ssize_t totalBytesRead = 0;
 
     try
     {
-        while (!_readingFinished)
+        buffer.resize(SOCKET_BUFFER_SIZE);
+        ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
+        if (count == -1)
         {
-            buffer.resize(SOCKET_BUFFER_SIZE);
-            ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
-            if (count == -1)
-			{
-                //-- Thorben, please help to use epoll event here;
-				continue;
-			}
-            else if (count == 0)
-                return emptyRequest(client);
+			//-- Maybe should write some error message
+            //Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			return (1);
+        }
+        else if (count == 0)
+            return emptyRequest(client);
 
-            buffer.resize(count);
-            validRequest(client->_server, buffer, count, client->_request);
+        buffer.resize(count);
+        validRequest(client->_server, buffer, count, client->_request);
 
-            //-- Append data to requestBody
-            requestBody.append(buffer.data(), count);
-            totalBytesRead += count;
+        //-- Append data to requestBody
+        requestBody.append(buffer.data(), count);
+        totalBytesRead += count;
 
-            //-- Check for Content-Length.
-			//-- If has a content length, means request has a body.
-            if (_headerChecked && !contentLengthFound)
-			{
-                std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
-                if (it != _headerMap.end()) {
-                    _contentLength = std::atoi(it->second.c_str());
-                    contentLengthFound = true;
-                }
+        //-- Check for Content-Length.
+        //-- If has a content length, means request has a body.
+        if (_headerChecked && !contentLengthFound)
+        {
+            std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
+            if (it != _headerMap.end()) {
+                _contentLength = std::atoi(it->second.c_str());
+                contentLengthFound = true;
             }
-
-            //-- Stop reading if we have reached Content-Length
-            if (contentLengthFound && requestBody.size() >= _contentLength)
-                _readingFinished = true;
         }
 
-        //-- Process the request body if headers are fully checked
-        if (_firstLineChecked && _headerChecked)
+        //-- Stop reading if we have reached Content-Length
+        if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
         {
-			//-- SUMON: client_max_body_size check moved to PostMethod
+            _readingFinished = true;
+			totalBytesRead = 0;
+        }
+
+        //-- Process the request body if headers are fully checked and reading is finished
+        if (_firstLineChecked && _headerChecked && _readingFinished)
+        {
+            //-- SUMON: client_max_body_size check moved to PostMethod
             if (this->_method->getName() == "POST")
                 storeRequestBody(requestBody, 0);
+			requestBody.clear();
+        }
+		else
+        {
+            // Not finished reading, return to epoll event loop
+            Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+            return 0;
         }
     }
     catch (std::exception &e)

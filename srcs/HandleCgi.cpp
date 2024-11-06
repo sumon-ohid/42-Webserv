@@ -225,7 +225,8 @@ void	HandleCgi::writeToChildFd(Client* client)
 		_response.clear();
 		client->_request._response->setIsChunk(true);
 	}
-	_byteTracker = 0;
+    //-- SUMON: This cause problem when writing to the pipe
+	//_byteTracker = 0;
 	// std::cout << "Bytes written to pipe: " << bytes_written << std::endl;
     // std::cout << "Data written to pipe: " << std::string(response.begin(), response.end()) << std::endl;
 
