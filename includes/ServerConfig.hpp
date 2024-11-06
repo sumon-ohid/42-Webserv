@@ -60,6 +60,7 @@ class ServerConfig : public LocationConfig
         void checkAllowedMethods(std::string value, std::string line);
         void checkRedirect(std::string value);
         bool checkAutoIndex(std::string line);
+        bool checkClientMaxBodySize(std::string value);
 
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void handleErrorPages(std::string line, ServerConfig &server);

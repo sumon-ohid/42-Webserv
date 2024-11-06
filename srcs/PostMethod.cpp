@@ -10,6 +10,7 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <cstdlib>
 
 PostMethod::PostMethod() : socketFd(-1)
 {
@@ -72,6 +73,26 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         }
     }
 
+    //-- SUMON : Client Max Body Size check
+    //-- Server directive
+    std::string clientMaxBodySize;
+    //-- If not found in server directive, then find in location directive
+    clientMaxBodySize = findMaxBodySize(requestPath, client);
+    if (clientMaxBodySize.empty())
+    {
+        clientMaxBodySize = client->_server->getServerConfig().getClientMaxBodySize();
+        if (clientMaxBodySize.empty())
+            clientMaxBodySize = "1";
+    }
+
+    //-- If the client_max_body_size is set to 0, then no limit
+    if (clientMaxBodySize != "0")
+    {
+        size_t maxBodySize = std::atoi(clientMaxBodySize.c_str()) * 1024 * 1024;
+        if (request._requestBody.size() > maxBodySize)
+            throw std::runtime_error("413");
+    }
+
     this->socketFd = socketFd;
     this->root = locationFinder._root;
     this->locationPath = locationFinder._locationPath;
@@ -80,6 +101,21 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
     fileName = request._postFilename;
 
     handlePostRequest(request, client);
+}
+
+//-- SUMON : Client Max Body Size check
+//-- this will return the max body size for the request path
+std::string	PostMethod::findMaxBodySize(std::string requestPath, Client *client)
+{
+	LocationFinder locationFinder;
+
+	bool locationMatched = locationFinder.locationMatch(client, requestPath, 0);
+	if (!locationMatched)
+		return ("1");
+
+	if (locationFinder._clientBodySizeFound)
+		return (locationFinder._clientMaxBodySize);
+    return ("");
 }
 
 void PostMethod::handlePostRequest(Request &request, Client *client)
