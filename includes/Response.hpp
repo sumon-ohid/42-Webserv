@@ -22,6 +22,7 @@ class Response {
 		std::string		_header;
 		std::string		_body;
 		std::string		_mimeType;
+		std::string	_sessionId; //-- BONUS : cookies
 		ssize_t			_bytesSent;
 		size_t			_totalBytesSent;
 

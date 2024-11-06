@@ -29,5 +29,8 @@ class PostMethod : public Method
         std::string parseBody(std::string body);
         std::string parseFilename(std::string& content);
 
+        //-- SUMON : Client Max Body Size check
+		std::string findMaxBodySize(std::string requestPath, Client* client);
+
         Method*	clone();
 };

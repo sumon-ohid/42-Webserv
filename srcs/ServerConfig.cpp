@@ -48,20 +48,40 @@ void ServerConfig::locationBlock(std::string line, size_t &i, std::vector<std::s
             std::string value = line.substr(pos + 1);
             if (key == "autoindex")
                 if (checkAutoIndex(value) == false)
-                    throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+                    throw std::runtime_error(BOLD RED + line + " [ NOT VALID ]" RESET);
             if (key == "allowed_methods")
                 checkAllowedMethods(value, locationConfig.getPath());
             if (key == "return")
                 checkRedirect(value);
+            if (key == "client_max_body_size")
+                if (!checkClientMaxBodySize(value))
+                    throw std::runtime_error(BOLD RED + line + " [ NOT VALID ]" RESET);
             if (key != "allowed_methods" && key != "return")
                 value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
             if (key.empty() || value.empty())
-                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+                throw std::runtime_error(BOLD RED + line + " [ NOT VALID ]" RESET);
             locationConfig.insertInMap(key, value);
         }
         i++;
     }
     server.locations.push_back(locationConfig);
+}
+
+bool ServerConfig::checkClientMaxBodySize(std::string line)
+{
+    size_t pos = line.find_first_not_of(" ");
+    size_t end = line.find_last_not_of(" ");
+    std::string temp = line.substr(pos, end + 1);
+
+    if (temp.at(temp.size() - 1) != 'M')
+        return false;
+    temp = temp.substr(0, temp.size() - 1);
+    for (size_t i = 0; i < temp.size(); i++)
+    {
+        if (!std::isdigit(temp[i]))
+            return false;
+    }
+    return true;
 }
 
 bool ServerConfig::checkAutoIndex(std::string line)
@@ -219,14 +239,6 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             if (server.cgiFile.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
-        else if (line.find("try_files") == 0)
-        {
-            size_t pos = line.find(" ");
-            if (pos != std::string::npos)
-                server.tryFiles = line.substr(pos + 1);
-            if (server.tryFiles.empty())
-                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
-        }
         else if (line.find("location") == 0)
             locationBlock(line, i, configVector, server, configFile);
         else if (line.find("client_max_body_size") == 0)
@@ -234,6 +246,8 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             size_t pos = line.find(" ");
             if (pos != std::string::npos)
                 server.clientMaxBodySize = line.substr(pos + 1);
+            if (checkClientMaxBodySize(server.clientMaxBodySize) == false)
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
             server.clientMaxBodySize.erase(std::remove(server.clientMaxBodySize.begin(), server.clientMaxBodySize.end(), ' '), server.clientMaxBodySize.end());
             if (server.clientMaxBodySize.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);

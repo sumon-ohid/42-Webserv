@@ -271,6 +271,7 @@ void	HandleCgi::MimeTypeCheck(Client* client)
 {
 	_responseStr = std::string(_response.data(), _byteTracker);
     //*** This is to handle mime types for cgi scripts
+	std::cout << "header: " << _responseStr << std::endl;
     size_t pos = _responseStr.find("Content-Type:");
     std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
     std::string setMime;
@@ -286,8 +287,9 @@ void	HandleCgi::MimeTypeCheck(Client* client)
         }
     }
     //-- If no mime types found set it to default
-    if (setMime.empty())
-        setMime = ".html";
+	if (setMime.empty())
+    	setMime = ".html";
+	std::cout << "Mime type extracted: " << setMime << std::endl;
     client->_request.setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
@@ -303,4 +305,70 @@ bool    HandleCgi::getCgiDone() const
 HandleCgi::~HandleCgi()
 {
     _env.clear();
+}
+
+
+//--- Copy constructor
+HandleCgi::HandleCgi(const HandleCgi &src)
+	:	_locationPath(src._locationPath),
+		_method(src._method),
+		_postBody(src._postBody),
+		_fileName(src._fileName),
+		_byteTracker(src._byteTracker),
+		_totalBytesSent(src._totalBytesSent),
+		_response(src._response),
+		_responseStr(src._responseStr),
+		_mimeCheckDone(src._mimeCheckDone),
+		_cgiDone(src._cgiDone),
+		_env(src._env) 
+{
+	// Deep copy the pipe file descriptors
+	_pipeIn[0] = src._pipeIn[0];
+	_pipeIn[1] = src._pipeIn[1];
+	_pipeOut[0] = src._pipeOut[0];
+	_pipeOut[1] = src._pipeOut[1];
+}
+
+//--- Assignment operator
+HandleCgi &HandleCgi::operator=(const HandleCgi &src)
+{
+    if (this != &src)
+	{
+		_locationPath = src._locationPath;
+		_method = src._method;
+		_postBody = src._postBody;
+		_fileName = src._fileName;
+		_pipeIn[0] = src._pipeIn[0];
+		_pipeIn[1] = src._pipeIn[1];
+		_pipeOut[0] = src._pipeOut[0];
+		_pipeOut[1] = src._pipeOut[1];
+		_byteTracker = src._byteTracker;
+		_totalBytesSent = src._totalBytesSent;
+		_response = src._response;
+		_responseStr = src._responseStr;
+		_mimeCheckDone = src._mimeCheckDone;
+		_cgiDone = src._cgiDone;
+		_env = src._env;
+	}
+	return (*this);
+}
+
+//--- == operator overloading
+bool HandleCgi::operator==(const HandleCgi &src) const 
+{
+    return (_locationPath == src._locationPath &&
+           _method == src._method &&
+           _postBody == src._postBody &&
+           _fileName == src._fileName &&
+           _pipeIn[0] == src._pipeIn[0] &&
+           _pipeIn[1] == src._pipeIn[1] &&
+           _pipeOut[0] == src._pipeOut[0] &&
+           _pipeOut[1] == src._pipeOut[1] &&
+           _byteTracker == src._byteTracker &&
+           _totalBytesSent == src._totalBytesSent &&
+           _response == src._response &&
+           _responseStr == src._responseStr &&
+           _mimeCheckDone == src._mimeCheckDone &&
+           _cgiDone == src._cgiDone &&
+           _env == src._env);
 }

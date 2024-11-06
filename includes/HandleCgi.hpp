@@ -11,11 +11,10 @@
 #include <sstream>
 
 #include "Request.hpp"
-#include "ServerConfig.hpp"
 
 class Client;
 
-class HandleCgi : public ServerConfig
+class HandleCgi
 {
     private:
         std::string							_locationPath;
@@ -36,6 +35,13 @@ class HandleCgi : public ServerConfig
         HandleCgi();
         HandleCgi(std::string requestBuffer, int nSocket, Client &client, Request &request);
         ~HandleCgi();
+
+        //-- Copy constructor
+        HandleCgi(const HandleCgi &src);
+        //-- Assignment operator
+        HandleCgi &operator=(const HandleCgi &src);
+        //-- == operator overloading
+        bool operator==(const HandleCgi &src) const;
 
         void			initEnv(Request &request);
         void			proccessCGI(Client*);

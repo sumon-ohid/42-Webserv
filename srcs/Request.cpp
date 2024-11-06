@@ -168,6 +168,8 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 }
 
 void Request::storeOneHeaderInMap(const std::string& oneLine) {
+
+	// std::cout << "$" << oneLine << "$" << std::endl;
 	std::size_t pos = oneLine.find(":");
 	if (pos == std::string::npos)
 		return;
@@ -185,7 +187,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 }
 
 void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
-	std::size_t pos = strLine.find("\r\n", endPos);
+	std::size_t pos = strLine.find("\r\n", endPos + 2);
 	std::size_t pos2 = endPos;
 
 	endPos = strLine.find("\r\n\r\n", 0);
@@ -204,10 +206,11 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 		if (_method->getName() == "GET" || _method->getName() == "DELETE")
 			_readingFinished = true;
 	}
-	while (pos < endPos) {
+	while (pos <= endPos) {
+		// std:: cout << "my pos: " << pos2 << " & " << pos << std::endl;
 		storeOneHeaderInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
 		pos2 = pos;
-		pos = strLine.find("\r\n", pos2 + 1);
+		pos = strLine.find("\r\n", pos2 + 2);
 	}
 }
 
@@ -257,11 +260,23 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	std::string boundary;
 	if (it != _headerMap.end()) {
 		// BP: check when there is no boundary
-		boundary = "--" + it->second.substr(it->second.find("boundary=") + 9);
-		endPos = strLine.find(boundary, pos + 4);
-		_requestBody = strLine.substr(pos + 4, endPos - pos - 7);
-	}
+		std::string contentType = it->second;
+		size_t boundaryPos = contentType.find("boundary=");
+		if (boundaryPos != std::string::npos) {
+			boundary = "--" + contentType.substr(boundaryPos + 9);
 
+			//-- SUMON :
+			//-- first find the start and end positions of the file data
+			//-- In the previous implementation, we used the boundary to find the start and end positions
+			//-- So some sections after boundary were included in the file data
+			//-- Which caused the file to be corrupted
+			size_t boundaryPos = strLine.find(boundary, pos);
+			size_t startPos = strLine.find("\r\n\r\n", boundaryPos);
+			size_t endPos = strLine.find(boundary, startPos);
+
+			_requestBody = strLine.substr(startPos + 4, endPos - startPos - 4); //-- 4 is for "\r\n\r\n" and --\r\n at the end
+		}
+	}
 	_readingFinished = true;
 	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
 	// std::string end =  strLine.rfind();
@@ -339,6 +354,7 @@ void	Request::executeMethod(int socketFd, Client *client)
 	this->_method->executeMethod(socketFd, client, *this);
 }
 
+//-- This is not ALLOWED
 int	Request::invalidRequest(Client* client)
 {
 	if (errno == EINTR)
@@ -378,63 +394,96 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	// 		storeRequestBody(strLine, endPos);
 	// 	}
 	// }
-	if (request._firstLineChecked && request._headerChecked && endPos != std::string::npos) {
-		if (this->_method->getName() == "POST") {
-			storeRequestBody(strLine, endPos);
-		}
-	}
+	//-- OLD POST BODY
+	// if (request._firstLineChecked && request._headerChecked && endPos != std::string::npos) {
+	// 	if (this->_method->getName() == "POST") {
+	// 		storeRequestBody(strLine, endPos);
+	// 	}
+	// }
 }
 
-int	Request::clientRequest(Client* client)
+//-- SUMON : trying to read the request body in chunks
+int Request::clientRequest(Client* client)
 {
-	int		event_fd = client->getFd();
-	bool	writeFlag = false;
-	std::vector<char> buffer;  // Zero-initialize the buffer for incoming data
-	ssize_t count = read(event_fd, &buffer[0], buffer.size());  // Read data from the client socket
+    int event_fd = client->getFd();
+    bool writeFlag = false;
+    bool contentLengthFound = false;
+    std::string requestBody;
 
-	// while (!client->_request.getReadingFinished())
-	// {
-		try
-		{
-			buffer.resize(SOCKET_BUFFER_SIZE);
-			ssize_t count = read(event_fd, &buffer[0], buffer.size());
-			if (count == -1)
-				return (invalidRequest(client));
-			else if (count == 0)
-				return (emptyRequest(client));
-			else
-				validRequest(client->_server, buffer, count, client->_request);
-		}
-		catch (std::exception &e)
-		{
-			if (static_cast<std::string>(e.what()) == TELNETSTOP) {
-				client->_server->_epoll->removeClient(client);
-			} else {
-				client->_request._response->error(client->_request, static_cast<std::string>(e.what()), client);
+    std::vector<char> buffer(SOCKET_BUFFER_SIZE);
+    ssize_t totalBytesRead = 0;
+
+    try
+    {
+        while (!_readingFinished)
+        {
+            buffer.resize(SOCKET_BUFFER_SIZE);
+            ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
+            if (count == -1)
+			{
+                //-- Thorben, please help to use epoll event here;
+				continue;
 			}
-			std::cerr << "exception: " << e.what() << std::endl;
-			writeFlag = true;
-			return OK;
-		}
-	// }
-	// std::cout << _readingFinished << std::endl;
-	if (!writeFlag && _readingFinished)
-	{
-		try {
-			client->_request.executeMethod(event_fd, client);
-			// std::cout << client->_request.getHeaderMap().size() << std::endl;
-		}
-		catch (std::exception &e) {
-			client->_request._response->error(client->_request, static_cast<std::string>(e.what()), client);
-		}
+            else if (count == 0)
+                return emptyRequest(client);
 
-	}
-	(void) count;
-	writeFlag = false;
-	// std::map<std::string, std::string> testMap = client->_request.getHeaderMap();
-	// std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << " " << client->_request.getMethodProtocol() << std::endl;
-	std::cout << "-------------------------------------" << std::endl;
-	return (0);
+            buffer.resize(count);
+            validRequest(client->_server, buffer, count, client->_request);
+
+            //-- Append data to requestBody
+            requestBody.append(buffer.data(), count);
+            totalBytesRead += count;
+
+            //-- Check for Content-Length.
+			//-- If has a content length, means request has a body.
+            if (_headerChecked && !contentLengthFound)
+			{
+                std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
+                if (it != _headerMap.end()) {
+                    _contentLength = std::atoi(it->second.c_str());
+                    contentLengthFound = true;
+                }
+            }
+
+            //-- Stop reading if we have reached Content-Length
+            if (contentLengthFound && requestBody.size() >= _contentLength)
+                _readingFinished = true;
+        }
+
+        //-- Process the request body if headers are fully checked
+        if (_firstLineChecked && _headerChecked)
+        {
+			//-- SUMON: client_max_body_size check moved to PostMethod
+            if (this->_method->getName() == "POST")
+                storeRequestBody(requestBody, 0);
+        }
+    }
+    catch (std::exception &e)
+    {
+        if (std::string(e.what()) == TELNETSTOP) {
+            client->_server->_epoll->removeClient(client);
+        } else {
+            client->_request._response->error(client->_request, e.what(), client);
+        }
+        std::cerr << "Exception: " << e.what() << std::endl;
+        writeFlag = true;
+        return OK;
+    }
+
+    // Execute the method if reading is finished and no errors occurred
+    if (!writeFlag && _readingFinished)
+    {
+        try {
+            client->_request.executeMethod(event_fd, client);
+        }
+        catch (std::exception &e) {
+            client->_request._response->error(client->_request, e.what(), client);
+        }
+    }
+
+    writeFlag = false;
+    std::cout << "-------------------------------------" << std::endl;
+    return 0;
 }
 
 
@@ -461,3 +510,43 @@ std::string	Request::getHost() const
 {
 	return (_host);
 }
+
+//-- BONUS : cookies
+std::string Request::getSessionId() const
+{
+	// std::cout << _headerMap.size() << "\n\n" << std::endl;
+	// for (std::map<std::string, std::string>::const_iterator it = _headerMap.begin(); it != _headerMap.end(); it++)
+	// {
+	// 	std::cout << "$" << it->first << ": " << it->second << "$" << std::endl;
+	// }
+
+	std::string cookie = getHeaderFromHeaderMap("Cookie");
+	//std::cout << "\n\nCookie: " << cookie << std::endl;
+	std::size_t pos = cookie.find("session=");
+	if (pos == std::string::npos)
+		return ("");
+	std::size_t end = cookie.find(";", pos);
+	std::string _sessionId = cookie.substr(pos + 10, end - pos - 10);
+	return (_sessionId);
+}
+
+
+
+
+
+// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+// Accept-Encoding: gzip, deflate, br, zstd
+// Accept-Language: en-US,en;q=0.9
+// Connection: keep-alive
+// Cookie: session=lVH6A0QDpBNrQNfXfPPCeQSj1gIuFJWQ
+// Host: 127.0.0.1:8000
+// Referer: http://127.0.0.1:8000/about/index.html
+// Sec-Fetch-Dest: document
+// Sec-Fetch-Mode: navigate
+// Sec-Fetch-Site: same-origin
+// Sec-Fetch-User: ?1
+// Upgrade-Insecure-Requests: 1
+// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36
+// sec-ch-ua: "Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"
+// sec-ch-ua-mobile: ?0
+// sec-ch-ua-platform: "Linux"

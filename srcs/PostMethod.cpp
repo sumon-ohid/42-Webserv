@@ -5,9 +5,12 @@
 #include "../includes/Client.hpp"
 #include "../includes/LocationFinder.hpp"
 #include "../includes/HandleCgi.hpp"
+#include "../includes/GetMethod.hpp"
 
 #include <string>
 #include <fstream>
+#include <iomanip>
+#include <cstdlib>
 
 PostMethod::PostMethod() : socketFd(-1)
 {
@@ -71,6 +74,26 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         }
     }
 
+    //-- SUMON : Client Max Body Size check
+    //-- Server directive
+    std::string clientMaxBodySize;
+    //-- If not found in server directive, then find in location directive
+    clientMaxBodySize = findMaxBodySize(requestPath, client);
+    if (clientMaxBodySize.empty())
+    {
+        clientMaxBodySize = client->_server->getServerConfig().getClientMaxBodySize();
+        if (clientMaxBodySize.empty())
+            clientMaxBodySize = "1";
+    }
+
+    //-- If the client_max_body_size is set to 0, then no limit
+    if (clientMaxBodySize != "0")
+    {
+        size_t maxBodySize = std::atoi(clientMaxBodySize.c_str()) * 1024 * 1024;
+        if (request._requestBody.size() > maxBodySize)
+            throw std::runtime_error("413");
+    }
+
     this->socketFd = socketFd;
     this->root = locationFinder._root;
     this->locationPath = locationFinder._locationPath;
@@ -79,6 +102,21 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
     fileName = request._postFilename;
 
     handlePostRequest(request, client);
+}
+
+//-- SUMON : Client Max Body Size check
+//-- this will return the max body size for the request path
+std::string	PostMethod::findMaxBodySize(std::string requestPath, Client *client)
+{
+	LocationFinder locationFinder;
+
+	bool locationMatched = locationFinder.locationMatch(client, requestPath, 0);
+	if (!locationMatched)
+		return ("1");
+
+	if (locationFinder._clientBodySizeFound)
+		return (locationFinder._clientMaxBodySize);
+    return ("");
 }
 
 void PostMethod::handlePostRequest(Request &request, Client *client)
@@ -98,12 +136,28 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
         request._response->error(request, "500", client);
         return;
     }
+   
+    std::string body =  " <html><head> <title>File uploaded</title>"
+        "  <style> body { display: flex; justify-content: center;"
+        "  align-items: center; height: 100vh; font-family: Arial, sans-serif;"
+        "  font-size: 1em; font-weight: bold; font-style: italic; } </style>"
+        "  </head> <body> <h1>File uploaded successfully!</h1><br>"
+        "  <br><a href=\"" + locationPath + "/" + fileName + "\">VIEW</a>"
+        "  </body> </html>";
 
-    std::string body = "<html><body><h1>File uploaded successfully!</h1></body></html>";
     request._response->createHeaderAndBodyString(request, body, "200", client);
 
-    std::cout << BOLD YELLOW << "size : " << fileBody.size() << " bytes" << RESET << std::endl;
-    std::cout << BOLD BLUE "File : " << fileName << RESET << std::endl;
+    //-- Remove the double slashes from the file path
+    size_t pos = fileToCreate.find("//");
+    if (pos != std::string::npos)
+        fileToCreate.erase(pos, 1);
+    
+    //-- Print the file size
+    size_t fileSize = fileBody.size();
+    double fileSizeInMB = static_cast<double>(fileSize) / (1024.0 * 1024.0);
+
+    std::cout << BOLD YELLOW << "size : " << fileSize << " BYTES  |  " << fileSize / 1024 << " KB  |  "  << std::fixed << std::setprecision(1) << fileSizeInMB << " MB" << RESET << std::endl;
+    std::cout << BOLD BLUE "File : " << fileToCreate << RESET << std::endl;
     std::cout << BOLD GREEN "FILE SAVED! 💾" << RESET << std::endl;
 }
 

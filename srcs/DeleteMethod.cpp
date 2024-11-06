@@ -54,7 +54,13 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 	if (_statusCode == "204")
 	{
 		//-- headerAndBody is always 200, but we need for different codes as well.
-		std::string body = "<html><body><h1>File Deleted Successfully!</h1></body></html>";
+		std::string body =  " <html><head> <title>File uploaded</title>"
+        "  <style> body { display: flex; justify-content: center;"
+        "  align-items: center; height: 100vh; font-family: Arial, sans-serif;"
+        "  font-size: 1em; font-weight: bold; font-style: italic; } </style>"
+        "  </head> <body> <h1>File Deleted successfully!</h1>"
+        "  </body> </html>";
+
 		request._response->createHeaderAndBodyString(request, body, "204", client);
 	}
 	else

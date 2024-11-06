@@ -96,6 +96,10 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     struct dirent *ent;
     std::ostringstream body;
 
+    size_t pos = path.find("//");
+    if (pos != std::string::npos)
+        path.erase(pos, 1);
+
     if ((dir = opendir(path.c_str())) != NULL)
     {
         body << "<html><head><title>Index of "
