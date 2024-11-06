@@ -11,17 +11,25 @@
 #include <sstream>
 
 #include "Request.hpp"
-#include "ServerConfig.hpp"
-#include "Server.hpp"
+
+class Client;
 
 class HandleCgi
 {
     private:
-        std::string locationPath;
-        std::string method;
-        std::string postBody;
-        std::string fileName;
-        std::map<std::string, std::string> env;
+        std::string							_locationPath;
+        std::string							_method;
+        std::string							_postBody;
+        std::string							_fileName;
+        int									_pipeIn[2];
+		int									_pipeOut[2];
+		ssize_t								_byteTracker;
+		ssize_t								_totalBytesSent;
+		std::vector<char>					_response;
+		std::string							_responseStr;
+		bool								_mimeCheckDone;
+        bool                                _cgiDone;
+        std::map<std::string, std::string>	_env;
 
     public:
         HandleCgi();
@@ -29,17 +37,23 @@ class HandleCgi
         ~HandleCgi();
 
         //-- Copy constructor
-        HandleCgi(HandleCgi &src);
+        HandleCgi(const HandleCgi &src);
         //-- Assignment operator
-        HandleCgi &operator=(HandleCgi &src);
+        HandleCgi &operator=(const HandleCgi &src);
         //-- == operator overloading
-        bool operator==(HandleCgi &src);
+        bool operator==(const HandleCgi &src) const;
 
-        void initEnv(Request &request);
-        void proccessCGI(Client*, int nSocket, Request &request);
-        void handleParentProcess(Client*, int nSocket, int pipe_in[2], int pipe_out[2], pid_t pid, Request &request);
-        void handleChildProcess(int pipe_in[2], int pipe_out[2] ,const std::string &locationPath, Request &request);
-        std::string getExecutable(const std::string &locationPath);
+        void			initEnv(Request &request);
+        void			proccessCGI(Client*);
+        void			handleChildProcess(const std::string &_locationPath, Request &request);
+        std::string		getExecutable(const std::string &locationPath);
+        void			handleParentProcess(Client* client);
+		void			writeToChildFd(Client* client);
+		void			readFromChildFd(Client* client);
+		void			MimeTypeCheck(Client *client);
+		void			closeCgi(Client* client);
+
+        bool            getCgiDone() const;
 
         // Function template to convert various types to string
         template <typename T>

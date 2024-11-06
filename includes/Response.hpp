@@ -1,7 +1,9 @@
 #pragma once
 
 // #include "Request.hpp"
+#include <cstddef>
 #include <string>
+#include <sys/types.h>
 
 #include "ErrorHandle.hpp"
 
@@ -21,6 +23,8 @@ class Response {
 		std::string		_body;
 		std::string		_mimeType;
 		std::string	_sessionId; //-- BONUS : cookies
+		ssize_t			_bytesSent;
+		size_t			_totalBytesSent;
 
 	public:
 		Response();
@@ -31,6 +35,8 @@ class Response {
 		Response* clone() const;
 
 		bool	getIsChunk();
+		bool	getIsFinished();
+		size_t	getBodySize() const;
 
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
 		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client);
@@ -41,5 +47,8 @@ class Response {
 		void	error(Request& request, std::string statusCode, Client *client);
 
 		void	sendChunkHeader(Client*, int socketFd, Request& request);
-		long	sendChunks(int socketFd, std::string chunkString);
+		long	sendChunks(Client* client, std::string& chunkString);
+
+		void	setIsChunk(bool);
+		void	addToBody(const std::string&);
 };

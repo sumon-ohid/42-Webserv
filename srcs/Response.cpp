@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <signal.h>
+#include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -13,9 +14,13 @@
 #include "../includes/Request.hpp"
 #include "../includes/Helper.hpp"
 
-Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false), _bytesSentOfBody(0), _header(""), _body(""), _mimeType(""), _sessionId("") {}
+Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false),
+ _bytesSentOfBody(0), _header(""), _body(""), _mimeType(""), _sessionId(""), _bytesSent(0), _totalBytesSent(0) {}
 
-Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),  _headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection), _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _body(other._body), _mimeType(other._mimeType), _sessionId(other._sessionId) {}
+Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),
+_headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection),
+ _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _body(other._body), _mimeType(other._mimeType), _sessionId(other._sessionId),
+ _bytesSent(other._bytesSent), _totalBytesSent(other._totalBytesSent) {}
 
 Response& Response::operator=(const Response& other) {
 	if (this == &other)
@@ -31,6 +36,8 @@ Response& Response::operator=(const Response& other) {
 	_body = other._body;
 	_mimeType = other._mimeType;
 	_sessionId = other._sessionId;
+	_bytesSent = other._bytesSent;
+	_totalBytesSent = other._totalBytesSent;
 	return *this;
 }
 
@@ -86,49 +93,79 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 // Connection: keep-alive
 // Connection: Transfer-Encoding
 
-
 void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client) {
-	_body = body;
-	if ( body.size() > CHUNK_SIZE) {
+	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
-		_header = createHeaderString(request, _body, "200");
-	}
-	_header = createHeaderString(request, body, statusCode);
-	_body = body + "\r\n";
-	Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
+	if (_header.empty())
+		_header = createHeaderString(request, body, statusCode);
+	_body += body;
+	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 }
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
-	long bytesSent;
-
+	long bytesSent = 0;
 	if (_isChunk) {
-		if (!_headerSent) {
+		if (!_headerSent)
+		{
 			bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);
 			_headerSent = true;
-		} else {
-			bytesSent = sendChunks(socketFd, _body.substr(_bytesSentOfBody, CHUNK_SIZE));
+		}
+		else
+		{
+			bytesSent = sendChunks(client, _body);
 			_bytesSentOfBody += bytesSent;
-			if (bytesSent == 0) {
-				bytesSent = send(socketFd, "0\r\n\r\n", 5, 0); // for ending chunk encoding
-				_finishedSending = true; // BP: is this necessary?
-				Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
-				request.requestReset();
+			if (bytesSent > 0)
+			{
+				_body.erase(0, bytesSent);
+				// if (_body.size() > 0)
+				// 	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 			}
 		}
 
-		if (bytesSent < 0) {
+		if (bytesSent < 0)
+		{
 			std::cerr << "Error sending chunk response" << std::endl; // BP: client closed? change
-			Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN); // BP: check if it is protected
+			Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN); // BP: check if it is protected
 			return;
 		}
-	} else {
-		std::string total = _header + _body;
+	}
+	else
+	{
+		std::string total = _header + _body +  "\r\n";
 		bytesSent = send(socketFd , total.c_str(), total.size(), 0);
 		if (bytesSent < 0)
 			throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
-		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
+		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		request.requestReset();
 	}
+}
+
+long	Response::sendChunks(Client* client, std::string& chunkString) {
+	std::ostringstream ss1;
+	long bytesSent = 0;
+	if (!chunkString.empty())
+	{
+		ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), chunkString.size()) << "\r\n";
+		std::string header = ss1.str();
+		std::string message = header + chunkString.substr(0, CHUNK_SIZE) + "\r\n";
+		bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
+		// TB: should be checked
+		return (bytesSent - header.size() - 2);
+	}
+	else if (client->_isCgi && client->_cgi.getCgiDone())
+	{
+		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		// TB: should be checked
+		// Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
+		_finishedSending = true; // BP: is this necessary?
+	}
+	else if (!client->_isCgi)
+	{
+		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		// TB: should be checked
+		_finishedSending = true; // BP: is this necessary?
+	}
+	return (0);
 }
 
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {
@@ -217,17 +254,22 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 
 }
 
+void	Response::setIsChunk(bool setBool)
+{
+	_isChunk = setBool;
+}
 
-long	Response::sendChunks(int socketFd, std::string chunkString) {
-	std::ostringstream ss1;
-	ss1 << std::hex << chunkString.size() << "\r\n";
-	long bytesSent = send(socketFd, ss1.str().c_str(), ss1.str().size(), 0);
-	if (bytesSent < 0)
-		return bytesSent;
-	std::ostringstream ss2;
-	ss2 << chunkString << "\r\n";
-	bytesSent = send(socketFd, ss2.str().c_str(), ss2.str().size(), 0);
-	if (bytesSent < 0)
-		return bytesSent;
-	return bytesSent - 2;
+void	Response::addToBody(const std::string& str)
+{
+	_body += str;
+}
+
+size_t	Response::getBodySize() const
+{
+	return (_body.size());
+}
+
+bool	Response::getIsFinished()
+{
+	return (_finishedSending);
 }

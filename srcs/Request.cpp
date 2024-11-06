@@ -289,7 +289,7 @@ void	Request::extractHttpMethod(std::string& requestLine)
 	std::string	methodContainer = requestLine.substr(0, 8);
 	size_t endPos = methodContainer.find_first_of(" ");
 	if (endPos == std::string::npos)
-		throw std::runtime_error("400");
+		throw std::runtime_error("400 a");
 	std::string method = requestLine.substr(0, endPos);
 	requestLine.erase(0, endPos + 1);
 	createHttpMethod(method);
@@ -309,7 +309,7 @@ void Request::createHttpMethod(const std::string& method) {
 	else if (method == "DELETE")
 		_method = new DeleteMethod();
 	else
-		throw std::runtime_error("400");
+		throw std::runtime_error("400 b");
 	_method->setName(method);
 }
 
@@ -321,7 +321,7 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	extractHttpMethod(strLine);
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
-		throw std::runtime_error("400");
+		throw std::runtime_error("400 c");
 	this->_method->setPath(strLine.substr(0, spacePos2));
 
 	endPos = strLine.find("\r\n", spacePos2 + 1);
@@ -337,7 +337,7 @@ void	Request::checkHost(Client* client) {
 
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
 	if (it == _headerMap.end())
-		throw std::runtime_error("400");
+		throw std::runtime_error("400 d");
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);

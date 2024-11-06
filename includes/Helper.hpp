@@ -20,6 +20,7 @@ class Helper {
 
 		static std::string	getActualTimeStringGMT();
 		static void			checkStatus(std::string& statusCode, std::string& statusMessage);
+		static void			modifyEpollEventClient(Epoll&, Client*, uint32_t);
 		static void			modifyEpollEvent(Epoll&, Client*, uint32_t);
 
 		static std::string decodeUrl(std::string url);
