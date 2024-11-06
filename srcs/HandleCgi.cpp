@@ -242,7 +242,7 @@ void	HandleCgi::writeToChildFd(Client* client)
 	{
 		std::cout << "0 bytes written in cgi writeToChildFd" << std::endl;
 		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN | EPOLLET); //register child's output pipe for writtening
+		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN); //register child's output pipe for writtening
     	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); //
 		_byteTracker = 0;
 		_totalBytesSent = 0;
@@ -277,8 +277,6 @@ void	HandleCgi::readFromChildFd(Client* client)
 	_response.resize(64000, '\0');
 	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
 	std::cout << "bytes read from child:\t" << _byteTracker << std::endl;
-	if (_byteTracker < 100)
-		std::cout << "response read from child:" << _response.data() << std::endl;
 	_totalBytesSent += _byteTracker;
 	std::cout << "cgiDone is " << (_cgiDone == true ? "true" : "false") << std::endl;
 	if	(_byteTracker == -1)
@@ -291,19 +289,18 @@ void	HandleCgi::readFromChildFd(Client* client)
 	{
 		std::cout << "0 bytes read in cgi readFromChild" << std::endl;
 		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+		std::cout << "Client removed" << std::endl;
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
-		_responseStr = std::string(_response.begin(), _response.end());
-		client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
         _cgiDone = true;
 		std::cout << "cgiDone is " << (_cgiDone == true ? "true" : "false") << std::endl;
-		_byteTracker = 0;
-		std::cout << "\n\nDone\n" << std::endl;
 	}
 	// if (_byteTracker < 100)
 	// 	std::cout << "response read from child:" << _response << std::endl;
 	if (!_mimeCheckDone)
 		MimeTypeCheck(client);
+	else
+		_responseStr = std::string(_response.data(), _byteTracker);
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
 	std::cout << "length of response string:\t" << _responseStr.length() << std::endl;
 	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);

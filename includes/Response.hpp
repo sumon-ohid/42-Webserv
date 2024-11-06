@@ -38,7 +38,7 @@ class Response {
 		size_t	getBodySize() const;
 
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
-		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client, bool finished = true);
+		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client);
 
 		void	sendResponse(Client* client, int socketFd, Request& request);
 

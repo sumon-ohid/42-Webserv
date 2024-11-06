@@ -113,7 +113,7 @@ void	Helper::checkStatus(std::string& statusCode, std::string& statusMessage) {
 	}
 }
 
-void	Helper::modifyEpollEvent(Epoll &epoll, Client *client, uint32_t events)
+void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t events)
 {
 	struct	epoll_event	event;
 	event.events = events;

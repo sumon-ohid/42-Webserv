@@ -8,7 +8,6 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <vector>
 
 #include "../includes/Response.hpp"
 #include "../includes/ErrorHandle.hpp"
@@ -84,14 +83,13 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 // Connection: keep-alive
 // Connection: Transfer-Encoding
 
-void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client, bool finished) {
+void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client) {
 	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
 	if (_header.empty())
 		_header = createHeaderString(request, body, statusCode);
 	_body += body;
-	Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
-	(void)finished;
+	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 }
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
@@ -110,6 +108,8 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 			if (bytesSent > 0)
 			{
 				_body.erase(0, bytesSent);
+				// if (_body.size() > 0)
+				// 	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 				std::cout << "size of bytes that will be eliminated: " << bytesSent << std::endl;
 			}
 		}
@@ -117,7 +117,7 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 		if (bytesSent < 0)
 		{
 			std::cerr << "Error sending chunk response" << std::endl; // BP: client closed? change
-			Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN); // BP: check if it is protected
+			Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN); // BP: check if it is protected
 			return;
 		}
 	}
@@ -127,7 +127,7 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 		bytesSent = send(socketFd , total.c_str(), total.size(), 0);
 		if (bytesSent < 0)
 			throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
-		Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
+		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		request.requestReset();
 	}
 }
@@ -153,6 +153,7 @@ long	Response::sendChunks(Client* client, std::string& chunkString) {
 	{
 		std::cout << "client is cgi and cgi is done 0 byte" << std::endl;
 		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		// Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 		_finishedSending = true; // BP: is this necessary?
 	}
 	else if (!client->_isCgi)
