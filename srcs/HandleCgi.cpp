@@ -271,7 +271,6 @@ void	HandleCgi::MimeTypeCheck(Client* client)
 {
 	_responseStr = std::string(_response.data(), _byteTracker);
     //*** This is to handle mime types for cgi scripts
-	std::cout << "header: " << _responseStr << std::endl;
     size_t pos = _responseStr.find("Content-Type:");
     std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
     std::string setMime;
@@ -295,6 +294,12 @@ void	HandleCgi::MimeTypeCheck(Client* client)
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
     if (bodyStart != std::string::npos)
         _responseStr.erase(0, bodyStart += 5);
+}
+
+void	HandleCgi::closeCgi(Client* client)
+{
+	client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
+	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
 }
 
 bool    HandleCgi::getCgiDone() const

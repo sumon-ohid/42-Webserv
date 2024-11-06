@@ -51,6 +51,7 @@ class HandleCgi
 		void			writeToChildFd(Client* client);
 		void			readFromChildFd(Client* client);
 		void			MimeTypeCheck(Client *client);
+		void			closeCgi(Client* client);
 
         bool            getCgiDone() const;
 

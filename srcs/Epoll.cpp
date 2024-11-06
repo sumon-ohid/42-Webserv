@@ -247,8 +247,11 @@ void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)
 void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 {
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(pipeFd);
-	_mpCgiClient.erase(it);
-	removeClientEpoll(pipeFd);
+	if (it != _mpCgiClient.end())
+	{
+		_mpCgiClient.erase(it);
+		removeClientEpoll(pipeFd);
+	}
 	std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 }
 
@@ -270,6 +273,7 @@ void	Epoll::removeClient(Client* client)
 {
 	if (!client || !client->_server)
 		return;
+	client->_cgi.closeCgi(client);
 	removeClientEpoll(client->getFd());
 	removeClientFromServer(client->_server, client->getFd());
 }
