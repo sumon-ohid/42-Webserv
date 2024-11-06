@@ -11,7 +11,7 @@
 #include <iostream>
 #include <map>
 
-#define	SOCKET_BUFFER_SIZE		32000 // 64 kb
+#define	SOCKET_BUFFER_SIZE		32000 // 32 kb , can be increased
 #define SOCKET_MAX_LISTEN		1000
 
 typedef std::map<std::string, ServerConfig>		mHstConfs;

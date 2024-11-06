@@ -7,6 +7,7 @@
 #include <sys/epoll.h>
 #include <sstream>
 #include <cstdlib>
+#include <cstring>
 
 Helper::Helper() {}
 
@@ -116,6 +117,7 @@ void	Helper::checkStatus(std::string& statusCode, std::string& statusMessage) {
 void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t events)
 {
 	struct	epoll_event	event;
+	std::memset(&event, 0, sizeof(event)); // Zero-initialize the epoll_event structure
 	event.events = events;
 	event.data.fd = client->getFd();
 	if (epoll_ctl(epoll.getFd(), EPOLL_CTL_MOD, event.data.fd, &event) == -1)
