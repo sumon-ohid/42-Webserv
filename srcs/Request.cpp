@@ -245,7 +245,6 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		if (bodyPos != std::string::npos) {
 			//-- Body starts after the double CRLF
 			_requestBody = strLine.substr(bodyPos + bodyDelimiter.length());
-			std::cout << RED << "I am also here" << RESET << std::endl;
 		}
 		_readingFinished = true;
 		return;
@@ -457,11 +456,16 @@ int Request::clientRequest(Client* client)
 			//-- SUMON : Client Max Body Size check
 			//-- Need to handle for each location block
 			std::string clientMaxBodySize = client->_server->getServerConfig().getClientMaxBodySize();
+			//std::string requestPath = _method->getPath();
+			//std::string clientMaxBodySize = findMaxBodySize(requestPath, client->_server);
 			if (clientMaxBodySize.empty())
 				clientMaxBodySize = "1";
-			size_t maxBodySize = std::atoi(clientMaxBodySize.c_str()) * 1024 * 1024;
-			if (requestBody.size() > maxBodySize)
-				throw std::runtime_error("413");
+			if (clientMaxBodySize != "0")
+			{
+				size_t maxBodySize = std::atoi(clientMaxBodySize.c_str()) * 1024 * 1024;
+				if (requestBody.size() > maxBodySize)
+					throw std::runtime_error("413");
+			}
 
             if (this->_method->getName() == "POST")
                 storeRequestBody(requestBody, 0);
