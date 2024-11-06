@@ -18,11 +18,13 @@ LocationFinder::LocationFinder()
     _pathToServe = "";
     _locationPath = "";
     _defaultRoot = "./www";
+    _clientMaxBodySize = "";
 
     _cgiFound = false;
     _autoIndexFound = false;
     _allowedMethodFound = false;
     _redirectFound = false;
+    _clientBodySizeFound = false;
 
     locationsVector.clear();
 }
@@ -158,6 +160,10 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
                 if (it->first == "allowed_methods") {
                     _allowed_methods = it->second;
                     _allowedMethodFound = true;
+                }
+                if (it->first == "client_max_body_size") {
+                    _clientMaxBodySize = it->second;
+                    _clientBodySizeFound = true;
                 }
             }
             //-- IF location has no Index or Root, It will search for index,html

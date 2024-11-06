@@ -453,20 +453,7 @@ int Request::clientRequest(Client* client)
         //-- Process the request body if headers are fully checked
         if (_firstLineChecked && _headerChecked)
         {
-			//-- SUMON : Client Max Body Size check
-			//-- Need to handle for each location block
-			std::string clientMaxBodySize = client->_server->getServerConfig().getClientMaxBodySize();
-			//std::string requestPath = _method->getPath();
-			//std::string clientMaxBodySize = findMaxBodySize(requestPath, client->_server);
-			if (clientMaxBodySize.empty())
-				clientMaxBodySize = "1";
-			if (clientMaxBodySize != "0")
-			{
-				size_t maxBodySize = std::atoi(clientMaxBodySize.c_str()) * 1024 * 1024;
-				if (requestBody.size() > maxBodySize)
-					throw std::runtime_error("413");
-			}
-
+			//-- SUMON: client_max_body_size check moved to PostMethod
             if (this->_method->getName() == "POST")
                 storeRequestBody(requestBody, 0);
         }

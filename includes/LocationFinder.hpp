@@ -20,11 +20,13 @@ class LocationFinder
         std::string _pathToServe;
         std::string _locationPath;
         std::string _defaultRoot;
+        std::string _clientMaxBodySize;
 
         bool _cgiFound;
         bool _autoIndexFound;
         bool _allowedMethodFound;
         bool _redirectFound;
+        bool _clientBodySizeFound;
 
         LocationFinder();
         LocationFinder& operator=(const LocationFinder& other);
