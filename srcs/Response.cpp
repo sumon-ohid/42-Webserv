@@ -98,7 +98,6 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 		if (!_headerSent)
 		{
 			bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);
-			std::cout << "header sent; bytes sent:\t" << bytesSent << std::endl;
 			_headerSent = true;
 		}
 		else
@@ -110,7 +109,6 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 				_body.erase(0, bytesSent);
 				// if (_body.size() > 0)
 				// 	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
-				std::cout << "size of bytes that will be eliminated: " << bytesSent << std::endl;
 			}
 		}
 
@@ -135,31 +133,26 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 long	Response::sendChunks(Client* client, std::string& chunkString) {
 	std::ostringstream ss1;
 	long bytesSent = 0;
-	std::cout << "in sendChunks - chunkString size:\t" << chunkString.size() << std::endl;
-	if (client->_isCgi)
-		std::cout << "in sendChunks, client is cgi" << std::endl;
-	if (client->_cgi.getCgiDone())
-		std::cout << "in sendChunks, cgi has finished" << std::endl;
 	if (!chunkString.empty())
 	{
 		ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), chunkString.size()) << "\r\n";
 		std::string header = ss1.str();
 		std::string message = header + chunkString.substr(0, CHUNK_SIZE) + "\r\n";
 		bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
-		std::cout << "bytes sent:\t" << bytesSent << std::endl;
+		// TB: should be checked
 		return (bytesSent - header.size() - 2);
 	}
 	else if (client->_isCgi && client->_cgi.getCgiDone())
 	{
-		std::cout << "client is cgi and cgi is done 0 byte" << std::endl;
 		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		// TB: should be checked
 		// Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 		_finishedSending = true; // BP: is this necessary?
 	}
 	else if (!client->_isCgi)
 	{
-		std::cout << "normal 0 byte" << std::endl;
 		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		// TB: should be checked
 		_finishedSending = true; // BP: is this necessary?
 	}
 	return (0);

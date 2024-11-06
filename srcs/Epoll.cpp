@@ -88,7 +88,6 @@ void Epoll::Monitoring(vSrv& servers)
 	// Infinite loop to process events
 	while (1)
 	{
-		std::cout << "234324" << std::endl;
 		// Wait for events on the epoll instance
 		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1)
 			break;
@@ -115,25 +114,20 @@ int	Epoll::checkEpollWait(int epollWaitReturn)
 bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if client is still connected
 {
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(eventFd);
-	std::cout << "EventFd " << eventFd << std::endl;
 	if (it == _mpCgiClient.end())
 		return (false);
-	std::cout << " was found" << std::endl;
 	Client* client = it->second;
-	std::cout << "3" << std::endl;
 	if (events & EPOLLERR)
 		cgiErrorOrHungUp(eventFd);
 	if (events & (EPOLLHUP | EPOLLRDHUP))
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
 			client->_cgi.readFromChildFd(client);
-		std::cout << "1" << std::endl;
 	}
 	if (client->_isCgi)
 	{
 		if (events & EPOLLIN)
 		{
-			std::cout << "2" << std::endl;
 			client->_cgi.readFromChildFd(client);
 		}	
 		if (events & EPOLLOUT)
@@ -207,11 +201,9 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 
 void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
 {
-	std::cout << "eventFd: " << event_fd << std::endl;
 	Client* client = retrieveClient(servers, event_fd);
 	if (!client)
 		return (clientRetrievalError(event_fd));
-	std::cout << "client retrieved" << std::endl;
 	if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
 		return (clientErrorOrHungUp(client));
 	if (events & EPOLLIN)  // Check if the event is for reading
@@ -219,7 +211,6 @@ void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
 		// should handle read events
 	if (events & EPOLLOUT) // Check if the event is for writing
 		clientResponse(client);
-	std::cout << "saidfoj" << std::endl;
 }
 
 void	Epoll::clientRetrievalError(int event_fd)
@@ -237,8 +228,6 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	std::cout << "In here there probably is a problem" << std::endl;
-	std::cout << "is client cgi? " << (client->_isCgi ? "true" : "false") << " with a body size of " << client->_request._response->getBodySize() << " and cgi done " << (client->_cgi.getCgiDone() ? "true" :"false");
 	if ((client->_isCgi && client->_request._response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
 		client->_request._response->sendResponse(client, client->getFd(), client->_request);
 	if (client->_request._response->getIsFinished())

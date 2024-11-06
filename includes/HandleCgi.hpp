@@ -38,10 +38,10 @@ class HandleCgi : public ServerConfig
         ~HandleCgi();
 
         void			initEnv(Request &request);
-        void			proccessCGI(Client*, int nSocket, Request &request);
+        void			proccessCGI(Client*);
         void			handleChildProcess(const std::string &_locationPath, Request &request);
         std::string		getExecutable(const std::string &locationPath);
-        void			handleParentProcess(Client* client, int nSocket, pid_t pid, Request &request);
+        void			handleParentProcess(Client* client);
 		void			writeToChildFd(Client* client);
 		void			readFromChildFd(Client* client);
 		void			MimeTypeCheck(Client *client);

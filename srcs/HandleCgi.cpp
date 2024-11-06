@@ -68,31 +68,17 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
         throw std::runtime_error("404");
     if (_method != "GET" && _method != "POST")
         throw std::runtime_error("405");
-
     if (locationFinder._allowedMethodFound && locationFinder._cgiFound)
     {
         if (locationFinder._allowed_methods.find(_method) == std::string::npos)
             throw std::runtime_error("405");
     }
-
-    // if (method == "POST")
-    // {
-    //     // PostMethod postMethod;
-    //     // postMethod.executeMethod(nSocket, &client, request);
-    //     // return;
-    //     proccessCGI(&client, nSocket, request);
-    // }
-
-    // if (requestBuffer == "/cgi-bin" || requestBuffer == "/cgi-bin/" || requestBuffer == location + index)
-    //     proccessCGI(&client, nSocket, request);
-    // else
-    //     throw std::runtime_error("404");
     client._isCgi = true;
-    proccessCGI(&client, nSocket, request);
+    proccessCGI(&client);
 }
 
 //--- Main function to process CGI
-void HandleCgi::proccessCGI(Client* client, int nSocket, Request &request)
+void HandleCgi::proccessCGI(Client* client)
 {
     if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
         throw std::runtime_error("500");
@@ -100,9 +86,9 @@ void HandleCgi::proccessCGI(Client* client, int nSocket, Request &request)
     if (pid < 0)
         throw std::runtime_error("500");
     else if (pid == 0)
-        handleChildProcess(_locationPath, request);
+        handleChildProcess(_locationPath, client->_request);
     else
-        handleParentProcess(client, nSocket, pid, request);
+        handleParentProcess(client);
 }
 
 
@@ -159,19 +145,13 @@ std::string HandleCgi::getExecutable(const std::string &_locationPath)
 //----- Function to handle the parent process
 //--- NOTE: This should go through epoll
 //--- read there from pipe_fd[0] and write to the client socket
-void HandleCgi::handleParentProcess(Client* client, int nSocket, pid_t pid, Request &request)
+void HandleCgi::handleParentProcess(Client* client)
 {
     close(_pipeIn[0]); //-- Close read end of the pipe
     close(_pipeOut[1]); //-- Close write end of the pipe
-    // std::cout << BOLD YELLOW << "REQUEST BODY: " << request._requestBody << RESET << std::endl;
 	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
-	std::cout << _response << std::endl;
     client->_epoll->registerSocket(_pipeIn[1], EPOLLOUT);
     client->_epoll->addCgiClientToEpollMap(_pipeIn[1], client);
-	std::cout << "added fd: " << _pipeIn[1] << " toEpoll" << std::endl;
-	(void)nSocket;
-	(void)pid;
-	(void)request;
 }
 
 
@@ -228,10 +208,7 @@ void	HandleCgi::writeToChildFd(Client* client)
     // std::cout << BOLD YELLOW << "REQUEST BODY: " << request._requestBody << RESET << std::endl;
     //-- Write the body to the CGI script's stdin
     // Write the body to the CGI script's stdin
-	std::cout << "cgi writing to child" << std::endl;
-	std::cout << "response: " << _response << std::endl;
 	_byteTracker = write(_pipeIn[1], _response.data() + _byteTracker, _response.size() - _byteTracker);
-	std::cout << _byteTracker << " bytes written in cgi writeToChildFd" << std::endl;
 	_totalBytesSent += _byteTracker;
 	if	(_byteTracker == -1)
     {
@@ -240,20 +217,8 @@ void	HandleCgi::writeToChildFd(Client* client)
     }
 	else if (_byteTracker == 0)
 	{
-		std::cout << "0 bytes written in cgi writeToChildFd" << std::endl;
 		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
 		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN); //register child's output pipe for writtening
-    	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); //
-		_byteTracker = 0;
-		_totalBytesSent = 0;
-		_response.clear();
-		client->_request._response->setIsChunk(true);
-	}
-	else if(static_cast<unsigned long>(_totalBytesSent) == _response.size())
-	{
-		std::cout << "All bytes written in cgi writeToChildFd" << std::endl;
-		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN | EPOLLET); //register child's output pipe for reading
     	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); //
 		_byteTracker = 0;
 		_totalBytesSent = 0;
@@ -273,12 +238,9 @@ void	HandleCgi::readFromChildFd(Client* client)
 
 
     // std::vector<char> cgiOutput(64000); //-- Buffer size of 64 KB
-	std::cout << "cgi reading from child" << std::endl;
 	_response.resize(64000, '\0');
 	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
-	std::cout << "bytes read from child:\t" << _byteTracker << std::endl;
 	_totalBytesSent += _byteTracker;
-	std::cout << "cgiDone is " << (_cgiDone == true ? "true" : "false") << std::endl;
 	if	(_byteTracker == -1)
     {
         std::cout << strerror(errno) << std::endl;
@@ -287,13 +249,10 @@ void	HandleCgi::readFromChildFd(Client* client)
     }
 	else if (_byteTracker == 0)
 	{
-		std::cout << "0 bytes read in cgi readFromChild" << std::endl;
 		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
-		std::cout << "Client removed" << std::endl;
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
         _cgiDone = true;
-		std::cout << "cgiDone is " << (_cgiDone == true ? "true" : "false") << std::endl;
 	}
 	// if (_byteTracker < 100)
 	// 	std::cout << "response read from child:" << _response << std::endl;
@@ -302,7 +261,6 @@ void	HandleCgi::readFromChildFd(Client* client)
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
 	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
-	std::cout << "length of response string:\t" << _responseStr.length() << std::endl;
 	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
 	_byteTracker = 0;
 	// client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
@@ -333,13 +291,8 @@ void	HandleCgi::MimeTypeCheck(Client* client)
     client->_request.setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
-	std::cout << RED << "body start found at: " << bodyStart << std::endl;
     if (bodyStart != std::string::npos)
-    {
-        bodyStart += 5;
-        _responseStr.erase(0, bodyStart);
-		std::cout << BLUE "erased soemthing" << RESET << std::endl;
-    }
+        _responseStr.erase(0, bodyStart += 5);
 }
 
 bool    HandleCgi::getCgiDone() const
