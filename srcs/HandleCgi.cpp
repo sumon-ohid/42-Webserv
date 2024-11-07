@@ -25,7 +25,7 @@ HandleCgi::HandleCgi()
 	_byteTracker = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
-    _cgiDone = false;
+	_cgiDone = false;
 }
 
 //-- Function to initialize the environment variables
@@ -147,124 +147,70 @@ std::string HandleCgi::getExecutable(const std::string &_locationPath)
 //--- read there from pipe_fd[0] and write to the client socket
 void HandleCgi::handleParentProcess(Client* client)
 {
-    close(_pipeIn[0]); //-- Close read end of the pipe
-    close(_pipeOut[1]); //-- Close write end of the pipe
-	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
-    client->_epoll->registerSocket(_pipeIn[1], EPOLLOUT);
-    client->_epoll->addCgiClientToEpollMap(_pipeIn[1], client);
+	close(_pipeIn[0]); //-- Close read end of the pipe
+	close(_pipeOut[1]); //-- Close write end of the pipe
+	client->_epoll->registerSocket(_pipeIn[1], EPOLLOUT);
+	client->_epoll->addCgiClientToEpollMap(_pipeIn[1], client);
 }
 
-
-
-    // -- Write the body to the CGI script's stdin
-    // Write the body to the CGI script's stdin
-
-
-    // ssize_t bytes_written = write(_pipeIn[1], response.data(), response.size());
-    // if (bytes_written == -1)
-    // {
-    //     close(_pipeIn[1]);
-    //     throw std::runtime_error("500");
-    // }
-    // // std::cout << "Bytes written to pipe: " << bytes_written << std::endl;
-    // // std::cout << "Data written to pipe: " << std::string(response.begin(), response.end()) << std::endl;
-
-
-    // close(_pipeIn[1]); //-- Close write end after sending data
-
-    // //--- Read CGI output from the pipe
-
-    // client->_epoll->registerSocket(_pipeOut[0], EPOLLIN | EPOLLET);
-    // client->_epoll->addCgiClientToEpoll(_pipeOut[0], client);
-
-    // std::ostringstream bodyStr;
-    // int status;
-    // std::vector<char> cgiOutput(64000); //-- Buffer size of 64 KB
-    // while (true)
-    // {
-    //     ssize_t n = read(_pipeOut[0], cgiOutput.data(), cgiOutput.size());
-    //     if (n > 0)
-    //         bodyStr.write(cgiOutput.data(), n);
-    //     else if (n == 0)
-    //         break;
-    //     else
-    //     {
-    //         close(_pipeOut[0]);
-    //         throw std::runtime_error("500");
-    //     }
-
-    //     //-- Check if the child process has exited
-    //     //-- WNOHANG: return immediately if no child has exited
-    //     if (waitpid(pid, &status, WNOHANG) == pid)
-    //     {
-    //         if (WIFEXITED(status))
-    //             std::cout << BOLD BLUE << "Process completed with exit code: " << WEXITSTATUS(status) << RESET << std::endl;
-    //         break;
-    //     }
-    // }
+void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
+{
+	if (_byteTracker > -1)
+		return;
+	std::cout << strerror(errno) << std::endl;
+	client->_epoll->removeCgiClientFromEpoll(fdToClose);
+	throw std::runtime_error("500");
+}
 
 void	HandleCgi::writeToChildFd(Client* client)
 {
-    // std::cout << BOLD YELLOW << "REQUEST BODY: " << request._requestBody << RESET << std::endl;
-    //-- Write the body to the CGI script's stdin
-    // Write the body to the CGI script's stdin
+	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
 	_byteTracker = write(_pipeIn[1], _response.data() + _byteTracker, _response.size() - _byteTracker);
 	_totalBytesSent += _byteTracker;
-	if	(_byteTracker == -1)
-    {
-        close(_pipeIn[1]);
-        throw std::runtime_error("500");
-    }
-	else if (_byteTracker == 0)
-	{
-		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-		client->_epoll->registerSocket(_pipeOut[0], EPOLLIN); //register child's output pipe for writtening
-    	client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client); //
-		_byteTracker = 0;
-		_totalBytesSent = 0;
-		_response.clear();
-		client->_request._response->setIsChunk(true);
-	}
+	checkReadOrWriteError(client, _pipeIn[1]);
+	if (_byteTracker == 0)
+		finishWriteAndPrepareReadFromChild(client);
 	_byteTracker = 0;
-	// std::cout << "Bytes written to pipe: " << bytes_written << std::endl;
-    // std::cout << "Data written to pipe: " << std::string(response.begin(), response.end()) << std::endl;
-
 }
 
-void	HandleCgi::readFromChildFd(Client* client)
+void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
 {
-	// std::ostringstream bodyStr;
-	// std::ostringstream bodyStr;
+	client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
+	client->_epoll->registerSocket(_pipeOut[0], EPOLLIN);
+    client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client);
+	_byteTracker = 0;
+	_totalBytesSent = 0;
+	_response.clear();
+	client->_request._response->setIsChunk(true);
+}
 
-
-    // std::vector<char> cgiOutput(64000); //-- Buffer size of 64 KB
-	_response.resize(64000, '\0');
-	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
-	_totalBytesSent += _byteTracker;
-	if	(_byteTracker == -1)
-    {
-        std::cout << strerror(errno) << std::endl;
-		close(_pipeOut[0]);
-        throw std::runtime_error("500");
-    }
-	else if (_byteTracker == 0)
-	{
-		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
-		if (!_mimeCheckDone)
-			MimeTypeCheck(client);
-        _cgiDone = true;
-	}
-	// if (_byteTracker < 100)
-	// 	std::cout << "response read from child:" << _response << std::endl;
+void	HandleCgi::processCgiDataFromChild(Client* client)
+{
+	readFromChildFd();
+	checkReadOrWriteError(client, _pipeOut[0]);
+	if (_byteTracker == 0)
+		finishReadingFromChild(client);
 	if (!_mimeCheckDone)
 		MimeTypeCheck(client);
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
-	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLIN);
 	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
 	_byteTracker = 0;
-	// client->_request._response->addToBody(std::string(_response.begin(), _response.end()));
-	// Helper::modifyEpollEvent(*client->_epoll, client, EPOLLOUT);
+}
+
+void	HandleCgi::readFromChildFd()
+{
+	_response.resize(64000, '\0');
+	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
+	_totalBytesSent += _byteTracker;
+}
+
+void	HandleCgi::finishReadingFromChild(Client* client)
+{
+	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+	if (!_mimeCheckDone)
+		MimeTypeCheck(client);
+	_cgiDone = true;
 }
 
 void	HandleCgi::MimeTypeCheck(Client* client)
@@ -288,7 +234,6 @@ void	HandleCgi::MimeTypeCheck(Client* client)
     //-- If no mime types found set it to default
 	if (setMime.empty())
     	setMime = ".html";
-	std::cout << "Mime type extracted: " << setMime << std::endl;
     client->_request.setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");

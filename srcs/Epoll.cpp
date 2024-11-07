@@ -122,13 +122,13 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 	if (events & (EPOLLHUP | EPOLLRDHUP))
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
-			client->_cgi.readFromChildFd(client);
+			client->_cgi.processCgiDataFromChild(client);
 	}
 	if (client->_isCgi)
 	{
 		if (events & EPOLLIN)
 		{
-			client->_cgi.readFromChildFd(client);
+			client->_cgi.processCgiDataFromChild(client);
 		}	
 		if (events & EPOLLOUT)
 			client->_cgi.writeToChildFd(client);
