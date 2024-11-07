@@ -61,6 +61,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     _postBody = request._requestBody;
     _fileName = request._postFilename;
 	_byteTracker = 0;
+	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
 
@@ -277,7 +278,7 @@ HandleCgi::HandleCgi(const HandleCgi &src)
 		_responseStr(src._responseStr),
 		_mimeCheckDone(src._mimeCheckDone),
 		_cgiDone(src._cgiDone),
-		_env(src._env) 
+		_env(src._env)
 {
 	// Deep copy the pipe file descriptors
 	_pipeIn[0] = src._pipeIn[0];
@@ -311,7 +312,7 @@ HandleCgi &HandleCgi::operator=(const HandleCgi &src)
 }
 
 //--- == operator overloading
-bool HandleCgi::operator==(const HandleCgi &src) const 
+bool HandleCgi::operator==(const HandleCgi &src) const
 {
     return (_locationPath == src._locationPath &&
            _method == src._method &&

@@ -130,7 +130,7 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 		if (events & EPOLLIN)
 		{
 			client->_cgi.processCgiDataFromChild(client);
-		}	
+		}
 		if (events & EPOLLOUT)
 			client->_cgi.writeToChildFd(client);
 	}
@@ -233,7 +233,7 @@ void	Epoll::clientResponse(Client* client)
 		client->_request._response->sendResponse(client);
 	if (client->_request._response->getIsFinished())
 	{
-		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN | EPOLLET);
+		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		client->_request.requestReset();
 		client->_cgi = HandleCgi();
 	}
