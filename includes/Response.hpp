@@ -41,13 +41,14 @@ class Response {
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
 		void		createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client);
 
-		void	sendResponse(Client* client, int socketFd, Request& request);
+		void	sendResponse(Client* client, int socketFd);
 
 		void	fallbackError(Request& request, std::string statusCode, Client* client);
 		void	error(Request& request, std::string statusCode, Client *client);
 
 		void	sendChunkHeader(Client*, int socketFd, Request& request);
-		long	sendChunks(Client* client, std::string& chunkString);
+		void	prepareChunk(Client* client);
+		void	sendChunk(Client* client);
 
 		void	setIsChunk(bool);
 		void	addToBody(const std::string&);
