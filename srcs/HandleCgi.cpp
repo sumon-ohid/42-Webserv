@@ -165,7 +165,7 @@ void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
 void	HandleCgi::writeToChildFd(Client* client)
 {
 	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
-	_byteTracker = write(_pipeIn[1], _response.data() + _byteTracker, _response.size() - _byteTracker);
+	_byteTracker = write(_pipeIn[1], _response.data() + _totalBytesSent, _response.size() - _totalBytesSent);
 	_totalBytesSent += _byteTracker;
 	checkReadOrWriteError(client, _pipeIn[1]);
 	if (_byteTracker == 0)
