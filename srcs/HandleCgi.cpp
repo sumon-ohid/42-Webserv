@@ -215,30 +215,37 @@ void	HandleCgi::finishReadingFromChild(Client* client)
 
 void	HandleCgi::MimeTypeCheck(Client* client)
 {
+	//*** This is to handle mime types for cgi scripts
 	_responseStr = std::string(_response.data(), _byteTracker);
-    //*** This is to handle mime types for cgi scripts
-    size_t pos = _responseStr.find("Content-Type:");
-    std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
-    std::string setMime;
-
-    std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
-    std::map<std::string, std::string>::iterator it;
-    for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
-    {
-        if (mimeType == it->second)
-        {
-            setMime = it->first;
-            break;
-        }
-    }
-    //-- If no mime types found set it to default
-	if (setMime.empty())
-    	setMime = ".html";
-    client->_request.setMethodMimeType(setMime);
+	size_t pos = _responseStr.find("Content-Type:");
+	std::string setMime;
+	extractMimeType(pos, setMime);
+	client->_request.setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
-    if (bodyStart != std::string::npos)
-        _responseStr.erase(0, bodyStart += 5);
+	if (bodyStart != std::string::npos)
+		_responseStr.erase(0, bodyStart += 5);
+}
+
+void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
+{
+	if (pos != std::string::npos)
+	{
+		std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
+
+		std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
+		std::map<std::string, std::string>::iterator it;
+		for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
+		{
+			if (mimeType == it->second)
+			{
+				setMime = it->first;
+				break;
+			}
+		}
+	}
+	if (setMime.empty())
+    	setMime = ".html";
 }
 
 void	HandleCgi::closeCgi(Client* client)

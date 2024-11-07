@@ -55,6 +55,7 @@ class HandleCgi
 		void			readFromChildFd();
 		void			finishReadingFromChild(Client* client);
 		void			MimeTypeCheck(Client *client);
+		void			extractMimeType(size_t pos, std::string& setMime);
 		void			closeCgi(Client* client);
 
 		bool			getCgiDone() const;
