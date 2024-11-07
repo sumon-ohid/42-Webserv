@@ -23,6 +23,9 @@ class Helper {
 		static void			modifyEpollEventClient(Epoll&, Client*, uint32_t);
 		static void			modifyEpollEvent(Epoll&, Client*, uint32_t);
 
+		static long			checkFileSize(const std::string&, Client*);
+		static std::string	mapErrnoToHttpCodeString();
+
 		static std::string decodeUrl(std::string url);
 		static std::string generateSessionId(); //-- BONUS : cookies
 };

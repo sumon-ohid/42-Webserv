@@ -16,6 +16,7 @@
 #include <sstream>
 #include <dirent.h>
 #include <string>
+#include <fcntl.h>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -178,13 +179,26 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     }
 
     this->setMimeType(path);
-    std::ifstream file(path.c_str());
     if (locationFinder.isDirectory(path))
     {
         path = path + "/";
         handleAutoIndexOrError(locationFinder, request, client);
         return;
     }
+	int fd = open(path.c_str(), O_RDONLY);
+	if (fd == -1)
+    {
+        //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
+        request._response->error(request, "404", client);
+        return;
+    }
+	if (Helper::checkFileSize(path, client) < CHUNK_SIZE)
+		
+	client->_epoll->registerSocket(fd, EPOLLIN);
+    client->_epoll->addCgiClientToEpollMap(fd, client);
+
+
+    std::ifstream file(path.c_str());
     if (!file.is_open())
     {
         //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
@@ -200,6 +214,8 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     std::cout << request.getMethodName() << " " << request.getMethodPath() << RESET << std::endl;
     std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 }
+
+
 
 //-- Handle CGI script execution.
 void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Request &request)

@@ -1,4 +1,5 @@
 #include "../includes/Helper.hpp"
+#include "../includes/Response.hpp"
 
 #include <cstddef>
 #include <iomanip>
@@ -8,6 +9,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
+#include <sys/stat.h>
 
 Helper::Helper() {}
 
@@ -156,6 +158,25 @@ std::string Helper::decodeUrl(std::string url)
             decodedUrl += url[i];
     }
     return decodedUrl;
+}
+
+long	Helper::checkFileSize(const std::string& path, Client* client)
+{
+	struct stat fileStat;
+
+	if (stat(path.c_str(), &fileStat) == -1)
+		client->_request._response->error(client->_request, mapErrnoToHttpCodeString(), client);
+	return (fileStat.st_size);
+}
+
+std::string	Helper::mapErrnoToHttpCodeString() {
+	switch (errno) {
+		case ENOENT: return "404"; // Not Found
+		case EACCES: return "403"; // Forbidden
+		case ENAMETOOLONG: return "414"; // URI Too Long
+		case ENOTDIR: return "404"; // Not Found
+		default: return "500"; // Internal Server Error
+	}
 }
 
 // BONUS : cookies
