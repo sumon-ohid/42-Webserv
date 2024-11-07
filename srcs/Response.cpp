@@ -142,7 +142,6 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 
 long	Response::sendChunks(Client* client, std::string& chunkString) {
 	std::ostringstream ss1;
-	long _bytesSent = 0;
 	if (!chunkString.empty())
 	{
 		ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), chunkString.size()) << "\r\n";
@@ -152,17 +151,11 @@ long	Response::sendChunks(Client* client, std::string& chunkString) {
 		// TB: should be checked
 		return (_bytesSent - header.size() - 2);
 	}
-	else if (client->_isCgi && client->_cgi.getCgiDone())
+	else if ((client->_isCgi && client->_cgi.getCgiDone()) || !client->_isCgi)
 	{
 		_bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
 		// TB: should be checked
 		// Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
-		_finishedSending = true; // BP: is this necessary?
-	}
-	else if (!client->_isCgi)
-	{
-		_bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
-		// TB: should be checked
 		_finishedSending = true; // BP: is this necessary?
 	}
 	return (0);
