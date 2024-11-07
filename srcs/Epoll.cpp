@@ -123,13 +123,13 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 	if (events & (EPOLLHUP | EPOLLRDHUP))
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
-			client->_cgi.readFromChildFd(client);
+			client->_cgi.processCgiDataFromChild(client);
 	}
 	if (client->_isCgi)
 	{
 		if (events & EPOLLIN)
 		{
-			client->_cgi.readFromChildFd(client);
+			client->_cgi.processCgiDataFromChild(client);
 		}	
 		if (events & EPOLLOUT)
 			client->_cgi.writeToChildFd(client);
@@ -230,7 +230,7 @@ void	Epoll::clientErrorOrHungUp(Client* client)
 void	Epoll::clientResponse(Client* client)
 {
 	if ((client->_isCgi && client->_request._response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
-		client->_request._response->sendResponse(client, client->getFd(), client->_request);
+		client->_request._response->sendResponse(client);
 	if (client->_request._response->getIsFinished())
 	{
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN | EPOLLET);
@@ -250,10 +250,10 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(pipeFd);
 	if (it != _mpCgiClient.end())
 	{
+		std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 		_mpCgiClient.erase(it);
 		removeClientEpoll(pipeFd);
 	}
-	//std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 }
 
 
