@@ -108,8 +108,8 @@ void	Response::sendResponse(Client* client, int socketFd) {
 		prepareChunk(client);
 	else
 	{
-		std::string total = _header + _body +  "\r\n";
-		_bytesSent = send(socketFd , total.c_str(), total.size(), 0);
+		_body = _header + _body + "\r\n";
+		_bytesSent = send(socketFd , _body.c_str(), _body.size(), 0);
 		if (_bytesSent < 0)
 			throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 		_finishedSending = true;
