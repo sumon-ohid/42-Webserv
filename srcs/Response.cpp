@@ -102,18 +102,13 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 }
 
-void	Response::sendResponse(Client* client, int socketFd) {
+void	Response::sendResponse(Client* client) 
+{
 	_bytesSent = 0;
 	if (_isChunk) 
 		prepareChunk(client);
 	else
-	{
-		_body = _header + _body + "\r\n";
-		_bytesSent = send(socketFd , _body.c_str(), _body.size(), 0);
-		if (_bytesSent < 0)
-			throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
-		_finishedSending = true;
-	}
+		sendSimpleResponse(client);
 }
 
 void	Response::prepareChunk(Client* client)
@@ -125,7 +120,10 @@ void	Response::prepareChunk(Client* client)
 	}
 	else
 	{
-		sendChunk(client);
+		if (!_body.empty())
+			sendContentChunk(client);
+		else
+			sendNullChunk(client);
 		_bytesSentOfBody += _bytesSent;
 	}
 	if (_bytesSent < 0)
@@ -136,27 +134,36 @@ void	Response::prepareChunk(Client* client)
 	}
 }
 
-void	Response::sendChunk(Client* client) {
+void	Response::sendContentChunk(Client* client)
+{
 	std::ostringstream ss1;
-	if (!_body.empty())
+	ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), _body.size()) << "\r\n";
+	std::string header = ss1.str();
+	std::string message = header + _body.substr(0, CHUNK_SIZE) + "\r\n";
+	_bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
+	_bytesSent -= header.size() + 2;
+	if (_bytesSent > 0)
+		_body.erase(0, _bytesSent);
+}
+
+void	Response::sendNullChunk(Client* client)
+{
+	_bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+	if (_bytesSent > 0)
 	{
-		ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), _body.size()) << "\r\n";
-		std::string header = ss1.str();
-		std::string message = header + _body.substr(0, CHUNK_SIZE) + "\r\n";
-		_bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
-		_bytesSent -= header.size() + 2;
-		if (_bytesSent > 0)
-			_body.erase(0, _bytesSent);
+		_bytesSent -= 5;
+		_finishedSending = true;
 	}
-	else if ((client->_isCgi && client->_cgi.getCgiDone()) || !client->_isCgi)
-	{
-		_bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
-		if (_bytesSent > 0)
-		{
-			_bytesSent -= 5;
-			_finishedSending = true;
-		}
-	}
+}
+
+
+void	Response::sendSimpleResponse(Client* client)
+{
+	_body = _header + _body + "\r\n";
+	_bytesSent = send(client->getFd() , _body.c_str(), _body.size(), 0);
+	if (_bytesSent < 0)
+		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
+	_finishedSending = true;
 }
 
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {
