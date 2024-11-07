@@ -103,26 +103,26 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 }
 
 void	Response::sendResponse(Client* client, int socketFd, Request& request) {
-	long bytesSent = 0;
+	_bytesSent = 0;
 	if (_isChunk) {
 		if (!_headerSent)
 		{
-			bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);
+			_bytesSent = send(socketFd, _header.c_str(), _header.size(), 0);
 			_headerSent = true;
 		}
 		else
 		{
-			bytesSent = sendChunks(client, _body);
-			_bytesSentOfBody += bytesSent;
-			if (bytesSent > 0)
+			_bytesSent = sendChunks(client, _body);
+			_bytesSentOfBody += _bytesSent;
+			if (_bytesSent > 0)
 			{
-				_body.erase(0, bytesSent);
+				_body.erase(0, _bytesSent);
 				// if (_body.size() > 0)
 				// 	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 			}
 		}
 
-		if (bytesSent < 0)
+		if (_bytesSent < 0)
 		{
 			std::cerr << "Error sending chunk response" << std::endl; // BP: client closed? change
 			Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN); // BP: check if it is protected
@@ -132,8 +132,8 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 	else
 	{
 		std::string total = _header + _body +  "\r\n";
-		bytesSent = send(socketFd , total.c_str(), total.size(), 0);
-		if (bytesSent < 0)
+		_bytesSent = send(socketFd , total.c_str(), total.size(), 0);
+		if (_bytesSent < 0)
 			throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		request.requestReset();
@@ -142,26 +142,26 @@ void	Response::sendResponse(Client* client, int socketFd, Request& request) {
 
 long	Response::sendChunks(Client* client, std::string& chunkString) {
 	std::ostringstream ss1;
-	long bytesSent = 0;
+	long _bytesSent = 0;
 	if (!chunkString.empty())
 	{
 		ss1 << std::hex << std::min(static_cast<unsigned long>(CHUNK_SIZE), chunkString.size()) << "\r\n";
 		std::string header = ss1.str();
 		std::string message = header + chunkString.substr(0, CHUNK_SIZE) + "\r\n";
-		bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
+		_bytesSent = send(client->getFd() , message.c_str(), message.size(), 0);
 		// TB: should be checked
-		return (bytesSent - header.size() - 2);
+		return (_bytesSent - header.size() - 2);
 	}
 	else if (client->_isCgi && client->_cgi.getCgiDone())
 	{
-		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		_bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
 		// TB: should be checked
 		// Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 		_finishedSending = true; // BP: is this necessary?
 	}
 	else if (!client->_isCgi)
 	{
-		bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
+		_bytesSent = send(client->getFd() , "0\r\n\r\n", 5, 0);
 		// TB: should be checked
 		_finishedSending = true; // BP: is this necessary?
 	}

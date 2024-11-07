@@ -249,10 +249,10 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(pipeFd);
 	if (it != _mpCgiClient.end())
 	{
+		std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 		_mpCgiClient.erase(it);
 		removeClientEpoll(pipeFd);
 	}
-	std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
 }
 
 
