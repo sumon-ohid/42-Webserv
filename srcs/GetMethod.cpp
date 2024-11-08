@@ -50,7 +50,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     {
         if (locationFinder._redirectFound)
         {
-            handleRedirection(locationFinder._redirect);
+            handleRedirection(client, request, locationFinder._redirect);
             return;
         }
         if (locationFinder._cgiFound)
@@ -126,7 +126,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
 
-void GetMethod::handleRedirection(std::string &redirectUrl)
+void GetMethod::handleRedirection(Client* client, Request& request, std::string &redirectUrl)
 {
     std::map<std::string, std::string> redirectCodes = Helper::redirectCodes;
 
@@ -145,20 +145,21 @@ void GetMethod::handleRedirection(std::string &redirectUrl)
         }
     }
 
-    std::cout << BOLD YELLOW << "Redirecting to: " << url << RESET << std::endl; // BP: maybe move this part to response class
-    std::ostringstream redirectHeader;
-    redirectHeader << "HTTP/1.1 " << redirectCode << " " << redirectCodes[redirectCode] << "\r\n"
-                   << "Location: " << url << "\r\n"
-                   << "Content-Length: 0\r\n"
-                   << "Connection: close\r\n\r\n";
-    std::string response = redirectHeader.str();
-    ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
-    if (bytes_written == -1)
-        throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
-    else if (bytes_written == 0)
-        std::cerr << BOLD RED << "Error: 0 bytes written to socket in GetMethod::handleRedirection" << RESET << std::endl;
-    else
-        std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
+    std::cout << BOLD YELLOW << "Redirecting to: " << url << RESET << std::endl;
+    request._response->createHeaderAndBodyString(request, url, redirectCode, client);
+    // std::ostringstream redirectHeader;
+    // redirectHeader << "HTTP/1.1 " << redirectCode << " " << redirectCodes[redirectCode] << "\r\n"
+    //                << "Location: " << url << "\r\n"
+    //                << "Content-Length: 0\r\n"
+    //                << "Connection: close\r\n\r\n";
+    // std::string response = redirectHeader.str();
+    // ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
+    // if (bytes_written == -1)
+    //     throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
+    // else if (bytes_written == 0)
+    //     std::cerr << BOLD RED << "Error: 0 bytes written to socket in GetMethod::handleRedirection" << RESET << std::endl;
+    // else
+    // std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
 }
 
 void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &path, Request &request, Client *client)

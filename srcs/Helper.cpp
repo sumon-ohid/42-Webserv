@@ -32,6 +32,9 @@ static std::map<std::string, std::string> initStatusCodesMap() {
 	codes["204"] = "No Content";
 	codes["301"] = "Moved Permanently";
 	codes["302"] = "Found";
+	codes["303"] = "See Other"; //-- redirect after a POST request
+	codes["307"] = "Temporary Redirect";
+	codes["308"] = "Permanent Redirect";
 	codes["400"] = "Bad Request";
 	codes["401"] = "Unauthorized";
 	codes["403"] = "Forbidden";
