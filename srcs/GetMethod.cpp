@@ -16,6 +16,10 @@
 #include <sstream>
 #include <dirent.h>
 #include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <iomanip>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -90,6 +94,16 @@ void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& 
         request._response->error(request, "403", client);
 }
 
+
+//-- Function template to convert various types to string
+template <typename T>
+std::string anyToString(const T& value)
+{
+    std::stringstream ss;
+    ss << value;
+    return ss.str();
+}
+
 void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
 {
     DIR *dir;
@@ -103,15 +117,37 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     if ((dir = opendir(path.c_str())) != NULL)
     {
         body << "<html><head><title>Index of "
-        << path << "</title></head><body><h1>Index of "
-        << path << "</h1><hr><pre>";
+             << path << "</title></head><body><h1>Index of "
+             << path << "</h1><hr><pre>"
+             << std::setw(20) << "Name" << std::setw(20) << "Size" << std::setw(30) << "Last Modified" << "<br><br>";
 
         while ((ent = readdir(dir)) != NULL)
         {
-            body << "<a href=\""
-                << "/" << ent->d_name
-                << "\">" << ent->d_name
-                << "</a><br>";
+            std::string fullPath = path + "/" + ent->d_name;
+            struct stat fileStat;
+
+            // Retrieve file information
+            if (stat(fullPath.c_str(), &fileStat) == 0)
+            {
+                // Format file size
+                std::string size;
+                if (S_ISDIR(fileStat.st_mode))
+                    size = "-";
+                else
+                    size = anyToString(fileStat.st_size) + " bytes";
+
+                // Format last modified time
+                char timeBuffer[30];
+                strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", localtime(&fileStat.st_mtime));
+
+                // Directory entry
+                body << "<a href=\""
+                     << "/" << ent->d_name
+                     << "\">" << std::setw(20) << ent->d_name << "</a>"
+                     << std::setw(20) << size
+                     << std::setw(30) << timeBuffer
+                     << "<br>";
+            }
         }
         body << "</pre><hr></body></html>";
         closedir(dir);
@@ -121,10 +157,12 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         request._response->error(request, "403", client);
         return;
     }
+    
     std::string bodyStr = body.str();
     request._response->createHeaderAndBodyString(request, bodyStr, "200", client);
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
+
 
 void GetMethod::handleRedirection(Client* client, Request& request, std::string &redirectUrl)
 {
