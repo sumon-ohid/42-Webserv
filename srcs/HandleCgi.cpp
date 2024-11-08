@@ -22,7 +22,9 @@ HandleCgi::HandleCgi()
     _method = "";
     _postBody = "";
     _fileName = "";
+	_pid = -1;
 	_byteTracker = 0;
+	_totalBytesSent = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
@@ -64,7 +66,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
-
+	_pid = -1;
     if (locationFinder.isDirectory(_locationPath))
         throw std::runtime_error("404");
     if (_method != "GET" && _method != "POST")
@@ -81,15 +83,20 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
 //--- Main function to process CGI
 void HandleCgi::proccessCGI(Client* client)
 {
-    if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
-        throw std::runtime_error("500");
-    pid_t pid = fork();
-    if (pid < 0)
-        throw std::runtime_error("500");
-    else if (pid == 0)
-        handleChildProcess(_locationPath, client->_request);
-    else
-        handleParentProcess(client);
+	if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
+		throw std::runtime_error("500");
+	std::cout << "pid before fork " << _pid << std::endl;
+	_pid = fork();
+	std::cout << "PID after fork: " << _pid << std::endl;
+	if (_pid < 0)
+		throw std::runtime_error("500");
+	else if (_pid == 0)
+		handleChildProcess(_locationPath, client->_request);
+	else
+	{
+		std::cout << "pid after fork in parent process " << _pid << std::endl;
+		handleParentProcess(client);
+	}
 }
 
 
@@ -165,6 +172,7 @@ void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
 
 void	HandleCgi::writeToChildFd(Client* client)
 {
+	
 	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
 	_byteTracker = write(_pipeIn[1], _response.data() + _totalBytesSent, _response.size() - _totalBytesSent);
 	_totalBytesSent += _byteTracker;
@@ -187,6 +195,7 @@ void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
 
 void	HandleCgi::processCgiDataFromChild(Client* client)
 {
+	checkWaitPid();
 	readFromChildFd();
 	checkReadOrWriteError(client, _pipeOut[0]);
 	if (_byteTracker == 0)
@@ -197,6 +206,27 @@ void	HandleCgi::processCgiDataFromChild(Client* client)
 		_responseStr = std::string(_response.data(), _byteTracker);
 	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
 	_byteTracker = 0;
+}
+
+bool childReaped = false;
+void	HandleCgi::checkWaitPid()
+{
+	if (childReaped)
+		return;
+	std::cout << "pid in checkWaitPid " << _pid << std::endl;
+	int status = 0;
+	pid_t result = waitpid(_pid, &status, WNOHANG);
+	if (result == -1)
+		throw (500); 
+	else if (result > 0) 
+	{
+		// Child process has terminated
+		if (WIFEXITED(status))
+			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+		else if (WIFSIGNALED(status))
+			std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
+		childReaped = true;
+	}
 }
 
 void	HandleCgi::readFromChildFd()
@@ -272,6 +302,7 @@ HandleCgi::HandleCgi(const HandleCgi &src)
 		_method(src._method),
 		_postBody(src._postBody),
 		_fileName(src._fileName),
+		_pid(src._pid),
 		_byteTracker(src._byteTracker),
 		_totalBytesSent(src._totalBytesSent),
 		_response(src._response),
@@ -300,6 +331,7 @@ HandleCgi &HandleCgi::operator=(const HandleCgi &src)
 		_pipeIn[1] = src._pipeIn[1];
 		_pipeOut[0] = src._pipeOut[0];
 		_pipeOut[1] = src._pipeOut[1];
+		_pid = src._pid;
 		_byteTracker = src._byteTracker;
 		_totalBytesSent = src._totalBytesSent;
 		_response = src._response;
@@ -322,6 +354,7 @@ bool HandleCgi::operator==(const HandleCgi &src) const
            _pipeIn[1] == src._pipeIn[1] &&
            _pipeOut[0] == src._pipeOut[0] &&
            _pipeOut[1] == src._pipeOut[1] &&
+		   _pid == src._pid &&
            _byteTracker == src._byteTracker &&
            _totalBytesSent == src._totalBytesSent &&
            _response == src._response &&
