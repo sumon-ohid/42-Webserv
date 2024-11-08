@@ -90,7 +90,10 @@ bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &
                 searchIndexHtml(path, foundPaths);
         }
         else
+        {
+            closedir(dir);
             return false;
+        }
     }
     closedir(dir);
     return true;

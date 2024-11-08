@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // Check if the user is logged in
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+    
+        //If not logged in, redirect to the login page
+        if (!isLoggedIn) {
+          window.location.href = "./account/login.html";
+        }
+      });
+    </script>
+    <title>42-webserv</title>
+    <link rel="stylesheet" href="./assets/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicons/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicons/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicons/site.webmanifest" />
+  </head>
+  <body>
+    <!-- Navigation bar -->
+    <div class="nav_container">
+      <a href="index.html">
+        <button id="nav-toggle" class="nav-toggle">
+          <i class="fa-solid fa-house"></i>
+        </button>
+      </a>
+      <a href="./account/login.html">
+        <button id="nav-toggle" class="nav-toggle">
+          <i class="fa-solid fa-user"></i>
+        </button>
+      </a>
+      <a href="gallery/gallery.html">
+        <button id="nav-toggle" class="nav-toggle">
+          <i class="fa-solid fa-image"></i>
+        </button>
+      </a>
+      <a href="#" onclick="logout()">
+          <button id="nav-toggle" class="nav-toggle">
+              <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+      </a>
+      
+      <script>
+          function logout() {
+              // Clear the session and localStorage
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("username");
+              document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              // Redirect to the login page
+              window.location.href = "./account/login.html";
+          }
+      </script>
+
+      <!-- Mode switch -->
+      <button id="mode-switch" class="nav-toggle">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+    <!-- small texts -->
+    <div class="small-text"></div>
+    <!-- Header -->
+    <div>
+      <a href="index.html" class="logo">
+        <h1 class="highlight">Webserv</h1>
+      </a>
+    </div>
+    <!-- 42 icon -->
+    <div class="icon">
+      <img src="https://simpleicons.org/icons/42.svg" alt="42" />
+    </div>
+
+    <!-- Main container -->
+    <div class="container">
+      <div class="button-container">
+        <a href="./about/index.html" class="button">ABOUT</a>
+        <a href="/autoindex/" class="button">AUTOINDEX</a>
+        <a href="/redirect/" class="button">REDIRECT</a>
+        <a href="/42/" class="button">REDIRECT TO URL</a>
+        <a href="/cgi-bin/" class="button">CGI-BIN</a>
+        <a href="./upload/index.html" class="button">POST</a>
+        <a href="home.html" class="button">GET</a>
+        <a href="delete/index.html" class="button">DELETE</a>
+        <a href="video/video.html" class="button">VIDEO</a>
+        <a href="/404" class="button">404</a>
+      </div>
+    </div>
+    <script src="./assets/script.js"></script>
+  </body>
+  <footer>
+    <!-- copyright -->
+    <div class="footer">
+      <p>
+        © 2024
+        <a href="https://profile.intra.42.fr/users/msumon" class="highlight"
+          >msumon</a
+        >
+      </p>
+    </div>
+  </footer>
+</html>

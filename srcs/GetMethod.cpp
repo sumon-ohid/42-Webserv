@@ -50,9 +50,6 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 
     LocationFinder locationFinder;
     locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
-
-    std::cout << BOLD YELLOW << "Location : " << locationFinder._pathToServe << RESET << std::endl;
-
     if (locationMatched)
     {
         if (locationFinder._redirectFound)
@@ -158,7 +155,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
                     //-- Make links for each file and directory
                     body << "<a href=\"";
                     if (S_ISDIR(fileStat.st_mode))
-                        body << request.getUri() << file; //-- Directory link
+                        body << file; //-- Directory link
                     else
                         body << file; //-- File link with directory
                     body << "\">" << std::setw(30) << std::left << file << "</a>"
