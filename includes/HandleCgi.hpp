@@ -24,6 +24,7 @@ class HandleCgi
 	int									_pipeIn[2];
 	int									_pipeOut[2];
 	pid_t								_pid;
+	bool								_childReaped;
 	ssize_t								_byteTracker;
 	ssize_t								_totalBytesSent;
 	std::vector<char>					_response;

@@ -194,6 +194,7 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
+	Helper::setCloexec(_connSock);
 	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt), this);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
