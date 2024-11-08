@@ -50,6 +50,9 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 
     LocationFinder locationFinder;
     locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
+
+    std::cout << BOLD YELLOW << "Location : " << locationFinder._pathToServe << RESET << std::endl;
+
     if (locationMatched)
     {
         if (locationFinder._redirectFound)
@@ -87,7 +90,10 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 
 void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& request, Client* client)
 {
-    std::string fullPath =locationFinder._root + locationFinder._locationPath;
+    std::string fullPath = locationFinder._pathToServe;
+    if (!locationFinder.isDirectory(fullPath))
+       fullPath = locationFinder._root + locationFinder._locationPath;
+    
     if (locationFinder._autoIndex == "on" && locationFinder.isDirectory(fullPath))
         handleAutoIndex(fullPath, request, client);
     else
@@ -118,8 +124,9 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     {
         body << "<html><head><title>Index of "
              << path << "</title></head><body><h1>Index of "
-             << path << "</h1><hr><pre>"
-             << std::setw(20) << "Name" << std::setw(20) << "Size" << std::setw(30) << "Last Modified" << "<br><br>";
+             << path << "</h1><hr><pre>";
+
+        //body << "<a href=\"../\">../</a>\n";
 
         while ((ent = readdir(dir)) != NULL)
         {
@@ -128,24 +135,37 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
 
             if (stat(fullPath.c_str(), &fileStat) == 0)
             {
-                //-- Format file size
-                std::string size;
-                if (S_ISDIR(fileStat.st_mode))
-                    size = "-";
+                std::string file = ent->d_name;
+
+                if (file == "." || file == "..")
+                    continue;
                 else
-                    size = anyToString(fileStat.st_size) + " bytes";
+                {
+                    if (S_ISDIR(fileStat.st_mode))
+                        file += "/";
 
-                //-- Format last modified time 
-                char timeBuffer[30];
-                strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", localtime(&fileStat.st_mtime));
+                    //-- Format file size
+                    std::string size;
+                    if (S_ISDIR(fileStat.st_mode))
+                        size = "-";
+                    else
+                        size = anyToString(fileStat.st_size);
 
-                //-- Make links for each file and directory
-                body << "<a href=\""
-                     << "/" << ent->d_name
-                     << "\">" << std::setw(20) << ent->d_name << "</a>"
-                     << std::setw(20) << size
-                     << std::setw(30) << timeBuffer
-                     << "<br>";
+                    //-- Format last modified time 
+                    char timeBuffer[30];
+                    strftime(timeBuffer, sizeof(timeBuffer), "%d-%b-%Y %H:%M", localtime(&fileStat.st_mtime));
+
+                    //-- Make links for each file and directory
+                    body << "<a href=\"";
+                    if (S_ISDIR(fileStat.st_mode))
+                        body << request.getUri() << file; //-- Directory link
+                    else
+                        body << file; //-- File link with directory
+                    body << "\">" << std::setw(30) << std::left << file << "</a>"
+                         << std::setw(30) << std::left << timeBuffer
+                         << size
+                         << "<br>";
+                }
             }
         }
         body << "</pre><hr></body></html>";
@@ -156,7 +176,6 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         request._response->error(request, "403", client);
         return;
     }
-    
     std::string bodyStr = body.str();
     request._response->createHeaderAndBodyString(request, bodyStr, "200", client);
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
