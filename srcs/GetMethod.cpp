@@ -126,21 +126,20 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
             std::string fullPath = path + "/" + ent->d_name;
             struct stat fileStat;
 
-            // Retrieve file information
             if (stat(fullPath.c_str(), &fileStat) == 0)
             {
-                // Format file size
+                //-- Format file size
                 std::string size;
                 if (S_ISDIR(fileStat.st_mode))
                     size = "-";
                 else
                     size = anyToString(fileStat.st_size) + " bytes";
 
-                // Format last modified time
+                //-- Format last modified time 
                 char timeBuffer[30];
                 strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", localtime(&fileStat.st_mtime));
 
-                // Directory entry
+                //-- Make links for each file and directory
                 body << "<a href=\""
                      << "/" << ent->d_name
                      << "\">" << std::setw(20) << ent->d_name << "</a>"
