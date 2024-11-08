@@ -34,5 +34,5 @@ class LocationFinder
 
         bool locationMatch(Client *client, std::string, int socketFd);
         bool isDirectory(const std::string &path);
-        void searchIndexHtml(const std::string &directory, std::string &foundPaths);
+        bool searchIndexHtml(const std::string &directory, std::string &foundPaths);
 };

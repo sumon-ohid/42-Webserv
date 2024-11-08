@@ -54,6 +54,7 @@ class Request {
 		std::string getHeaderFromHeaderMap(std::string headerName) const; // BP: to create
 		std::string getHost() const;
 		std::string getSessionId() const; //-- BONUS : cookies
+		std::string	getUri(); //-- Extract Referer
 
 		void	setMethodMimeType(std::string path);
 		void	storeRequestBody(const std::string& strLine, std::size_t endPos);
