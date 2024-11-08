@@ -4,7 +4,6 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
-#include <errno.h>
 #include <sys/types.h>
 #include <vector>
 
@@ -280,7 +279,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	}
 	_readingFinished = true;
 	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
-	// std::string end =  strLine.rfind();
+	// std::string end =	strLine.rfind();
 	// std::cout << "$" << _requestBody << "$" << std::endl;
 }
 
@@ -362,7 +361,7 @@ void	Request::executeMethod(int socketFd, Client *client)
 // 		return (-1);
 // 	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
 // 	if (errno != EAGAIN && errno != EWOULDBLOCK)
-// 		client->_server->_epoll->removeClient(client);  // Close the socket on other read errors
+// 		client->_server->_epoll->removeClient(client);	// Close the socket on other read errors
 // 	return (-1); // Move to the next event
 // }
 
@@ -412,91 +411,91 @@ ssize_t totalBytesRead = 0;
 
 int Request::clientRequest(Client* client)
 {
-    int event_fd = client->getFd();
-    bool writeFlag = false;
-    bool contentLengthFound = false;
+	int event_fd = client->getFd();
+	bool writeFlag = false;
+	bool contentLengthFound = false;
 
-    std::vector<char> buffer(SOCKET_BUFFER_SIZE);
+	std::vector<char> buffer(SOCKET_BUFFER_SIZE);
 
-    try
-    {
-        buffer.resize(SOCKET_BUFFER_SIZE);
-        ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
-        if (count == -1)
-        {
+	try
+	{
+		buffer.resize(SOCKET_BUFFER_SIZE);
+		ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
+		if (count == -1)
+		{
 			//-- Maybe should write some error message
-            //Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			//Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
 			return (1);
-        }
-        else if (count == 0)
-            return emptyRequest(client);
+		}
+		else if (count == 0)
+			return emptyRequest(client);
 
-        buffer.resize(count);
-        validRequest(client->_server, buffer, count, client->_request);
+		buffer.resize(count);
+		validRequest(client->_server, buffer, count, client->_request);
 
-        //-- Append data to requestBody
-        requestBody.append(buffer.data(), count);
-        totalBytesRead += count;
+		//-- Append data to requestBody
+		requestBody.append(buffer.data(), count);
+		totalBytesRead += count;
 
-        //-- Check for Content-Length.
-        //-- If has a content length, means request has a body.
-        if (_headerChecked && !contentLengthFound)
-        {
-            std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
-            if (it != _headerMap.end()) {
-                _contentLength = std::atoi(it->second.c_str());
-                contentLengthFound = true;
-            }
-        }
+		//-- Check for Content-Length.
+		//-- If has a content length, means request has a body.
+		if (_headerChecked && !contentLengthFound)
+		{
+			std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
+			if (it != _headerMap.end()) {
+			 _contentLength = std::atoi(it->second.c_str());
+			 contentLengthFound = true;
+			}
+		}
 
-        //-- Stop reading if we have reached Content-Length
-        if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
-        {
-            _readingFinished = true;
+		//-- Stop reading if we have reached Content-Length
+		if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
+		{
+			_readingFinished = true;
 			totalBytesRead = 0;
-        }
+		}
 
-        //-- Process the request body if headers are fully checked and reading is finished
-        if (_firstLineChecked && _headerChecked && _readingFinished)
-        {
-            //-- SUMON: client_max_body_size check moved to PostMethod
-            if (this->_method->getName() == "POST")
-                storeRequestBody(requestBody, 0);
+		//-- Process the request body if headers are fully checked and reading is finished
+		if (_firstLineChecked && _headerChecked && _readingFinished)
+		{
+			//-- SUMON: client_max_body_size check moved to PostMethod
+			if (this->_method->getName() == "POST")
+			 storeRequestBody(requestBody, 0);
 			requestBody.clear();
-        }
+		}
 		else
-        {
-            // Not finished reading, return to epoll event loop
-            Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
-            return 0;
-        }
-    }
-    catch (std::exception &e)
-    {
-        if (std::string(e.what()) == TELNETSTOP) {
-            client->_server->_epoll->removeClient(client);
-        } else {
-            client->_request._response->error(client->_request, e.what(), client);
-        }
-        std::cerr << "Exception: " << e.what() << std::endl;
-        writeFlag = true;
-        return OK;
-    }
+		{
+			// Not finished reading, return to epoll event loop
+			Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			return 0;
+		}
+	}
+	catch (std::exception &e)
+	{
+		if (std::string(e.what()) == TELNETSTOP) {
+			client->_server->_epoll->removeClient(client);
+		} else {
+			client->_request._response->error(client->_request, e.what(), client);
+		}
+		std::cerr << "Exception: " << e.what() << std::endl;
+		writeFlag = true;
+		return OK;
+	}
 
-    // Execute the method if reading is finished and no errors occurred
-    if (!writeFlag && _readingFinished)
-    {
-        try {
-            client->_request.executeMethod(event_fd, client);
-        }
-        catch (std::exception &e) {
-            client->_request._response->error(client->_request, e.what(), client);
-        }
-    }
+	// Execute the method if reading is finished and no errors occurred
+	if (!writeFlag && _readingFinished)
+	{
+		try {
+			client->_request.executeMethod(event_fd, client);
+		}
+		catch (std::exception &e) {
+			client->_request._response->error(client->_request, e.what(), client);
+		}
+	}
 
-    writeFlag = false;
-    std::cout << "-------------------------------------" << std::endl;
-    return 0;
+	writeFlag = false;
+	std::cout << "-------------------------------------" << std::endl;
+	return 0;
 }
 
 
