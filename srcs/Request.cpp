@@ -337,7 +337,7 @@ void	Request::checkHost(Client* client) {
 
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
 	if (it == _headerMap.end())
-		throw std::runtime_error("400 d");
+		throw std::runtime_error("400");
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
