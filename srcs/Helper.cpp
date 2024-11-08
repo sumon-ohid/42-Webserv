@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 
 Helper::Helper() {}
 
@@ -168,4 +169,14 @@ std::string Helper::generateSessionId()
 		sessionId += chars[rand() % chars.size()];
 	}
 	return sessionId;
+}
+
+void	Helper::setCloexec(int fd)
+{
+	int flags = fcntl(fd, F_GETFD);
+	if (flags == -1)
+		throw std::runtime_error("500");
+	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags
+	if (fcntl(fd, F_SETFD, flags) == -1)
+		throw std::runtime_error("500");
 }

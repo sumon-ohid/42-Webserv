@@ -130,7 +130,7 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 		if (events & EPOLLIN)
 		{
 			client->_cgi.processCgiDataFromChild(client);
-		}	
+		}
 		if (events & EPOLLOUT)
 			client->_cgi.writeToChildFd(client);
 	}
@@ -194,6 +194,7 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
+	Helper::setCloexec(_connSock);
 	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt), this);
 	// addTimestamp(tmp);
 	serv.addClient(tmp);
@@ -233,7 +234,7 @@ void	Epoll::clientResponse(Client* client)
 		client->_request._response->sendResponse(client);
 	if (client->_request._response->getIsFinished())
 	{
-		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN | EPOLLET);
+		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		client->_request.requestReset();
 		client->_cgi = HandleCgi();
 	}
