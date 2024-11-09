@@ -183,6 +183,7 @@ body {
     cursor: pointer;
     margin: 10px;
     border: 2px solid #ccc;
+    position: relative;
 }
 
 .profile-picture {
@@ -194,6 +195,11 @@ body {
 
 .profile-picture-input {
     display: none;
+}
+
+.profile-picture-label:hover {
+    border: 2px solid var(--button-hover-bg);
+    
 }
 
 .mode-switch {
