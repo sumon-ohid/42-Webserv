@@ -105,6 +105,7 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 // Connection: Transfer-Encoding
 
 void Response::createHeaderAndBodyString(Request& request,std::string& body, std::string statusCode, Client* client) {
+	// std::cout << "create" << std::endl;
 	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
 	if (_header.empty())
@@ -180,6 +181,8 @@ void	Response::sendSimpleResponse(Client* client)
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {
 	_closeConnection = true;
 
+	std::cout << "fallback" << std::endl;
+
 	if (request.hasMethod())
 		request.setMethodMimeType("fallback.html");
 
@@ -211,6 +214,8 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
 
+	std::cout << "error" << std::endl;
+
 	std::map<std::string, std::string> errorPages;
 	if (request._servConf)
 		errorPages = request._servConf->getErrorPages();
@@ -223,7 +228,9 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 			ErrorHandle errorHandle;
 			errorHandle.prepareErrorPage(client, statusCode);
 			if (request.hasMethod())
-				request.setMethodMimeType(errorHandle.getNewErrorFile()); // BP: no mime type here, maybe just set it to HTML?
+				request.setMethodMimeType("error.html");
+
+				// request.setMethodMimeType(errorHandle.getNewErrorFile()); // BP: no mime type here, maybe just set it to HTML?
 			// std::cout << "mime-type: "<< request.getMethodMimeType() << std::endl;
 			// std::cout << "file: "<< errorHandle.getNewErrorFile() << std::endl;
 			//-- this will create a new error file, error code will be the file name

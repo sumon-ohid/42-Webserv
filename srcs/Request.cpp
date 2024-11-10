@@ -150,16 +150,6 @@ void Request::setMethodMimeType(std::string path) {
 	this->_method->setMimeType(path);
 }
 
-
-
-// static void	checkLineLastChars(std::string& line) {
-// 	if (!line.empty() && line[line.size() - 1] == '\n')
-// 		line.resize(line.size() - 1);
-// 	if (!line.empty() && line[line.size() - 1] == '\r')
-// 		line.resize(line.size() - 1);
-// }
-
-
 static void	checkTelnetInterruption(std::vector<char>& line) {
 	signed char stopTelnet[] = {-1, -12, -1, -3, 6};
 
@@ -175,6 +165,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	if (pos == std::string::npos)
 		return;
 	std::string	key = oneLine.substr(0, pos);
+	Helper::toLower(key);
 	std::string value = oneLine.substr(pos + 1);
 	while (!value.empty() && value[0] == ' ') {
 		value.erase(0, 1);
@@ -279,9 +270,6 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		}
 	}
 	_readingFinished = true;
-	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
-	// std::string end =  strLine.rfind();
-	// std::cout << "$" << _requestBody << "$" << std::endl;
 }
 
 
@@ -336,7 +324,7 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 
 void	Request::checkHost(Client* client) {
 
-	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
+	std::map<std::string, std::string>::const_iterator it =_headerMap.find("host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400 d");
 	std::string host = it->second;
