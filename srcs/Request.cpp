@@ -514,7 +514,7 @@ int Request::clientRequest(Client* client)
         {
             std::map<std::string, std::string>::const_iterator it = _headerMap.find("content-length");
             if (it != _headerMap.end()) {
-                _contentLength = std::atoi(it->second.c_str());
+                _contentLength = std::atol(it->second.c_str());
                 contentLengthFound = true;
             }
         }
@@ -538,9 +538,6 @@ int Request::clientRequest(Client* client)
 		else
         {
             // Not finished reading, return to epoll event loop
-			bodyFile.close();
-			std::remove(fileName.c_str());
-		
             Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
             return 0;
         }
