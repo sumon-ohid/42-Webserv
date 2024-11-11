@@ -3,6 +3,7 @@
 #include <ctime>
 #include "Epoll.hpp"
 #include "HandleCgi.hpp"
+#include "IO.hpp"
 #include "Request.hpp"
 
 class	Server;
@@ -25,7 +26,10 @@ public:
 	Socket*			_socket;
 	Request			_request; // BP: can there be one or multiple requests at the same time
 	HandleCgi		_cgi;
+	IO				_io;
 	bool			_isCgi;
+	bool			_isRead;
+	bool			_isWrite;
 
 	// Coplien's form
 	Client();

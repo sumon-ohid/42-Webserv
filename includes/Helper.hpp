@@ -19,13 +19,15 @@ class Helper {
 		static const std::map<std::string, std::string> redirectCodes;
 
 		static std::string	getActualTimeStringGMT();
-		static void			checkStatus(std::string& statusCode, std::string& statusMessage);
+		static void			checkStatus(std::string&, std::string&);
 		static void			modifyEpollEventClient(Epoll&, Client*, uint32_t);
 		static void			modifyEpollEvent(Epoll&, Client*, uint32_t);
+		static void			addFdToEpoll(Client*, int, uint32_t);
+		static void			prepareIO(Client* client, int fd, std::string& path ,std::string mode);
 
 		static long			checkFileSize(const std::string&, Client*);
 		static std::string	mapErrnoToHttpCodeString();
 
-		static std::string decodeUrl(std::string url);
+		static std::string decodeUrl(std::string);
 		static std::string generateSessionId(); //-- BONUS : cookies
 };

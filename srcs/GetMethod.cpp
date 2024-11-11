@@ -185,37 +185,17 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
         handleAutoIndexOrError(locationFinder, request, client);
         return;
     }
-	int fd = open(path.c_str(), O_RDONLY);
+	int fd = open(path.c_str(), O_NONBLOCK);
 	if (fd == -1)
     {
         //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
         request._response->error(request, "404", client);
         return;
     }
-	if (Helper::checkFileSize(path, client) < CHUNK_SIZE)
-		
-	client->_epoll->registerSocket(fd, EPOLLIN);
-    client->_epoll->addCgiClientToEpollMap(fd, client);
-
-
-    std::ifstream file(path.c_str());
-    if (!file.is_open())
-    {
-        //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
-        request._response->error(request, "404", client);
-        return;
-    }
-
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    std::string body = buffer.str();
-    file.close();
-    request._response->createHeaderAndBodyString(request, body, "200", client);
-    std::cout << request.getMethodName() << " " << request.getMethodPath() << RESET << std::endl;
-    std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
+	Helper::prepareIO(client, fd, path, "read");
+	if (client->_io.getSize() > CHUNK_SIZE)
+		client->_request._response->setIsChunk(true);
 }
-
-
 
 //-- Handle CGI script execution.
 void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Request &request)

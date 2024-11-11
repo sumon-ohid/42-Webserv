@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
+#include <cerrno>
 
 Helper::Helper() {}
 
@@ -130,6 +131,26 @@ void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t event
 	}
 }
 
+void	Helper::addFdToEpoll(Client* client, int fd, uint32_t event)
+{
+	if (!client->_epoll->registerSocket(fd, event))
+		return ;
+    client->_epoll->addCgiClientToEpollMap(fd, client);
+}
+
+void	Helper::prepareIO(Client* client, int fd, std::string& path ,std::string mode)
+{
+	client->_io.setSize(Helper::checkFileSize(path, client));
+	client->_io.setFd(fd);
+	client->_epoll->addClientIo(client, mode);
+	if (mode == "read")
+		client->_isRead = true;
+	else if (mode == "write")
+		client->_isWrite = true;
+	else
+		throw (500);
+}
+
 std::string Helper::decodeUrl(std::string url)
 {
     std::string decodedUrl;
@@ -166,6 +187,7 @@ long	Helper::checkFileSize(const std::string& path, Client* client)
 
 	if (stat(path.c_str(), &fileStat) == -1)
 		client->_request._response->error(client->_request, mapErrnoToHttpCodeString(), client);
+	std::cout << "path: " << path << " with file size:\t" << fileStat.st_size << std::endl;
 	return (fileStat.st_size);
 }
 

@@ -3,6 +3,7 @@
 #include "../includes/Response.hpp"
 #include "../includes/Helper.hpp"
 
+#include <fcntl.h>
 #include <iostream>
 #include <cerrno>
 #include <cstddef>
@@ -17,7 +18,7 @@
 
 Epoll::Epoll() : _epollFd(-1) {}
 Epoll::~Epoll() {}
-Epoll::Epoll(const Epoll &orig) : _epollFd(orig._epollFd), _connSock(orig._connSock), _nfds(orig._nfds), _ev(orig._ev)
+Epoll::Epoll(const Epoll &orig) : _epollFd(orig._epollFd), _connSock(orig._connSock), _nfds(orig._nfds), _ev(orig._ev), _lstIoClients(orig._lstIoClients)
 {
 	for (int i = 0; i < MAX_EVENTS; ++i)
 			_events[i] = orig._events[i];
@@ -76,11 +77,13 @@ bool	Epoll::registerSocket(int fd, uint32_t events)
 	_ev.data.fd = fd;  // Set the file descriptor for the client socket
 	// Add the socket to the epoll instance for monitoring
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_ev) == -1)
-	{
-		close(fd);
-		std::cerr << "socket couldn't be added to epoll" << std::endl;
-		return (false);
-	}
+    {
+        std::cerr << "Error adding socket to epoll: " << strerror(errno) << std::endl;
+        std::cerr << "Permission denied: " << (errno == EPERM ? "EPOLL_CTL_ADD" : "") << std::endl;
+        std::cerr << "File descriptor: " << fd << std::endl;
+        close(fd);
+        return false;
+    }
 	return (true);
 }
 
@@ -96,6 +99,7 @@ void Epoll::Monitoring(vSrv& servers)
 			// Handle events on existing client connections
 			if (!cgi(_events[i].data.fd, _events[i].events) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
 				existingClient(servers, _events[i].events, _events[i].data.fd);
+		IOFiles();
 	}
 }
 
@@ -124,15 +128,19 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
 			client->_cgi.processCgiDataFromChild(client);
+		else
+			removeCgiClientFromEpoll(eventFd);
 	}
 	if (client->_isCgi)
 	{
 		if (events & EPOLLIN)
 		{
-			client->_cgi.processCgiDataFromChild(client);
+			client->_io.readFromChildFd(client);
+			// _cgi.processCgiDataFromChild(client);
 		}	
 		if (events & EPOLLOUT)
-			client->_cgi.writeToChildFd(client);
+			client->_io.writeToChildFd(client);
+		// _cgi.writeToChildFd(client);
 	}
 	// for later when reading from bigger file
 	// else
@@ -146,7 +154,7 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 
 void	Epoll::cgiErrorOrHungUp(int cgiFd)
 {
-	// std::cerr << "Error or cgi hung up on fd: " << cgiFd << std::endl;
+	std::cerr << "Error cgi fd: " << cgiFd << std::endl;
 	removeCgiClientFromEpoll(cgiFd);
 }
 
@@ -205,13 +213,31 @@ void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
 	Client* client = retrieveClient(servers, event_fd);
 	if (!client)
 		return (clientRetrievalError(event_fd));
-	if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
-		return (clientErrorOrHungUp(client));
+	if (events & (EPOLLHUP | EPOLLRDHUP))
+		return (clientHungUp(client));
+	if (events & EPOLLERR)
+		return (clientError(client));
 	if (events & EPOLLIN)  // Check if the event is for reading
 		client->_request.clientRequest(client);
 		// should handle read events
 	if (events & EPOLLOUT) // Check if the event is for writing
 		clientResponse(client);
+}
+
+void Epoll::IOFiles()
+{
+	for (std::list<Client*>::iterator clientIt = _lstIoClients.begin(); clientIt != _lstIoClients.end();)
+	{
+		std::list<Client*>::iterator nextIt = clientIt;
+		++nextIt;
+		if ((*clientIt)->_isRead)
+			(*clientIt)->_io.readFromFile(*clientIt);
+		else if ((*clientIt)->_isWrite)
+			(*clientIt)->_io.writeToFd(*clientIt);
+		if ((*clientIt)->_io.getFd() == -1)
+			_lstIoClients.erase(clientIt);  // Erase from the list
+		clientIt = nextIt;  // Move to the next element
+	}
 }
 
 void	Epoll::clientRetrievalError(int event_fd)
@@ -220,10 +246,17 @@ void	Epoll::clientRetrievalError(int event_fd)
 	removeClientEpoll(event_fd);
 }
 
-void	Epoll::clientErrorOrHungUp(Client* client)
+void	Epoll::clientHungUp(Client* client)
 {
 	// Handle error or hung up situation
-	std::cerr << "Error or client hung up on fd: " << client->getFd() << std::endl;
+	std::cerr << "Client hung up on fd: " << client->getFd() << std::endl;
+	removeClient(client); // Remove the client from epoll and close the connection
+}
+
+void	Epoll::clientError(Client* client)
+{
+	std::cerr << "Client error up on fd: " << client->getFd() << std::endl;
+	std::cerr << strerror(errno) << std::endl;
 	removeClient(client); // Remove the client from epoll and close the connection
 }
 
@@ -276,10 +309,29 @@ void	Epoll::removeClient(Client* client)
 		return;
 	client->_cgi.closeCgi(client);
 	removeClientEpoll(client->getFd());
+	removeClientIo(client);
 	removeClientFromServer(client->_server, client->getFd());
 }
 
 int	Epoll::getFd() const
 {
 	return (_epollFd);
+}
+
+void	Epoll::addClientIo(Client* client, std::string mode)
+{
+	_lstIoClients.push_back(client);
+	if (mode == "read")
+		client->_isRead = true;
+	else if (mode == "write")
+		client->_isWrite = true;
+	else
+		throw(500);
+}
+
+void	Epoll::removeClientIo(Client* client)
+{
+	_lstIoClients.remove(client);
+	client->_isRead = false;
+	client->_isWrite = false;
 }

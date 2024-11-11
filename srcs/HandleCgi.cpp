@@ -61,6 +61,7 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     _postBody = request._requestBody;
     _fileName = request._postFilename;
 	_byteTracker = 0;
+	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
 
@@ -149,8 +150,8 @@ void HandleCgi::handleParentProcess(Client* client)
 {
 	close(_pipeIn[0]); //-- Close read end of the pipe
 	close(_pipeOut[1]); //-- Close write end of the pipe
-	client->_epoll->registerSocket(_pipeIn[1], EPOLLOUT);
-	client->_epoll->addCgiClientToEpollMap(_pipeIn[1], client);
+	Helper::addFdToEpoll(client, _pipeIn[1], EPOLLOUT);
+	client->_io.setFd(_pipeIn[1]);
 }
 
 void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
@@ -254,9 +255,28 @@ void	HandleCgi::closeCgi(Client* client)
 	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
 }
 
+void	HandleCgi::setCgiDone(bool value)
+{
+	_cgiDone = value;
+}
+
 bool    HandleCgi::getCgiDone() const
 {
     return (_cgiDone);
+}
+
+int		HandleCgi::getPipeIn(unsigned i) const
+{
+	if (i > 1)
+		throw (500);
+	return (_pipeIn[i]);
+}
+
+int		HandleCgi::getPipeOut(unsigned i) const
+{
+	if (i > 1)
+		throw (500);
+	return (_pipeOut[i]);
 }
 
 HandleCgi::~HandleCgi()

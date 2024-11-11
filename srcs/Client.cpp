@@ -1,9 +1,9 @@
 #include "../includes/Client.hpp"
 
 // ------------- Coplien's Form -------------
-Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _epoll(NULL), _server(NULL), _socket(NULL), _isCgi(false) {};
-Client::Client(int fd, int port, Server *serv, Socket* socket, Epoll* epoll) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _epoll(epoll), _server(serv), _socket(socket), _isCgi(false) {}
-Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _epoll(orig._epoll), _server(orig._server), _socket(orig._socket), _request(orig._request), _isCgi(false) {}
+Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _epoll(NULL), _server(NULL), _socket(NULL), _isCgi(false), _isRead(false), _isWrite(false) {};
+Client::Client(int fd, int port, Server *serv, Socket* socket, Epoll* epoll) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _epoll(epoll), _server(serv), _socket(socket), _isCgi(false), _isRead(false), _isWrite(false) {}
+Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _epoll(orig._epoll), _server(orig._server), _socket(orig._socket), _request(orig._request), _isCgi(orig._isCgi), _isRead(orig._isRead), _isWrite(orig._isWrite) {}
 Client::~Client() {}
 Client&	Client::operator=(const Client& rhs)
 {
@@ -18,6 +18,8 @@ Client&	Client::operator=(const Client& rhs)
 		_socket = rhs._socket;
 		_request = rhs._request;
 		_isCgi = rhs._isCgi;
+		_isRead = rhs._isRead;
+		_isWrite = rhs._isWrite;
 	}
 	return (*this);
 }
@@ -31,7 +33,9 @@ bool	Client::operator==(const Client& other) const
 			_server == other._server &&
 			_socket == other._socket &&
 			_request == other._request &&
-			_isCgi == other._isCgi);
+			_isCgi == other._isCgi &&
+			_isRead == other._isRead &&
+			_isWrite == other._isWrite);
 }
 
 

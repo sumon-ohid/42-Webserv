@@ -58,7 +58,10 @@ class HandleCgi
 		void			extractMimeType(size_t pos, std::string& setMime);
 		void			closeCgi(Client* client);
 
+		void			setCgiDone(bool);
 		bool			getCgiDone() const;
+		int				getPipeIn(unsigned i) const;
+		int				getPipeOut(unsigned i) const;
 
         // Function template to convert various types to string
         template <typename T>
