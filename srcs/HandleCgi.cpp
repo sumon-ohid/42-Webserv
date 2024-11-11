@@ -11,6 +11,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
+#include <iostream>
 #include <netdb.h>
 #include <string>
 #include <algorithm>

@@ -16,6 +16,10 @@
 #include <sstream>
 #include <dirent.h>
 #include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <iomanip>
 
 GetMethod::GetMethod() : Method() { socketFd = -1; }
 
@@ -56,6 +60,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
         if (locationFinder._cgiFound)
         {
             pathToServe = locationFinder._pathToServe;
+
             if (locationFinder.isDirectory(pathToServe))
             {
                 handleAutoIndexOrError(locationFinder ,request, client);
@@ -83,11 +88,24 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
 
 void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& request, Client* client)
 {
-    std::string fullPath =locationFinder._root + locationFinder._locationPath;
+    std::string fullPath = locationFinder._pathToServe;
+    if (!locationFinder.isDirectory(fullPath))
+       fullPath = locationFinder._root + locationFinder._locationPath;
+    
     if (locationFinder._autoIndex == "on" && locationFinder.isDirectory(fullPath))
         handleAutoIndex(fullPath, request, client);
     else
         request._response->error(request, "403", client);
+}
+
+
+//-- Function template to convert various types to string
+template <typename T>
+std::string anyToString(const T& value)
+{
+    std::stringstream ss;
+    ss << value;
+    return ss.str();
 }
 
 void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *client)
@@ -103,15 +121,50 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     if ((dir = opendir(path.c_str())) != NULL)
     {
         body << "<html><head><title>Index of "
-        << path << "</title></head><body><h1>Index of "
-        << path << "</h1><hr><pre>";
+             << path << "</title></head><body><h1>Index of "
+             << path << "</h1><hr><pre>";
+
+        //body << "<a href=\"../\">../</a>\n";
 
         while ((ent = readdir(dir)) != NULL)
         {
-            body << "<a href=\""
-                << "/" << ent->d_name
-                << "\">" << ent->d_name
-                << "</a><br>";
+            std::string fullPath = path + "/" + ent->d_name;
+            struct stat fileStat;
+
+            if (stat(fullPath.c_str(), &fileStat) == 0)
+            {
+                std::string file = ent->d_name;
+
+                if (file == "." || file == "..")
+                    continue;
+                else
+                {
+                    if (S_ISDIR(fileStat.st_mode))
+                        file += "/";
+
+                    //-- Format file size
+                    std::string size;
+                    if (S_ISDIR(fileStat.st_mode))
+                        size = "-";
+                    else
+                        size = anyToString(fileStat.st_size);
+
+                    //-- Format last modified time 
+                    char timeBuffer[30];
+                    strftime(timeBuffer, sizeof(timeBuffer), "%d-%b-%Y %H:%M", localtime(&fileStat.st_mtime));
+
+                    //-- Make links for each file and directory
+                    body << "<a href=\"";
+                    if (S_ISDIR(fileStat.st_mode))
+                        body << file; //-- Directory link
+                    else
+                        body << file; //-- File link with directory
+                    body << "\">" << std::setw(30) << std::left << file << "</a>"
+                         << std::setw(30) << std::left << timeBuffer
+                         << size
+                         << "<br>";
+                }
+            }
         }
         body << "</pre><hr></body></html>";
         closedir(dir);
@@ -125,6 +178,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
     request._response->createHeaderAndBodyString(request, bodyStr, "200", client);
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }
+
 
 void GetMethod::handleRedirection(Client* client, Request& request, std::string &redirectUrl)
 {
