@@ -68,13 +68,13 @@ bool LocationFinder::isDirectory(const std::string &path)
     return false;
 }
 
-void LocationFinder::searchIndexHtml(const std::string &directory, std::string &foundPaths)
+bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &foundPaths)
 {
     DIR* dir = opendir(directory.c_str());
     if (dir == NULL)
     {
         std::cerr << BOLD RED << "Failed to open directory: " << directory << RESET << std::endl;
-        return;
+        return false;
     }
 
     struct dirent* ent;
@@ -89,8 +89,14 @@ void LocationFinder::searchIndexHtml(const std::string &directory, std::string &
             else if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
                 searchIndexHtml(path, foundPaths);
         }
+        else
+        {
+            closedir(dir);
+            return false;
+        }
     }
     closedir(dir);
+    return true;
 }
 
 //-- RequestPath should be the location of the request.
@@ -202,8 +208,15 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     _pathToServe = _root + _locationPath + path;    
     if (isDirectory(_pathToServe))
     {
-        searchIndexHtml(_pathToServe, _pathToServe);
-        return true;
+        if (searchIndexHtml(_pathToServe, _pathToServe))
+            return true;
+        else
+        {
+            _pathToServe = _root + _locationPath + path + "/";
+            _autoIndexFound = true;
+            _autoIndex = "on";
+            return true;
+        }
     }
     //std::cout << BOLD RED << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
     return false;

@@ -56,8 +56,15 @@ bool	Response::getIsChunk() {
 std::string Response::createHeaderString(Request& request, const std::string& body, std::string statusCode) {
 	std::stringstream ss;
 	std::string statusMessage = "";
+	std::string url;
+	bool	isRedirection = false;
 
 	Helper::checkStatus(statusCode, statusMessage);
+
+	if (statusCode[0] == '3') {
+		isRedirection = true;
+		url = body;
+	}
 
 	//-- BONUS : cookies
 	_sessionId = request.getSessionId();
@@ -71,19 +78,23 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	 	ss << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
 	ss << "Server: " << "webserv 1.0" << "\r\n";
 	ss << "Date: " << Helper::getActualTimeStringGMT() << "\r\n";
-	if (request.hasMethod())
+	if (request.hasMethod() && !isRedirection)
 		ss << "Content-Type: " << request.getMethodMimeType() << "\r\n";
-	else
+	else if (!isRedirection)
 	 	ss << "Content-Type: text/html\r\n";
+	if (isRedirection)
+		ss << "Location: " << body << "\r\n";
 	if (this->getIsChunk())
 		ss << "Transfer-Encoding: chunked\r\n";
+	else if (!isRedirection)
+		ss << "Content-Length: " << (body.size()) << "\r\n";
 	else
-		ss << "Content-Length: " << (body.size() + 1) << "\r\n"; // BP: + 1 plus additional \r\n at the end?
-	if (_closeConnection)
+		ss << "Content-Length: 0\r\n";
+	if (_closeConnection || isRedirection)
 		ss << "Connection: " << "close" << "\r\n"; // BP: to check
 	else
 		ss << "Connection: " << "keep-alive" << "\r\n";
-	if (!_sessionId.empty()) //-- BONUS : cookies
+	if (!_sessionId.empty() && !isRedirection) //-- BONUS : cookies
         ss << "Set-Cookie: session=" << _sessionId << "; Path=/; HttpOnly; Max-Age=3600;r\n";
 	ss << "\r\n";
 
@@ -93,7 +104,7 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 // Connection: keep-alive
 // Connection: Transfer-Encoding
 
-void Response::createHeaderAndBodyString(Request& request, std::string& body, std::string statusCode, Client* client) {
+void Response::createHeaderAndBodyString(Request& request,std::string& body, std::string statusCode, Client* client) {
 	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
 	if (_header.empty())
@@ -102,10 +113,10 @@ void Response::createHeaderAndBodyString(Request& request, std::string& body, st
 	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 }
 
-void	Response::sendResponse(Client* client) 
+void	Response::sendResponse(Client* client)
 {
 	_bytesSent = 0;
-	if (_isChunk) 
+	if (_isChunk)
 		prepareChunk(client);
 	else
 		sendSimpleResponse(client);

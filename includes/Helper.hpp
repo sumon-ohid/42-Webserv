@@ -30,4 +30,6 @@ class Helper {
 
 		static std::string decodeUrl(std::string);
 		static std::string generateSessionId(); //-- BONUS : cookies
+
+		static void			setCloexec(int fd);
 };

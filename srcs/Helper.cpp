@@ -9,6 +9,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <cerrno>
 
@@ -34,6 +35,9 @@ static std::map<std::string, std::string> initStatusCodesMap() {
 	codes["204"] = "No Content";
 	codes["301"] = "Moved Permanently";
 	codes["302"] = "Found";
+	codes["303"] = "See Other"; //-- redirect after a POST request
+	codes["307"] = "Temporary Redirect";
+	codes["308"] = "Permanent Redirect";
 	codes["400"] = "Bad Request";
 	codes["401"] = "Unauthorized";
 	codes["403"] = "Forbidden";
@@ -211,4 +215,14 @@ std::string Helper::generateSessionId()
 		sessionId += chars[rand() % chars.size()];
 	}
 	return sessionId;
+}
+
+void	Helper::setCloexec(int fd)
+{
+	int flags = fcntl(fd, F_GETFD);
+	if (flags == -1)
+		throw std::runtime_error("500");
+	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags
+	if (fcntl(fd, F_SETFD, flags) == -1)
+		throw std::runtime_error("500");
 }

@@ -22,7 +22,10 @@ HandleCgi::HandleCgi()
     _method = "";
     _postBody = "";
     _fileName = "";
+	_pid = -1;
+	_childReaped = false;
 	_byteTracker = 0;
+	_totalBytesSent = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
@@ -60,11 +63,12 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     _method = request.getMethodName();
     _postBody = request._requestBody;
     _fileName = request._postFilename;
+	_pid = -1;
+	_childReaped = false;
 	_byteTracker = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
-
     if (locationFinder.isDirectory(_locationPath))
         throw std::runtime_error("404");
     if (_method != "GET" && _method != "POST")
@@ -81,15 +85,15 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
 //--- Main function to process CGI
 void HandleCgi::proccessCGI(Client* client)
 {
-    if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
-        throw std::runtime_error("500");
-    pid_t pid = fork();
-    if (pid < 0)
-        throw std::runtime_error("500");
-    else if (pid == 0)
-        handleChildProcess(_locationPath, client->_request);
-    else
-        handleParentProcess(client);
+	if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
+		throw std::runtime_error("500");
+	_pid = fork();
+	if (_pid < 0)
+		throw std::runtime_error("500");
+	else if (_pid == 0)
+		handleChildProcess(_locationPath, client->_request);
+	else
+		handleParentProcess(client);
 }
 
 
@@ -187,6 +191,7 @@ void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
 
 void	HandleCgi::processCgiDataFromChild(Client* client)
 {
+	checkWaitPid();
 	readFromChildFd();
 	checkReadOrWriteError(client, _pipeOut[0]);
 	if (_byteTracker == 0)
@@ -197,6 +202,25 @@ void	HandleCgi::processCgiDataFromChild(Client* client)
 		_responseStr = std::string(_response.data(), _byteTracker);
 	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
 	_byteTracker = 0;
+}
+
+void	HandleCgi::checkWaitPid()
+{
+	if (_childReaped)
+		return;
+	int status = 0;
+	pid_t result = waitpid(_pid, &status, WNOHANG);
+	if (result == -1)
+		throw (500); 
+	else if (result > 0) 
+	{
+		// Child process has terminated
+		if (WIFEXITED(status))
+			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+		else if (WIFSIGNALED(status))
+			std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
+		_childReaped = true;
+	}
 }
 
 void	HandleCgi::readFromChildFd()
@@ -291,13 +315,15 @@ HandleCgi::HandleCgi(const HandleCgi &src)
 		_method(src._method),
 		_postBody(src._postBody),
 		_fileName(src._fileName),
+		_pid(src._pid),
+		_childReaped(src._childReaped),
 		_byteTracker(src._byteTracker),
 		_totalBytesSent(src._totalBytesSent),
 		_response(src._response),
 		_responseStr(src._responseStr),
 		_mimeCheckDone(src._mimeCheckDone),
 		_cgiDone(src._cgiDone),
-		_env(src._env) 
+		_env(src._env)
 {
 	// Deep copy the pipe file descriptors
 	_pipeIn[0] = src._pipeIn[0];
@@ -319,6 +345,8 @@ HandleCgi &HandleCgi::operator=(const HandleCgi &src)
 		_pipeIn[1] = src._pipeIn[1];
 		_pipeOut[0] = src._pipeOut[0];
 		_pipeOut[1] = src._pipeOut[1];
+		_pid = src._pid;
+		_childReaped = src._childReaped;
 		_byteTracker = src._byteTracker;
 		_totalBytesSent = src._totalBytesSent;
 		_response = src._response;
@@ -331,7 +359,7 @@ HandleCgi &HandleCgi::operator=(const HandleCgi &src)
 }
 
 //--- == operator overloading
-bool HandleCgi::operator==(const HandleCgi &src) const 
+bool HandleCgi::operator==(const HandleCgi &src) const
 {
     return (_locationPath == src._locationPath &&
            _method == src._method &&
@@ -341,6 +369,8 @@ bool HandleCgi::operator==(const HandleCgi &src) const
            _pipeIn[1] == src._pipeIn[1] &&
            _pipeOut[0] == src._pipeOut[0] &&
            _pipeOut[1] == src._pipeOut[1] &&
+		   _pid == src._pid &&
+		   _childReaped == src._childReaped &&
            _byteTracker == src._byteTracker &&
            _totalBytesSent == src._totalBytesSent &&
            _response == src._response &&

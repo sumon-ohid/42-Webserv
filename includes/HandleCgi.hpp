@@ -22,12 +22,14 @@ class HandleCgi
 	std::string							_postBody;
 	std::string							_fileName;
 	int									_pipeIn[2];
-	int								_pipeOut[2];
-	ssize_t							_byteTracker;
-	ssize_t							_totalBytesSent;
-	std::vector<char>				_response;
-	std::string						_responseStr;
-	bool							_mimeCheckDone;
+	int									_pipeOut[2];
+	pid_t								_pid;
+	bool								_childReaped;
+	ssize_t								_byteTracker;
+	ssize_t								_totalBytesSent;
+	std::vector<char>					_response;
+	std::string							_responseStr;
+	bool								_mimeCheckDone;
 	bool								_cgiDone;
 	std::map<std::string, std::string>	_env;
 
@@ -52,6 +54,7 @@ class HandleCgi
 		void			writeToChildFd(Client* client);
 		void			finishWriteAndPrepareReadFromChild(Client*);
 		void			processCgiDataFromChild(Client*);
+		void			checkWaitPid(void);
 		void			readFromChildFd();
 		void			finishReadingFromChild(Client* client);
 		void			MimeTypeCheck(Client *client);

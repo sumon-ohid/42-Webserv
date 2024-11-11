@@ -543,7 +543,18 @@ std::string Request::getSessionId() const
 }
 
 
+std::string	Request::getUri()
+{
+	std::string uri;
 
+	std::map<std::string, std::string>::const_iterator it = _headerMap.find("Referer");
+	if (it != _headerMap.end()) {
+		uri = it->second.c_str();
+	}
+	else
+		uri = "/";
+	return (uri);
+}
 
 
 // Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
