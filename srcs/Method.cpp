@@ -98,7 +98,7 @@ void	Method::setMimeType(std::string& path) {
 		if (ending == it->first)
 			this->_mimeType = it->second;
 	}
-	// if (_mimeType.empty()) {
-	// 	throw std::runtime_error("415");
-	// }
+	if (_mimeType.empty()) {
+		throw std::runtime_error("415");
+	}
 }
