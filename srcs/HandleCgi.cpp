@@ -212,8 +212,8 @@ void	HandleCgi::checkWaitPid()
 	int status = 0;
 	pid_t result = waitpid(_pid, &status, WNOHANG);
 	if (result == -1)
-		throw (500); 
-	else if (result > 0) 
+		throw (500);
+	else if (result > 0)
 	{
 		// Child process has terminated
 		if (WIFEXITED(status))
@@ -271,7 +271,7 @@ void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
 		}
 	}
 	if (setMime.empty())
-    	setMime = ".html";
+    	setMime = ".html"; // BP: here throw error?
 }
 
 void	HandleCgi::closeCgi(Client* client)

@@ -4,7 +4,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
-#include <errno.h>
+// #include <errno.h>
 #include <sys/types.h>
 #include <vector>
 
@@ -150,16 +150,6 @@ void Request::setMethodMimeType(std::string path) {
 	this->_method->setMimeType(path);
 }
 
-
-
-// static void	checkLineLastChars(std::string& line) {
-// 	if (!line.empty() && line[line.size() - 1] == '\n')
-// 		line.resize(line.size() - 1);
-// 	if (!line.empty() && line[line.size() - 1] == '\r')
-// 		line.resize(line.size() - 1);
-// }
-
-
 static void	checkTelnetInterruption(std::vector<char>& line) {
 	signed char stopTelnet[] = {-1, -12, -1, -3, 6};
 
@@ -175,6 +165,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	if (pos == std::string::npos)
 		return;
 	std::string	key = oneLine.substr(0, pos);
+	Helper::toLower(key);
 	std::string value = oneLine.substr(pos + 1);
 	while (!value.empty() && value[0] == ' ') {
 		value.erase(0, 1);
@@ -219,7 +210,7 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	std::size_t pos = strLine.find("filename=", endPos);
 	char* end;
-	unsigned long num = strtoul(getHeaderFromHeaderMap("Content-Length").c_str(), &end, 10);
+	unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
 	// std::atoi(getHeaderFromHeaderMap("Content-Length").c_str())
 	if (pos == std::string::npos && num > strLine.substr(endPos).size() ) {
 		return;
@@ -230,7 +221,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	{
 		//-- Find the start of the Content-Type header
 		//-- It is useful to know if we have to decode URL
-		std::string contentTypeHeader = "Content-Type: ";
+		std::string contentTypeHeader = "content-type: ";
 		std::size_t contentTypePos = strLine.find(contentTypeHeader);
 		if (contentTypePos != std::string::npos)
 		{
@@ -256,7 +247,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	pos = strLine.find("\r\n\r\n", endPos + 4);
 	// std::cout << "rnrn: " << pos << std::endl;
 	// std::cout << "$" << _postFilename << "$" << std::endl;
-	std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
+	std::map<std::string, std::string>::iterator it = _headerMap.find("content-type");
 	// std::cout << "content: " << it->second << std::endl;
 	std::string boundary;
 	if (it != _headerMap.end()) {
@@ -279,9 +270,6 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 		}
 	}
 	_readingFinished = true;
-	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
-	// std::string end =  strLine.rfind();
-	// std::cout << "$" << _requestBody << "$" << std::endl;
 }
 
 
@@ -336,7 +324,7 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 
 void	Request::checkHost(Client* client) {
 
-	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
+	std::map<std::string, std::string>::const_iterator it =_headerMap.find("host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400 d");
 	std::string host = it->second;
@@ -442,7 +430,7 @@ int Request::clientRequest(Client* client)
         //-- If has a content length, means request has a body.
         if (_headerChecked && !contentLengthFound)
         {
-            std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
+            std::map<std::string, std::string>::const_iterator it = _headerMap.find("content-length");
             if (it != _headerMap.end()) {
                 _contentLength = std::atoi(it->second.c_str());
                 contentLengthFound = true;
@@ -533,7 +521,7 @@ std::string Request::getSessionId() const
 	// 	std::cout << "$" << it->first << ": " << it->second << "$" << std::endl;
 	// }
 
-	std::string cookie = getHeaderFromHeaderMap("Cookie");
+	std::string cookie = getHeaderFromHeaderMap("cookie");
 	//std::cout << "\n\nCookie: " << cookie << std::endl;
 	std::size_t pos = cookie.find("session=");
 	if (pos == std::string::npos)

@@ -27,4 +27,6 @@ class Helper {
 		static std::string generateSessionId(); //-- BONUS : cookies
 
 		static void			setCloexec(int fd);
+
+		static void			toLower(std::string& str);
 };

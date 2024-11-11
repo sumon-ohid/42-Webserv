@@ -68,7 +68,7 @@ void	Method::setName(std::string name) {
 void	Method::setPath(std::string path) {
 	if (path.empty())
 		throw std::runtime_error("400 g");
-	
+
 	//-- If path is endoded, this will decode it.
 	path = Helper::decodeUrl(path);
 	if (path.find("..") != std::string::npos)
@@ -97,5 +97,8 @@ void	Method::setMimeType(std::string& path) {
 	for (std::map<std::string, std::string>::const_iterator it = Helper::mimeTypes.begin(); it != Helper::mimeTypes.end(); it++) {
 		if (ending == it->first)
 			this->_mimeType = it->second;
+	}
+	if (_mimeType.empty()) {
+		throw std::runtime_error("415");
 	}
 }

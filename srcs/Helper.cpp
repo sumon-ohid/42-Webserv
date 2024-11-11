@@ -41,6 +41,7 @@ static std::map<std::string, std::string> initStatusCodesMap() {
 	codes["404"] = "Not Found";
 	codes["405"] = "Not Allowed";
 	codes["413"] = "Payload Too Large";
+	codes["415"] = "Unsupported Media Type";
 	codes["500"] = "Internal Server Error";
 	codes["503"] = "Service Unavailable";
 	codes["505"] = "HTTP Version Not Supported";
@@ -182,4 +183,12 @@ void	Helper::setCloexec(int fd)
 	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags
 	if (fcntl(fd, F_SETFD, flags) == -1)
 		throw std::runtime_error("500");
+}
+
+#include <iostream>
+
+void	Helper::toLower(std::string& str) {
+	for (std::string::iterator it = str.begin(); it != str.end(); it++) {
+		*it = std::tolower(*it);
+	}
 }
