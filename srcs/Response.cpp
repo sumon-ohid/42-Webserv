@@ -181,8 +181,6 @@ void	Response::sendSimpleResponse(Client* client)
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {
 	_closeConnection = true;
 
-	std::cout << "fallback" << std::endl;
-
 	if (request.hasMethod())
 		request.setMethodMimeType("fallback.html");
 
@@ -213,8 +211,6 @@ void	Response::fallbackError(Request& request, std::string statusCode, Client* c
 void	Response::error(Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
-
-	std::cout << "error" << std::endl;
 
 	std::map<std::string, std::string> errorPages;
 	if (request._servConf)

@@ -89,8 +89,6 @@ void	Method::setProtocol(std::string protocol) {
 	this->_protocol = protocol;
 }
 
-#include <iostream>
-
 void	Method::setMimeType(std::string& path) {
 	size_t endPos = path.rfind('.');
 	if (endPos == std::string::npos)

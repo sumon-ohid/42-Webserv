@@ -4,7 +4,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
-#include <errno.h>
+// #include <errno.h>
 #include <sys/types.h>
 #include <vector>
 
@@ -210,7 +210,7 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	std::size_t pos = strLine.find("filename=", endPos);
 	char* end;
-	unsigned long num = strtoul(getHeaderFromHeaderMap("Content-Length").c_str(), &end, 10);
+	unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
 	// std::atoi(getHeaderFromHeaderMap("Content-Length").c_str())
 	if (pos == std::string::npos && num > strLine.substr(endPos).size() ) {
 		return;
@@ -221,7 +221,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	{
 		//-- Find the start of the Content-Type header
 		//-- It is useful to know if we have to decode URL
-		std::string contentTypeHeader = "Content-Type: ";
+		std::string contentTypeHeader = "content-type: ";
 		std::size_t contentTypePos = strLine.find(contentTypeHeader);
 		if (contentTypePos != std::string::npos)
 		{
@@ -247,7 +247,7 @@ void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
 	pos = strLine.find("\r\n\r\n", endPos + 4);
 	// std::cout << "rnrn: " << pos << std::endl;
 	// std::cout << "$" << _postFilename << "$" << std::endl;
-	std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
+	std::map<std::string, std::string>::iterator it = _headerMap.find("content-type");
 	// std::cout << "content: " << it->second << std::endl;
 	std::string boundary;
 	if (it != _headerMap.end()) {
@@ -430,7 +430,7 @@ int Request::clientRequest(Client* client)
         //-- If has a content length, means request has a body.
         if (_headerChecked && !contentLengthFound)
         {
-            std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
+            std::map<std::string, std::string>::const_iterator it = _headerMap.find("content-length");
             if (it != _headerMap.end()) {
                 _contentLength = std::atoi(it->second.c_str());
                 contentLengthFound = true;
@@ -521,7 +521,7 @@ std::string Request::getSessionId() const
 	// 	std::cout << "$" << it->first << ": " << it->second << "$" << std::endl;
 	// }
 
-	std::string cookie = getHeaderFromHeaderMap("Cookie");
+	std::string cookie = getHeaderFromHeaderMap("cookie");
 	//std::cout << "\n\nCookie: " << cookie << std::endl;
 	std::size_t pos = cookie.find("session=");
 	if (pos == std::string::npos)
