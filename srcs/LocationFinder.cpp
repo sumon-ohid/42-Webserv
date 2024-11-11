@@ -199,8 +199,6 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             _pathToServe = _root + tempPath + "/" + _index;
             _locationPath = tempPath;
 
-            //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
-
             return true;
         }
     }
@@ -217,6 +215,12 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             _autoIndex = "on";
             return true;
         }
+    }
+    else if (requestPath.find("cgi-bin") != std::string::npos && requestPath.size() > 9)
+    {
+        _pathToServe = _root + requestPath;
+        _cgiFound = true;
+        return true;
     }
     //std::cout << BOLD RED << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
     return false;

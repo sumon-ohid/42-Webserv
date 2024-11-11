@@ -60,6 +60,7 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
         if (locationFinder._cgiFound)
         {
             pathToServe = locationFinder._pathToServe;
+
             if (locationFinder.isDirectory(pathToServe))
             {
                 handleAutoIndexOrError(locationFinder ,request, client);
