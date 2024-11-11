@@ -69,7 +69,7 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	//-- BONUS : cookies
 	_sessionId = request.getSessionId();
 	if (_sessionId.empty())
-		_sessionId = Helper::generateSessionId();
+		_sessionId = Helper::generateRandomId();
 	// std::cout << BOLD YELLOW << _sessionId << RESET << std::endl;
 
 	if (request.hasMethod())

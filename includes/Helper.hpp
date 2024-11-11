@@ -24,7 +24,7 @@ class Helper {
 		static void			modifyEpollEvent(Epoll&, Client*, uint32_t);
 
 		static std::string decodeUrl(std::string url);
-		static std::string generateSessionId(); //-- BONUS : cookies
+		static std::string generateRandomId(); //-- BONUS : cookies
 
 		static void			setCloexec(int fd);
 
