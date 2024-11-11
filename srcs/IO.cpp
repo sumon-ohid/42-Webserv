@@ -67,18 +67,16 @@ void	IO::finishWrite(Client* client)
 void	IO::finishWriteCgi(Client* client)
 {
 	Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN); // pass _pipeOut[0]
+	client->_isWrite = false;
+	client->_isRead = true;
 	client->_request._response->setIsChunk(true);
 }
 
 void	IO::resetIO(Client* client)
 {
 	if (client->_isCgi)
-	{
 		client->_epoll->removeCgiClientFromEpoll(_fd);
-		_fd = client->_cgi.getPipeOut(0);
-	}
-	else
-		_fd = -1;
+	_fd = -1;
 	_size = 0;
 	_byteTracker = 0;
 	_totalBytesSent = 0;
@@ -89,6 +87,7 @@ void	IO::resetIO(Client* client)
 
 void	IO::readFromChildFd(Client* client)
 {
+	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
 	if (_byteTracker == 0)
@@ -138,6 +137,7 @@ void	IO::MimeTypeCheck(Client* client)
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
 	extractMimeType(pos, setMime);
+	std::cout << (client->_request.hasMethod() ? "method there" : "no method") << std::endl;
 	client->_request.setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");

@@ -146,7 +146,10 @@ std::string Request::getHeaderFromHeaderMap(std::string headerName) const {
 }
 
 void Request::setMethodMimeType(std::string path) {
-	this->_method->setMimeType(path);
+	if (this->hasMethod())
+		this->_method->setMimeType(path);
+	else
+		std::cout << "whooopsie daisy" << std::endl;
 }
 
 
@@ -311,6 +314,7 @@ void Request::createHttpMethod(const std::string& method) {
 	else
 		throw std::runtime_error("400");
 	_method->setName(method);
+	std::cout << _method->getName() << std::endl;
 }
 
 void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
