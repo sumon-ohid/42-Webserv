@@ -91,7 +91,7 @@ void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& 
     std::string fullPath = locationFinder._pathToServe;
     if (!locationFinder.isDirectory(fullPath))
        fullPath = locationFinder._root + locationFinder._locationPath;
-    
+
     if (locationFinder._autoIndex == "on" && locationFinder.isDirectory(fullPath))
         handleAutoIndex(fullPath, request, client);
     else
@@ -149,7 +149,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
                     else
                         size = anyToString(fileStat.st_size);
 
-                    //-- Format last modified time 
+                    //-- Format last modified time
                     char timeBuffer[30];
                     strftime(timeBuffer, sizeof(timeBuffer), "%d-%b-%Y %H:%M", localtime(&fileStat.st_mtime));
 
@@ -231,8 +231,6 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
             return;
         }
     }
-
-    this->setMimeType(path);
     std::ifstream file(path.c_str());
     if (locationFinder.isDirectory(path))
     {
@@ -247,6 +245,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
         return;
     }
 
+    setMimeType(path);
     std::ostringstream buffer;
     buffer << file.rdbuf();
     std::string body = buffer.str();

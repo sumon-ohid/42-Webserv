@@ -258,7 +258,7 @@ void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
 	if (pos != std::string::npos)
 	{
 		std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
-
+		std::cout << "extractMime: " << mimeType << std::endl;
 		std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
 		std::map<std::string, std::string>::iterator it;
 		for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
