@@ -164,7 +164,7 @@ std::string Helper::decodeUrl(std::string url)
 }
 
 // BONUS : cookies
-std::string Helper::generateSessionId()
+std::string Helper::generateRandomId()
 {
 	std::string sessionId = "";
 	std::string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

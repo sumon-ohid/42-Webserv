@@ -74,4 +74,6 @@ class Request {
 		int		emptyRequest(Client*);
 
 		void	requestReset();
+
+		void 	storeRequestBody(std::string& strLine, std::size_t endPos);
 };
