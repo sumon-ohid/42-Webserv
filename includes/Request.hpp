@@ -20,11 +20,10 @@ class Request {
 		bool	_headerChecked;
 		bool	_readingFinished;
 		bool	_isChunked;
-		int		_type; // request or response
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
 		std::size_t	_contentRead;
-		
+
 		std::string	_host;
 		void	storeOneHeaderInMap(const std::string& oneLine);
 		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
@@ -37,7 +36,6 @@ class Request {
 		Response*	_response;
 
 		Request();
-		Request(std::string method);
 		Request(const Request& other);
 		Request&	operator=(const Request& other);
 		bool		operator==(const Request& other) const;

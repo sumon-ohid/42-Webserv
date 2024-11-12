@@ -22,7 +22,6 @@
 #include "../includes/Helper.hpp"
 
 Request::Request() {
-	_type = -1;
 	_firstLineChecked = false;
 	_headerChecked = false;
 	_readingFinished = false;
@@ -35,7 +34,6 @@ Request::Request() {
 }
 
 Request::Request(const Request& other) {
-	_type = other._type;
 	_firstLineChecked = other._firstLineChecked;
 	_headerChecked = other._headerChecked;
 	_readingFinished = other._readingFinished;
@@ -63,7 +61,6 @@ Request&	Request::operator=(const Request& other) {
 	_headerChecked = other._headerChecked;
 	_readingFinished = other._readingFinished;
 	_isChunked = other._isChunked;
-	_type = other._type;
 	delete _method;
 	_method = NULL;
 	if (other._method)
@@ -86,7 +83,6 @@ bool		Request::operator==(const Request& other) const
 			_headerChecked == other._headerChecked &&
 			_readingFinished == other._readingFinished &&
 			_isChunked == other._isChunked &&
-			_type == other._type &&
 			_method == other._method &&
 			_headerMap == other._headerMap &&
 			_contentLength == other._contentLength &&
@@ -167,7 +163,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 
 	// std::cout << "$" << oneLine << "$" << std::endl;
 	std::size_t pos = oneLine.find(":");
-	if (pos == std::string::npos)
+	if (pos == std::string::npos || pos == 0) // BP check key is str _- num?
 		return;
 	std::string	key = oneLine.substr(0, pos);
 	Helper::toLower(key);
@@ -420,16 +416,6 @@ void	Request::executeMethod(int socketFd, Client *client)
 	this->_method->executeMethod(socketFd, client, *this);
 }
 
-//-- This is not ALLOWED
-// int	Request::invalidRequest(Client* client)
-// {
-// 	if (errno == EINTR)
-// 		return (-1);
-// 	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
-// 	if (errno != EAGAIN && errno != EWOULDBLOCK)
-// 		client->_server->_epoll->removeClient(client);	// Close the socket on other read errors
-// 	return (-1); // Move to the next event
-// }
 
 int	Request::emptyRequest(Client* client)
 {
@@ -454,18 +440,6 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	if (request.getFirstLineChecked() && !request._headerChecked && endPos != std::string::npos) {
 		storeHeadersInMap(strLine, endPos);
 	}
-	//-- SUMON commented
-	// if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
-	// 	if (this->_method->getName() == "POST") {
-	// 		storeRequestBody(strLine, endPos);
-	// 	}
-	// }
-	//-- OLD POST BODY
-	// if (request._firstLineChecked && request._headerChecked && endPos != std::string::npos) {
-	// 	if (this->_method->getName() == "POST") {
-	// 		storeRequestBody(strLine, endPos);
-	// 	}
-	// }
 }
 
 
@@ -561,11 +535,14 @@ int Request::clientRequest(Client* client)
 	// Execute the method if reading is finished and no errors occurred
 	if (!writeFlag && _readingFinished)
 	{
-		try {
-			executeMethod(event_fd, client);
-		}
-		catch (std::exception &e) {
-			_response->error(*this, e.what(), client);
+		if (this == &(*client->_request.begin()))
+		{
+			try {
+				executeMethod(event_fd, client);
+			}
+			catch (std::exception &e) {
+				_response->error(*this, e.what(), client);
+			}
 		}
 		client->_request.push_back(Request());
 	}
@@ -577,7 +554,6 @@ int Request::clientRequest(Client* client)
 
 
 void	Request::requestReset() {
-	_type = -1;
 	_firstLineChecked = false;
 	_headerChecked = false;
 	_readingFinished = false;

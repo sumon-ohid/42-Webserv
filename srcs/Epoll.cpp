@@ -270,6 +270,15 @@ void	Epoll::clientResponse(Client* client)
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		// client->_request.begin()->requestReset();
 		client->_request.pop_front();
+		if (client->_request.size() > 1)
+		{
+			try {
+				client->_request.begin()->executeMethod(client->getFd(), client);
+			}
+			catch (std::exception &e) {
+				client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
+			}
+		}
 		client->_cgi = HandleCgi();
 	}
 }
