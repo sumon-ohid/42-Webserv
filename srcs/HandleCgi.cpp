@@ -11,8 +11,10 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <iostream>
 #include <netdb.h>
+#include <stdexcept>
 #include <string>
 #include <algorithm>
 #include <sys/epoll.h>
@@ -70,8 +72,9 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
-    if (locationFinder.isDirectory(_locationPath))
+    if (locationFinder.isDirectory(_locationPath)) {
         throw std::runtime_error("404");
+	}
     if (_method != "GET" && _method != "POST")
         throw std::runtime_error("405");
     if (locationFinder._allowedMethodFound && locationFinder._cgiFound)
@@ -192,17 +195,26 @@ void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
 
 void	HandleCgi::processCgiDataFromChild(Client* client)
 {
-	checkWaitPid();
-	readFromChildFd();
-	checkReadOrWriteError(client, _pipeOut[0]);
-	if (_byteTracker == 0)
-		finishReadingFromChild(client);
-	if (!_mimeCheckDone)
-		MimeTypeCheck(client);
-	else
-		_responseStr = std::string(_response.data(), _byteTracker);
-	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
-	_byteTracker = 0;
+	try
+	{
+		checkWaitPid();
+		readFromChildFd();
+		checkReadOrWriteError(client, _pipeOut[0]);
+		if (_byteTracker == 0)
+			finishReadingFromChild(client);
+		if (!_mimeCheckDone)
+			MimeTypeCheck(client);
+		else
+			_responseStr = std::string(_response.data(), _byteTracker);
+		client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+		_byteTracker = 0;
+	}
+	catch (std::exception &e)
+	{
+		client->_request._response->error(client->_request, e.what(), client);
+		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+		_cgiDone = true;
+	}
 }
 
 void	HandleCgi::checkWaitPid()
@@ -271,7 +283,7 @@ void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
 		}
 	}
 	if (setMime.empty())
-    	setMime = ".html"; // BP: here throw error?
+    	throw std::runtime_error("415");
 }
 
 void	HandleCgi::closeCgi(Client* client)

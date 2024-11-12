@@ -127,7 +127,7 @@ std::string Request::getMethodProtocol() const {
 std::string Request::getMethodMimeType() const {
 	if (this->_method)
 		return this->_method->getMimeType();
-	return "text/plain"; // BP: or throw error?
+	return "text/plain";
 }
 
 bool	Request::getFirstLineChecked() const {
@@ -232,7 +232,7 @@ void Request::storeRequestBody(std::string& fileName, std::size_t endPos) {
 
 	std::string strLine;
 	readFileToString(fileName, strLine);
-	
+
 	std::size_t pos = strLine.find("filename=", endPos);
     char* end;
     unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
@@ -399,7 +399,7 @@ void	Request::checkHost(Client* client) {
 
 	std::map<std::string, std::string>::const_iterator it =_headerMap.find("host");
 	if (it == _headerMap.end())
-		throw std::runtime_error("400 d");
+		throw std::runtime_error("400");
 	std::string host = it->second;
 	std::size_t pos = host.find(':');
 	host = host.substr(0, pos);
@@ -502,8 +502,8 @@ int Request::clientRequest(Client* client)
 
         //-- Append data to requestBody
         //requestBody.append(buffer.data(), count);
-        
-		
+
+
 		// Append data to the file
 		bodyFile.write(buffer.data(), count);
 		totalBytesRead += count;
