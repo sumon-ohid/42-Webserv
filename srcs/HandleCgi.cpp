@@ -92,7 +92,7 @@ void HandleCgi::proccessCGI(Client* client)
 	if (_pid < 0)
 		throw std::runtime_error("500");
 	else if (_pid == 0)
-		handleChildProcess(_locationPath, client->_request);
+		handleChildProcess(_locationPath, *client->_request.begin());
 	else
 		handleParentProcess(client);
 }
@@ -170,7 +170,7 @@ void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
 
 void	HandleCgi::writeToChildFd(Client* client)
 {
-	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
+	_response = std::vector<char>(client->_request.begin()->_requestBody.begin(), client->_request.begin()->_requestBody.end());
 	_byteTracker = write(_pipeIn[1], _response.data() + _totalBytesSent, _response.size() - _totalBytesSent);
 	_totalBytesSent += _byteTracker;
 	checkReadOrWriteError(client, _pipeIn[1]);
@@ -187,7 +187,7 @@ void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
 	_byteTracker = 0;
 	_totalBytesSent = 0;
 	_response.clear();
-	client->_request._response->setIsChunk(true);
+	client->_request.begin()->_response->setIsChunk(true);
 }
 
 void	HandleCgi::processCgiDataFromChild(Client* client)
@@ -201,7 +201,7 @@ void	HandleCgi::processCgiDataFromChild(Client* client)
 		MimeTypeCheck(client);
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
-	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
 
@@ -246,7 +246,7 @@ void	HandleCgi::MimeTypeCheck(Client* client)
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
 	extractMimeType(pos, setMime);
-	client->_request.setMethodMimeType(setMime);
+	client->_request.begin()->setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
 	if (bodyStart != std::string::npos)

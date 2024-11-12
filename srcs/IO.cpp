@@ -32,9 +32,9 @@ IO::~IO() {}
 void	IO::writeToChildFd(Client* client)
 {
 	_fd = client->_cgi.getPipeIn(1);
-	size_t bytesToWrite = std::min(static_cast<std::size_t>(IO_SIZE), client->_request._requestBody.size() - _totalBytesSent);
-	_response = std::vector<char>(client->_request._requestBody.begin() + _totalBytesSent, client->_request._requestBody.begin() + _totalBytesSent + bytesToWrite );
-	_size =  client->_request._requestBody.size();
+	size_t bytesToWrite = std::min(static_cast<std::size_t>(IO_SIZE), client->_request.begin()->_requestBody.size() - _totalBytesSent);
+	_response = std::vector<char>(client->_request.begin()->_requestBody.begin() + _totalBytesSent, client->_request.begin()->_requestBody.begin() + _totalBytesSent + bytesToWrite );
+	_size =  client->_request.begin()->_requestBody.size();
 	writeToFd(client);
 }
 
@@ -69,13 +69,12 @@ void	IO::finishWriteCgi(Client* client)
 	Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN); // pass _pipeOut[0]
 	client->_isWrite = false;
 	client->_isRead = true;
-	client->_request._response->setIsChunk(true);
+	client->_request.begin()->_response->setIsChunk(true);
 }
 
 void	IO::resetIO(Client* client)
 {
-	if (client->_isCgi)
-		client->_epoll->removeCgiClientFromEpoll(_fd);
+	(void) client; // BP: remove client
 	_fd = -1;
 	_size = 0;
 	_byteTracker = 0;
@@ -96,7 +95,7 @@ void	IO::readFromChildFd(Client* client)
 		MimeTypeCheck(client);
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
-	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
 
@@ -107,7 +106,7 @@ void	IO::readFromFile(Client* client)
 	if (_byteTracker == 0)
 		finishReadingFromFd(client);
 	_responseStr = std::string(_response.data(), _byteTracker);
-	client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
+	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
 
@@ -120,12 +119,17 @@ void	IO::readFromFd()
 
 void	IO::finishReadingFromFd(Client* client)
 {
-	client->_epoll->removeCgiClientFromEpoll(_fd);
 	if (client->_isCgi)
 	{
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
 		client->_cgi.setCgiDone(true);
+		client->_epoll->removeCgiClientFromEpoll(_fd);
+	}
+	else
+	{
+		// client->_epoll->removeClientIo(client);
+		close (_fd);
 	}
 	resetIO(client);
 }
@@ -137,8 +141,8 @@ void	IO::MimeTypeCheck(Client* client)
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
 	extractMimeType(pos, setMime);
-	std::cout << (client->_request.hasMethod() ? "method there" : "no method") << std::endl;
-	client->_request.setMethodMimeType(setMime);
+	std::cout << (client->_request.begin()->hasMethod() ? "method there" : "no method") << std::endl;
+	client->_request.begin()->setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
 	if (bodyStart != std::string::npos)

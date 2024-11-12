@@ -249,8 +249,8 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
 	setMimeType(path);
     Helper::prepareIO(client, fd, path, "read");
 	if (client->_io.getSize() > CHUNK_SIZE)
-		client->_request._response->setIsChunk(true);
-    std::cout << "header will be chunked: " << (client->_request._response->getIsChunk() ? "true" : "false") << std::endl;
+		client->_request.back()._response->setIsChunk(true);
+    std::cout << "header will be chunked: " << (client->_request.back()._response->getIsChunk() ? "true" : "false") << std::endl;
 }
 
 //-- Handle CGI script execution.

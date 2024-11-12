@@ -5,6 +5,7 @@
 #include "HandleCgi.hpp"
 #include "IO.hpp"
 #include "Request.hpp"
+#include <list>
 
 class	Server;
 class	Socket;
@@ -21,15 +22,15 @@ private:
 	unsigned		_numRequests;
 
 public:
-	Epoll*			_epoll;
-	Server*			_server;
-	Socket*			_socket;
-	Request			_request; // BP: can there be one or multiple requests at the same time
-	HandleCgi		_cgi;
-	IO				_io;
-	bool			_isCgi;
-	bool			_isRead;
-	bool			_isWrite;
+	Epoll*				_epoll;
+	Server*				_server;
+	Socket*				_socket;
+	std::list<Request>	_request;
+	HandleCgi			_cgi;
+	IO					_io;
+	bool				_isCgi;
+	bool				_isRead;
+	bool				_isWrite;
 
 	// Coplien's form
 	Client();

@@ -219,7 +219,7 @@ void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
 	if (events & EPOLLERR)
 		return (clientError(client));
 	if (events & EPOLLIN)  // Check if the event is for reading
-		client->_request.clientRequest(client);
+		client->_request.back().clientRequest(client);
 		// should handle read events
 	if (events & EPOLLOUT) // Check if the event is for writing
 		clientResponse(client);
@@ -263,12 +263,13 @@ void	Epoll::clientError(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	if ((client->_isCgi && client->_request._response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
-		client->_request._response->sendResponse(client);
-	if (client->_request._response->getIsFinished())
+	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
+		client->_request.begin()->_response->sendResponse(client);
+	if (client->_request.begin()->_response->getIsFinished())
 	{
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
-		client->_request.requestReset();
+		// client->_request.begin()->requestReset();
+		client->_request.pop_front();
 		client->_cgi = HandleCgi();
 	}
 }

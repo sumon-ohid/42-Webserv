@@ -502,7 +502,7 @@ int Request::clientRequest(Client* client)
 			return emptyRequest(client);
 
 		buffer.resize(count);
-		validRequest(client->_server, buffer, count, client->_request);
+		validRequest(client->_server, buffer, count, *this);
 
         //-- Append data to requestBody
         //requestBody.append(buffer.data(), count);
@@ -551,7 +551,7 @@ int Request::clientRequest(Client* client)
 		if (std::string(e.what()) == TELNETSTOP) {
 			client->_server->_epoll->removeClient(client);
 		} else {
-			client->_request._response->error(client->_request, e.what(), client);
+			_response->error(*this, e.what(), client);
 		}
 		std::cerr << "Exception: " << e.what() << std::endl;
 		writeFlag = true;
@@ -562,11 +562,12 @@ int Request::clientRequest(Client* client)
 	if (!writeFlag && _readingFinished)
 	{
 		try {
-			client->_request.executeMethod(event_fd, client);
+			executeMethod(event_fd, client);
 		}
 		catch (std::exception &e) {
-			client->_request._response->error(client->_request, e.what(), client);
+			_response->error(*this, e.what(), client);
 		}
+		client->_request.push_back(Request());
 	}
 
 	writeFlag = false;

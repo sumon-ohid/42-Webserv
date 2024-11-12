@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <stdexcept>
 #include <sys/epoll.h>
 #include <sstream>
 #include <cstdlib>
@@ -153,7 +154,7 @@ void	Helper::prepareIO(Client* client, int fd, std::string& path, std::string mo
 	else if (mode == "write")
 		client->_isWrite = true;
 	else
-		throw ("500");
+		throw std::runtime_error("500");
 }
 
 std::string Helper::decodeUrl(std::string url)
@@ -191,7 +192,7 @@ long	Helper::checkFileSize(const std::string& path, Client* client)
 	struct stat fileStat;
 
 	if (stat(path.c_str(), &fileStat) == -1)
-		client->_request._response->error(client->_request, mapErrnoToHttpCodeString(), client);
+		client->_request.back()._response->error(client->_request.back(), mapErrnoToHttpCodeString(), client);
 	std::cout << "path: " << path << " with file size:\t" << fileStat.st_size << std::endl;
 	return (fileStat.st_size);
 }
