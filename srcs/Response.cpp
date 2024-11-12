@@ -226,7 +226,7 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 			if (request.hasMethod())
 				request.setMethodMimeType("error.html");
 
-				// request.setMethodMimeType(errorHandle.getNewErrorFile()); // BP: no mime type here, maybe just set it to HTML?
+				// request.setMethodMimeType(errorHandle.getNewErrorFile());
 			// std::cout << "mime-type: "<< request.getMethodMimeType() << std::endl;
 			// std::cout << "file: "<< errorHandle.getNewErrorFile() << std::endl;
 			//-- this will create a new error file, error code will be the file name

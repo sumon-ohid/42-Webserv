@@ -240,7 +240,7 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     }
     if (!file.is_open())
     {
-        //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
+        // std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
         request._response->error(request, "404", client);
         return;
     }

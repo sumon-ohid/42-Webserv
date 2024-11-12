@@ -54,7 +54,7 @@ std::string Method::getMimeType() const {
 
 void	Method::setName(std::string name) {
 	if (name.empty())
-		throw std::runtime_error("400 e");
+		throw std::runtime_error("400");
 
 	for (int i = 0; i < ARRAY_SIZE; i++) {
 		if (_methodArray[i] == name) {
@@ -62,12 +62,12 @@ void	Method::setName(std::string name) {
 			return;
 		}
 	}
-	throw std::runtime_error("400 f");
+	throw std::runtime_error("400");
 }
 
 void	Method::setPath(std::string path) {
 	if (path.empty())
-		throw std::runtime_error("400 g");
+		throw std::runtime_error("400");
 
 	//-- If path is endoded, this will decode it.
 	path = Helper::decodeUrl(path);
@@ -85,7 +85,7 @@ void	Method::setProtocol(std::string protocol) {
 	if (protocol == "HTTP/2" || protocol == "HTTP/1.0")
 		throw std::runtime_error("505");
 	if (protocol != "HTTP/1.1")
-		throw std::runtime_error("400 h");
+		throw std::runtime_error("400");
 	this->_protocol = protocol;
 }
 
