@@ -5,6 +5,7 @@ import cgitb
 import sqlite3
 import os
 import sys
+import json
 from urllib.parse import parse_qs
 from http.cookies import SimpleCookie
 
@@ -24,12 +25,16 @@ if "HTTP_COOKIE" in os.environ:
         if user:
             # User is already logged in
             print("""
+            Content-Type:text/html\r\n
+            \r\n\r\n
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>42-webserv</title>
+                <!-- Preload the Font Awesome CSS for faster loading -->
+                <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" as="style" />
                 <link rel="stylesheet" href="../assets/style.css" />
                 <link
                 rel="stylesheet"
@@ -124,6 +129,7 @@ sys.stdin.close()
 # Parse the input data
 form = parse_qs(request_body)
 login = form.get("login", [""])[0].replace("%20", " ")
+login_safe = json.dumps(login)
 passwd = form.get("passwd", [""])[0].replace("%20", " ")
 
 # Validate and sanitize input data
@@ -146,39 +152,33 @@ if user:
     cookie = SimpleCookie()
     cookie["session"] = login
     cookie["session"]["path"] = "/"
-    
+
     # Set the session cookie to expire in 1 hour
     cookie["session"]["max-age"] = 3600
 
-    print("""
+    print(f"""
+    Content-Type:text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>42-webserv</title>
+
+        <!-- Preload the Font Awesome CSS for faster loading -->
+        <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" as="style" />
+
+        <!-- Your main stylesheet -->
         <link rel="stylesheet" href="../assets/style.css" />
-        <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-        />
-        <link
-        rel="apple-touch-icon"
-        sizes="180x180"
-        href="../assets/favicons/apple-touch-icon.png"
-        />
-        <link
-        rel="icon"
-        type="image/png"
-        sizes="32x32"
-        href="../assets/favicons/favicon-32x32.png"
-        />
-        <link
-        rel="icon"
-        type="image/png"
-        sizes="16x16"
-        href="../assets/favicons/favicon-16x16.png"
-        />
+
+        <!-- Font Awesome CSS (after preload) -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+        <!-- Favicons -->
+        <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicons/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicons/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicons/favicon-16x16.png" />
         <link rel="manifest" href="../assets/favicons/site.webmanifest" />
     </head>
     <body>
@@ -228,7 +228,7 @@ if user:
                 localStorage.setItem("isLoggedIn", "true");
             </script>
             <script>
-                localStorage.setItem("login", {login});
+                localStorage.setItem("login", {login_safe});
             </script>
         </div>
         <script src="../assets/script.js"></script>
@@ -249,12 +249,16 @@ if user:
 else:
     # Display an error message
     print("""
+    Content-Type:text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>42-webserv</title>
+        <!-- Preload the Font Awesome CSS for faster loading -->
+        <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" as="style" />
         <link rel="stylesheet" href="../assets/style.css" />
         <link
         rel="stylesheet"

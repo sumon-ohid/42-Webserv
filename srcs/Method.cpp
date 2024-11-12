@@ -67,8 +67,6 @@ void	Method::setName(std::string name) {
 
 void	Method::setPath(std::string path) {
 	if (path.empty())
-		throw std::runtime_error("400 g");
-
 		throw std::runtime_error("400");
 
 	//-- If path is endoded, this will decode it.

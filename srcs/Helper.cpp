@@ -143,7 +143,7 @@ void	Helper::addFdToEpoll(Client* client, int fd, uint32_t event)
     client->_epoll->addCgiClientToEpollMap(fd, client);
 }
 
-void	Helper::prepareIO(Client* client, int fd, std::string& path ,std::string mode)
+void	Helper::prepareIO(Client* client, int fd, std::string& path, std::string mode)
 {
 	client->_io.setSize(Helper::checkFileSize(path, client));
 	client->_io.setFd(fd);
@@ -153,7 +153,7 @@ void	Helper::prepareIO(Client* client, int fd, std::string& path ,std::string mo
 	else if (mode == "write")
 		client->_isWrite = true;
 	else
-		throw (500);
+		throw ("500");
 }
 
 std::string Helper::decodeUrl(std::string url)

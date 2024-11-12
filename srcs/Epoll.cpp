@@ -137,7 +137,7 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 		{
 			client->_io.readFromChildFd(client);
 			// _cgi.processCgiDataFromChild(client);
-		}	
+		}
 		if (events & EPOLLOUT)
 			client->_io.writeToChildFd(client);
 		// _cgi.writeToChildFd(client);
@@ -327,7 +327,7 @@ void	Epoll::addClientIo(Client* client, std::string mode)
 	else if (mode == "write")
 		client->_isWrite = true;
 	else
-		throw(500);
+		throw("500");
 }
 
 void	Epoll::removeClientIo(Client* client)
