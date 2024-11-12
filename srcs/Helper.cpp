@@ -69,6 +69,7 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".mp4"] = "video/mp4";
 	mimes[".xml"] = "application/xml";
 	mimes[".json"] = "application/json";
+	mimes[".webmanifest"] = "application/json";
 	mimes[".svg"] = "image/svg+xml";
 	// BP: don't forget the point when adding a new mimetype - example: ".css"
 	return mimes;
