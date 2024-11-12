@@ -1,5 +1,6 @@
 #include "../includes/LocationFinder.hpp"
 #include "../includes/Server.hpp"
+#include "../includes/Helper.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -199,13 +200,17 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             _pathToServe = _root + tempPath + "/" + _index;
             _locationPath = tempPath;
 
-            //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
-
             return true;
         }
     }
+    //-- To check if cgi request with correct extention or not
+    std::string extension;
+    size_t pos = requestPath.rfind(".");
+    if (pos != std::string::npos)
+        extension = requestPath.substr(pos);
+
     _root = locationsVector[0].getLocationMap().find("root")->second;
-    _pathToServe = _root + _locationPath + path;    
+    _pathToServe = _root + _locationPath + path;
     if (isDirectory(_pathToServe))
     {
         if (searchIndexHtml(_pathToServe, _pathToServe))
@@ -217,6 +222,12 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             _autoIndex = "on";
             return true;
         }
+    }
+    else if (requestPath.find("cgi-bin") != std::string::npos && requestPath.size() > 9 && !extension.empty() && Helper::executableMap.find(extension) != Helper::executableMap.end())
+    {
+        _pathToServe = _root + requestPath;
+        _cgiFound = true;
+        return true;
     }
     //std::cout << BOLD RED << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
     return false;

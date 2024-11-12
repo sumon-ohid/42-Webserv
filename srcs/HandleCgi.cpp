@@ -11,6 +11,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
+#include <iostream>
 #include <netdb.h>
 #include <string>
 #include <algorithm>
@@ -211,8 +212,8 @@ void	HandleCgi::checkWaitPid()
 	int status = 0;
 	pid_t result = waitpid(_pid, &status, WNOHANG);
 	if (result == -1)
-		throw (500); 
-	else if (result > 0) 
+		throw (500);
+	else if (result > 0)
 	{
 		// Child process has terminated
 		if (WIFEXITED(status))
@@ -257,7 +258,7 @@ void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
 	if (pos != std::string::npos)
 	{
 		std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
-
+		std::cout << "extractMime: " << mimeType << std::endl;
 		std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
 		std::map<std::string, std::string>::iterator it;
 		for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
@@ -270,7 +271,7 @@ void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
 		}
 	}
 	if (setMime.empty())
-    	setMime = ".html";
+    	setMime = ".html"; // BP: here throw error?
 }
 
 void	HandleCgi::closeCgi(Client* client)

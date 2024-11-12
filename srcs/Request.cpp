@@ -6,6 +6,9 @@
 #include <iostream>
 #include <sys/types.h>
 #include <vector>
+#include <fstream>
+#include <iostream>
+#include <fstream>
 
 #include "../includes/Request.hpp"
 #include "../includes/Client.hpp"
@@ -152,16 +155,6 @@ void Request::setMethodMimeType(std::string path) {
 		std::cout << "whooopsie daisy" << std::endl;
 }
 
-
-
-// static void	checkLineLastChars(std::string& line) {
-// 	if (!line.empty() && line[line.size() - 1] == '\n')
-// 		line.resize(line.size() - 1);
-// 	if (!line.empty() && line[line.size() - 1] == '\r')
-// 		line.resize(line.size() - 1);
-// }
-
-
 static void	checkTelnetInterruption(std::vector<char>& line) {
 	signed char stopTelnet[] = {-1, -12, -1, -3, 6};
 
@@ -177,6 +170,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	if (pos == std::string::npos)
 		return;
 	std::string	key = oneLine.substr(0, pos);
+	Helper::toLower(key);
 	std::string value = oneLine.substr(pos + 1);
 	while (!value.empty() && value[0] == ' ') {
 		value.erase(0, 1);
@@ -217,74 +211,142 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 	}
 }
 
+void readFileToString(const std::string& fileName, std::string& fileContents)
+{
+    //-- Open the file in binary mode
+    std::ifstream inFile(fileName.c_str(), std::ios::in | std::ios::binary);
+    if (!inFile.is_open()) {
+        std::cerr << "Error opening file for reading" + fileName << std::endl;
+        return;
+    }
 
-void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
-	std::size_t pos = strLine.find("filename=", endPos);
-	char* end;
-	unsigned long num = strtoul(getHeaderFromHeaderMap("Content-Length").c_str(), &end, 10);
-	// std::atoi(getHeaderFromHeaderMap("Content-Length").c_str())
-	if (pos == std::string::npos && num > strLine.substr(endPos).size() ) {
-		return;
-	}
+    //-- Read the contents of the file into a string
+    inFile.seekg(0, std::ios::end);
+    std::streampos fileSize = inFile.tellg();
+    fileContents.resize(static_cast<std::size_t>(fileSize));
+    inFile.seekg(0, std::ios::beg);
+    inFile.read(&fileContents[0], fileContents.size());
 
-	//-- SUMON commented this out to handle post without filename
-	if (pos == std::string::npos)
-	{
-		//-- Find the start of the Content-Type header
-		//-- It is useful to know if we have to decode URL
-		std::string contentTypeHeader = "Content-Type: ";
-		std::size_t contentTypePos = strLine.find(contentTypeHeader);
-		if (contentTypePos != std::string::npos)
-		{
-			//-- Extract the Content-Type value
-			std::size_t start = contentTypePos + contentTypeHeader.length();
-			std::size_t end = strLine.find("\r\n", start);
-			std::string contentType = strLine.substr(start, end - start);
-		}
-
-		//-- Find the start of the body (after the double CRLF)
-		std::string bodyDelimiter = "\r\n\r\n";
-		std::size_t bodyPos = strLine.find(bodyDelimiter);
-		if (bodyPos != std::string::npos) {
-			//-- Body starts after the double CRLF
-			_requestBody = strLine.substr(bodyPos + bodyDelimiter.length());
-		}
-		_readingFinished = true;
-		return;
-	}
-
-	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
-	// std::cout << _postFilename << "\n\n" << std::endl;
-	pos = strLine.find("\r\n\r\n", endPos + 4);
-	// std::cout << "rnrn: " << pos << std::endl;
-	// std::cout << "$" << _postFilename << "$" << std::endl;
-	std::map<std::string, std::string>::iterator it = _headerMap.find("Content-Type");
-	// std::cout << "content: " << it->second << std::endl;
-	std::string boundary;
-	if (it != _headerMap.end()) {
-		// BP: check when there is no boundary
-		std::string contentType = it->second;
-		size_t boundaryPos = contentType.find("boundary=");
-		if (boundaryPos != std::string::npos) {
-			boundary = "--" + contentType.substr(boundaryPos + 9);
-
-			//-- SUMON :
-			//-- first find the start and end positions of the file data
-			//-- In the previous implementation, we used the boundary to find the start and end positions
-			//-- So some sections after boundary were included in the file data
-			//-- Which caused the file to be corrupted
-			size_t boundaryPos = strLine.find(boundary, pos);
-			size_t startPos = strLine.find("\r\n\r\n", boundaryPos);
-			size_t endPos = strLine.find(boundary, startPos);
-
-			_requestBody = strLine.substr(startPos + 4, endPos - startPos - 4); //-- 4 is for "\r\n\r\n" and --\r\n at the end
-		}
-	}
-	_readingFinished = true;
-	// Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryMLBLjWKqQwsOEKEd
-	// std::string end =	strLine.rfind();
-	// std::cout << "$" << _requestBody << "$" << std::endl;
+    //-- Close the file
+    inFile.close();
 }
+
+void Request::storeRequestBody(std::string& fileName, std::size_t endPos) {
+
+	std::string strLine;
+	readFileToString(fileName, strLine);
+
+	std::size_t pos = strLine.find("filename=", endPos);
+    char* end;
+    unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
+
+    if (pos == std::string::npos && num > strLine.substr(endPos).size()) {
+        return;
+    }
+
+    //-- If no filename is found, handle the body without filename
+    if (pos == std::string::npos) {
+        std::string contentTypeHeader = "content-type: ";
+        std::size_t contentTypePos = strLine.find(contentTypeHeader);
+        if (contentTypePos != std::string::npos) {
+            std::size_t start = contentTypePos + contentTypeHeader.length();
+            std::size_t end = strLine.find("\r\n", start);
+            std::string contentType = strLine.substr(start, end - start);
+        }
+
+        std::string bodyDelimiter = "\r\n\r\n";
+        std::size_t bodyPos = strLine.find(bodyDelimiter);
+        if (bodyPos != std::string::npos) {
+            _requestBody = strLine.substr(bodyPos + bodyDelimiter.length());
+        }
+        _readingFinished = true;
+        return;
+    }
+
+    _postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
+    pos = strLine.find("\r\n\r\n", endPos + 4);
+    std::map<std::string, std::string>::iterator it = _headerMap.find("content-type");
+    std::string boundary;
+    if (it != _headerMap.end()) {
+        std::string contentType = it->second;
+        size_t boundaryPos = contentType.find("boundary=");
+        if (boundaryPos != std::string::npos) {
+            boundary = "--" + contentType.substr(boundaryPos + 9);
+
+            size_t boundaryPos = strLine.find(boundary, pos);
+            size_t startPos = strLine.find("\r\n\r\n", boundaryPos);
+            size_t endPos = strLine.find(boundary, startPos);
+
+            _requestBody = strLine.substr(startPos + 4, endPos - startPos - 4); // 4 is for "\r\n\r\n" and --\r\n at the end
+        }
+    }
+    _readingFinished = true;
+}
+
+// void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
+// 	std::size_t pos = strLine.find("filename=", endPos);
+// 	char* end;
+// 	unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
+// 	// std::atoi(getHeaderFromHeaderMap("Content-Length").c_str())
+// 	if (pos == std::string::npos && num > strLine.substr(endPos).size() ) {
+// 		return;
+// 	}
+
+// 	//-- SUMON commented this out to handle post without filename
+// 	if (pos == std::string::npos)
+// 	{
+// 		//-- Find the start of the Content-Type header
+// 		//-- It is useful to know if we have to decode URL
+// 		std::string contentTypeHeader = "content-type: ";
+// 		std::size_t contentTypePos = strLine.find(contentTypeHeader);
+// 		if (contentTypePos != std::string::npos)
+// 		{
+// 			//-- Extract the Content-Type value
+// 			std::size_t start = contentTypePos + contentTypeHeader.length();
+// 			std::size_t end = strLine.find("\r\n", start);
+// 			std::string contentType = strLine.substr(start, end - start);
+// 		}
+
+// 		//-- Find the start of the body (after the double CRLF)
+// 		std::string bodyDelimiter = "\r\n\r\n";
+// 		std::size_t bodyPos = strLine.find(bodyDelimiter);
+// 		if (bodyPos != std::string::npos) {
+// 			//-- Body starts after the double CRLF
+// 			_requestBody = strLine.substr(bodyPos + bodyDelimiter.length());
+// 		}
+// 		_readingFinished = true;
+// 		return;
+// 	}
+
+// 	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
+// 	// std::cout << _postFilename << "\n\n" << std::endl;
+// 	pos = strLine.find("\r\n\r\n", endPos + 4);
+// 	// std::cout << "rnrn: " << pos << std::endl;
+// 	// std::cout << "$" << _postFilename << "$" << std::endl;
+// 	std::map<std::string, std::string>::iterator it = _headerMap.find("content-type");
+// 	// std::cout << "content: " << it->second << std::endl;
+// 	std::string boundary;
+// 	if (it != _headerMap.end()) {
+// 		// BP: check when there is no boundary
+// 		std::string contentType = it->second;
+// 		size_t boundaryPos = contentType.find("boundary=");
+// 		if (boundaryPos != std::string::npos) {
+// 			boundary = "--" + contentType.substr(boundaryPos + 9);
+
+// 			//-- SUMON :
+// 			//-- first find the start and end positions of the file data
+// 			//-- In the previous implementation, we used the boundary to find the start and end positions
+// 			//-- So some sections after boundary were included in the file data
+// 			//-- Which caused the file to be corrupted
+// 			size_t boundaryPos = strLine.find(boundary, pos);
+// 			size_t startPos = strLine.find("\r\n\r\n", boundaryPos);
+// 			size_t endPos = strLine.find(boundary, startPos);
+
+// 			_requestBody = strLine.substr(startPos + 4, endPos - startPos - 4); //-- 4 is for "\r\n\r\n" and --\r\n at the end
+// 		}
+// 	}
+// 	_readingFinished = true;
+// }
 
 
 void	Request::extractHttpMethod(std::string& requestLine)
@@ -339,7 +401,7 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 
 void	Request::checkHost(Client* client) {
 
-	std::map<std::string, std::string>::const_iterator it =_headerMap.find("Host");
+	std::map<std::string, std::string>::const_iterator it =_headerMap.find("host");
 	if (it == _headerMap.end())
 		throw std::runtime_error("400");
 	std::string host = it->second;
@@ -412,6 +474,7 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 //-- Reset the values after each request
 std::string requestBody;
 ssize_t totalBytesRead = 0;
+std::string fileName = "/tmp/" + Helper::generateRandomId();
 
 int Request::clientRequest(Client* client)
 {
@@ -419,7 +482,11 @@ int Request::clientRequest(Client* client)
 	bool writeFlag = false;
 	bool contentLengthFound = false;
 
-	std::vector<char> buffer(SOCKET_BUFFER_SIZE);
+	std::ofstream bodyFile(fileName.c_str(), std::ios::out | std::ios::app | std::ios::binary);
+	if (!bodyFile.is_open())
+		throw std::runtime_error("500");
+
+    std::vector<char> buffer(SOCKET_BUFFER_SIZE);
 
 	try
 	{
@@ -437,20 +504,24 @@ int Request::clientRequest(Client* client)
 		buffer.resize(count);
 		validRequest(client->_server, buffer, count, client->_request);
 
-		//-- Append data to requestBody
-		requestBody.append(buffer.data(), count);
+        //-- Append data to requestBody
+        //requestBody.append(buffer.data(), count);
+
+
+		// Append data to the file
+		bodyFile.write(buffer.data(), count);
 		totalBytesRead += count;
 
-		//-- Check for Content-Length.
-		//-- If has a content length, means request has a body.
-		if (_headerChecked && !contentLengthFound)
-		{
-			std::map<std::string, std::string>::const_iterator it = _headerMap.find("Content-Length");
-			if (it != _headerMap.end()) {
-			 _contentLength = std::atoi(it->second.c_str());
-			 contentLengthFound = true;
-			}
-		}
+        //-- Check for Content-Length.
+        //-- If has a content length, means request has a body.
+        if (_headerChecked && !contentLengthFound)
+        {
+            std::map<std::string, std::string>::const_iterator it = _headerMap.find("content-length");
+            if (it != _headerMap.end()) {
+                _contentLength = std::atol(it->second.c_str());
+                contentLengthFound = true;
+            }
+        }
 
 		//-- Stop reading if we have reached Content-Length
 		if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
@@ -459,14 +530,15 @@ int Request::clientRequest(Client* client)
 			totalBytesRead = 0;
 		}
 
-		//-- Process the request body if headers are fully checked and reading is finished
+        //-- Process the request body if headers are fully checked and reading is finished
 		if (_firstLineChecked && _headerChecked && _readingFinished)
-		{
-			//-- SUMON: client_max_body_size check moved to PostMethod
-			if (this->_method->getName() == "POST")
-			 storeRequestBody(requestBody, 0);
-			requestBody.clear();
-		}
+        {
+            //-- SUMON: client_max_body_size check moved to PostMethod
+			bodyFile.close();
+            if (this->_method->getName() == "POST")
+                storeRequestBody(fileName, 0);
+			std::remove(fileName.c_str());
+        }
 		else
 		{
 			// Not finished reading, return to epoll event loop
@@ -536,7 +608,7 @@ std::string Request::getSessionId() const
 	// 	std::cout << "$" << it->first << ": " << it->second << "$" << std::endl;
 	// }
 
-	std::string cookie = getHeaderFromHeaderMap("Cookie");
+	std::string cookie = getHeaderFromHeaderMap("cookie");
 	//std::cout << "\n\nCookie: " << cookie << std::endl;
 	std::size_t pos = cookie.find("session=");
 	if (pos == std::string::npos)

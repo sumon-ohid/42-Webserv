@@ -28,8 +28,10 @@ class Helper {
 		static long			checkFileSize(const std::string&, Client*);
 		static std::string	mapErrnoToHttpCodeString();
 
-		static std::string decodeUrl(std::string);
-		static std::string generateSessionId(); //-- BONUS : cookies
+		static std::string decodeUrl(std::string url);
+		static std::string generateRandomId(); //-- BONUS : cookies
 
 		static void			setCloexec(int fd);
+
+		static void			toLower(std::string& str);
 };

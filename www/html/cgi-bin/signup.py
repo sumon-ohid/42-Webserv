@@ -14,6 +14,7 @@ cgitb.enable()
 # Read the input data from stdin
 content_length = int(os.environ.get('CONTENT_LENGTH', 0))
 request_body = sys.stdin.read(content_length)
+sys.stdin.close()
 
 # Parse the input data
 form = parse_qs(request_body)
