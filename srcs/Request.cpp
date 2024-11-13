@@ -460,7 +460,6 @@ std::string fileName = "/tmp/" + Helper::generateRandomId();
 
 int Request::clientRequest(Client* client)
 {
-	std::cout << "11" << std::endl;
 	int event_fd = client->getFd();
 	bool writeFlag = false;
 	bool contentLengthFound = false;
@@ -547,7 +546,6 @@ int Request::clientRequest(Client* client)
 		if (this == &(*client->_request.begin()))
 		{
 			try {
-				std::cout << "10" << std::endl;
 				executeMethod(event_fd, client);
 			}
 			catch (std::exception &e) {
@@ -556,7 +554,6 @@ int Request::clientRequest(Client* client)
 		}
 		client->_request.push_back(Request());
 	}
-	std::cout << "size: " << client->_request.size() << std::endl;
 
 	writeFlag = false;
 	std::cout << "-------------------------------------" << std::endl;

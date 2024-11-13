@@ -155,6 +155,7 @@ void HandleCgi::handleParentProcess(Client* client)
 {
 	close(_pipeIn[0]); //-- Close read end of the pipe
 	close(_pipeOut[1]); //-- Close write end of the pipe
+	std::cout << BLUE "I was here" << RESET << std::endl;
 	Helper::addFdToEpoll(client, _pipeIn[1], EPOLLOUT);
 	client->_io.setFd(_pipeIn[1]);
 }
@@ -201,7 +202,6 @@ void	HandleCgi::processCgiDataFromChild(Client* client)
 		MimeTypeCheck(client);
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
-	std::cout << "12" << std::endl;
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
@@ -228,7 +228,8 @@ void	HandleCgi::checkWaitPid()
 void	HandleCgi::readFromChildFd()
 {
 	_response.resize(64000, '\0');
-	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
+	if (_pipeOut[0] > 0)
+		_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
 	_totalBytesSent += _byteTracker;
 }
 

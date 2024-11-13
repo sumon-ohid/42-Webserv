@@ -176,7 +176,6 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         return;
     }
     std::string bodyStr = body.str();
-    std::cout << "13" << std::endl;
     request._response->createHeaderAndBodyString(request, bodyStr, "200", client);
     std::cout << BOLD GREEN << "Autoindex response sent to client successfully 🚀" << RESET << std::endl;
 }

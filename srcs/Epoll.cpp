@@ -272,9 +272,8 @@ void	Epoll::clientResponse(Client* client)
 	{
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		// client->_request.begin()->requestReset();
-		// if (client->_request.size() > 1)
-		client->_request.pop_front();
-		std::cout << "1 size: " << client->_request.size() << std::endl;
+		if (client->_request.size() > 1)
+			client->_request.pop_front();
 		if (client->_request.size() > 1)
 		{
 			try {
