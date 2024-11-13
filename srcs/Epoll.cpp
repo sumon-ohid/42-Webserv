@@ -45,9 +45,10 @@ void	Epoll::Routine(std::vector<Server> &servers)
 
 void	Epoll::createEpoll()
 {
-	_epollFd = epoll_create1(EPOLL_CLOEXEC);
+	_epollFd = epoll_create(MAX_EVENTS);
 	if (_epollFd == -1)
 		std::runtime_error("epoll - creation failed");
+	Helper::setCloexec(_epollFd);
 }
 
 void	Epoll::registerLstnSockets(vSrv& servers)
