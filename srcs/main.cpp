@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << BOLD RED "Error:\t" << e.what() << RESET << std::endl;
+		std::cerr << BOLD RED "\nError:\t" << e.what() << RESET << std::endl;
 	}
 	serverManager.shutdown();
 }

@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <sys/types.h>
 
 Helper::Helper() {}
 
@@ -184,6 +185,18 @@ void	Helper::setCloexec(int fd)
 	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags
 	if (fcntl(fd, F_SETFD, flags) == -1)
 		throw std::runtime_error("500");
+}
+
+void	Helper::setFdFlags(int fd, uint32_t mask)
+{
+	int flags = fcntl(fd, F_GETFL);
+    if (flags == -1) {
+        throw std::runtime_error("500");
+    }
+    flags |= mask;
+    if (fcntl(fd, F_SETFL, flags) == -1) {
+        throw std::runtime_error("500");
+    }
 }
 
 #include <iostream>

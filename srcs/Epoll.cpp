@@ -5,6 +5,7 @@
 #include "../includes/main.hpp"
 
 
+#include <fcntl.h>
 #include <iostream>
 #include <cerrno>
 #include <cstddef>
@@ -47,9 +48,10 @@ void	Epoll::Routine(std::vector<Server> &servers)
 
 void	Epoll::createEpoll()
 {
-	_epollFd = epoll_create1(EPOLL_CLOEXEC);
+	_epollFd = epoll_create(MAX_EVENTS);
 	if (_epollFd == -1)
 		std::runtime_error("epoll - creation failed");
+	Helper::setCloexec(_epollFd);
 }
 
 void	Epoll::registerLstnSockets(vSrv& servers)
@@ -186,13 +188,15 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	socklen_t _addrlen = sizeof(sockIt->getAddress()); //implement function in Socket: setAddrlen
 	// sockIt->getAddressLen();
 	// Accept a new client connection on the listening socket
-	_connSock = accept4(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	_connSock = accept(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen);
 	if (_connSock < 0)
 	{
 		std::cerr << gai_strerror(_connSock);
 		throw std::runtime_error("Error:\taccept4 failed");
 		  // Skip to the next socket if accept fails
 	}
+	Helper::setCloexec(_connSock);
+	Helper::setFdFlags(_connSock, O_NONBLOCK);
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))

@@ -48,11 +48,12 @@ void	ServerManager::setUpServers()
 		try
 		{
 			tmp.setUpLstnSockets(*this);
-			_servers.push_back(tmp);
+			if (!tmp.getLstnSockets().empty())
+				_servers.push_back(tmp);
 		}
 		catch (std::exception &e)
 		{
-			std::cerr << "Error:\t" << e.what() << std::endl;
+			std::cerr << RED << "Error:\t" << e.what() << RESET << std::endl;
 		}
 	}
 	// check if there is at least one listening socket
@@ -107,7 +108,7 @@ void	ServerManager::shutdown()
 {
 	shutdownAllServers();
 	closeEpoll();
-	std::cout << "\nAll servers shut down" << std::endl;
+	std::cout << GREEN BOLD << "\nAll servers shut down" << RESET << std::endl;
 }
 
 bool	ServerManager::ipPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, int port, ServerConfig servConf)
