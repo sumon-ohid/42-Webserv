@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstring>
 #include <features.h>
-#include <iostream>
 #include <sys/types.h>
 #include <cerrno>
 
