@@ -150,9 +150,9 @@ void	Helper::prepareIO(Client* client, int fd, std::string& path, std::string mo
 	client->_io.setFd(fd);
 	client->_epoll->addClientIo(client, mode);
 	if (mode == "read")
-		client->_isRead = true;
+		client->_request.begin()->_isRead = true;
 	else if (mode == "write")
-		client->_isWrite = true;
+		client->_request.begin()->_isWrite = true;
 	else
 		throw std::runtime_error("500");
 }

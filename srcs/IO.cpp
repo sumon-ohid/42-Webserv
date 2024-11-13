@@ -67,8 +67,8 @@ void	IO::finishWrite(Client* client)
 void	IO::finishWriteCgi(Client* client)
 {
 	Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN); // pass _pipeOut[0]
-	client->_isWrite = false;
-	client->_isRead = true;
+	client->_request.begin()->_isWrite = false;
+	client->_request.begin()->_isRead = true;
 	client->_request.begin()->_response->setIsChunk(true);
 }
 
@@ -95,6 +95,7 @@ void	IO::readFromChildFd(Client* client)
 		MimeTypeCheck(client);
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
+	std::cout << "14" << std::endl;
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
@@ -106,6 +107,7 @@ void	IO::readFromFile(Client* client)
 	if (_byteTracker == 0)
 		finishReadingFromFd(client);
 	_responseStr = std::string(_response.data(), _byteTracker);
+	std::cout << "15" << std::endl;
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
@@ -113,7 +115,8 @@ void	IO::readFromFile(Client* client)
 void	IO::readFromFd()
 {
 	_response.resize(IO_SIZE, '\0');
-	_byteTracker = read(_fd, _response.data(), _response.size());
+	if (_fd > 0)
+		_byteTracker = read(_fd, _response.data(), _response.size());
 	_totalBytesSent += _byteTracker;
 }
 

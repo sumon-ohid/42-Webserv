@@ -29,8 +29,7 @@ public:
 	HandleCgi			_cgi;
 	IO					_io;
 	bool				_isCgi;
-	bool				_isRead;
-	bool				_isWrite;
+
 
 	// Coplien's form
 	Client();

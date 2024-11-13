@@ -231,9 +231,9 @@ void Epoll::IOFiles()
 	{
 		std::list<Client*>::iterator nextIt = clientIt;
 		++nextIt;
-		if ((*clientIt)->_isRead)
+		if ((*clientIt)->_request.begin()->_isRead)
 			(*clientIt)->_io.readFromFile(*clientIt);
-		else if ((*clientIt)->_isWrite)
+		else if ((*clientIt)->_request.begin()->_isWrite)
 			(*clientIt)->_io.writeToFd(*clientIt);
 		if ((*clientIt)->_io.getFd() == -1)
 			_lstIoClients.erase(clientIt);  // Erase from the list
@@ -263,13 +263,18 @@ void	Epoll::clientError(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
+	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone())) {
 		client->_request.begin()->_response->sendResponse(client);
+		std::cout << "\n" << client->_request.begin()->_response->getIsFinished() << std::endl;
+		std::cout << client->_request.begin()->_response->getBodySize() << std::endl;
+	}
 	if (client->_request.begin()->_response->getIsFinished())
 	{
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
 		// client->_request.begin()->requestReset();
+		// if (client->_request.size() > 1)
 		client->_request.pop_front();
+		std::cout << "1 size: " << client->_request.size() << std::endl;
 		if (client->_request.size() > 1)
 		{
 			try {
@@ -333,9 +338,9 @@ void	Epoll::addClientIo(Client* client, std::string mode)
 {
 	_lstIoClients.push_back(client);
 	if (mode == "read")
-		client->_isRead = true;
+		client->_request.begin()->_isRead= true;
 	else if (mode == "write")
-		client->_isWrite = true;
+		client->_request.begin()->_isWrite = true;
 	else
 		throw("500");
 }
@@ -343,6 +348,6 @@ void	Epoll::addClientIo(Client* client, std::string mode)
 void	Epoll::removeClientIo(Client* client)
 {
 	_lstIoClients.remove(client);
-	client->_isRead = false;
-	client->_isWrite = false;
+	client->_request.begin()->_isRead = false;
+	client->_request.begin()->_isWrite = false;
 }

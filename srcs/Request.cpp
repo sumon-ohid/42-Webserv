@@ -31,6 +31,8 @@ Request::Request() {
 	_contentLength = 0;
 	_contentRead = 0;
 	_servConf = NULL;
+	_isRead =false;
+	_isWrite = false;
 }
 
 Request::Request(const Request& other) {
@@ -51,6 +53,8 @@ Request::Request(const Request& other) {
 	_contentRead = other._contentRead;
 	_host = other._host;
 	_servConf = other._servConf;
+	_isRead = other._isRead;
+	_isWrite = other._isWrite;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -74,6 +78,8 @@ Request&	Request::operator=(const Request& other) {
 	_contentRead = other._contentRead;
 	_host = other._host;
 	_servConf = other._servConf;
+	_isRead = other._isRead;
+	_isWrite = other._isWrite;
 	return *this;
 }
 
@@ -88,7 +94,9 @@ bool		Request::operator==(const Request& other) const
 			_contentLength == other._contentLength &&
 			_contentRead == other._contentRead &&
 			_host == other._host &&
-			_servConf == other._servConf);
+			_servConf == other._servConf &&
+			_isRead == other._isRead &&
+			_isWrite == other._isWrite);
 }
 
 Request::~Request() {
@@ -452,6 +460,7 @@ std::string fileName = "/tmp/" + Helper::generateRandomId();
 
 int Request::clientRequest(Client* client)
 {
+	std::cout << "11" << std::endl;
 	int event_fd = client->getFd();
 	bool writeFlag = false;
 	bool contentLengthFound = false;
@@ -538,6 +547,7 @@ int Request::clientRequest(Client* client)
 		if (this == &(*client->_request.begin()))
 		{
 			try {
+				std::cout << "10" << std::endl;
 				executeMethod(event_fd, client);
 			}
 			catch (std::exception &e) {
@@ -546,6 +556,7 @@ int Request::clientRequest(Client* client)
 		}
 		client->_request.push_back(Request());
 	}
+	std::cout << "size: " << client->_request.size() << std::endl;
 
 	writeFlag = false;
 	std::cout << "-------------------------------------" << std::endl;

@@ -201,6 +201,7 @@ void	HandleCgi::processCgiDataFromChild(Client* client)
 		MimeTypeCheck(client);
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
+	std::cout << "12" << std::endl;
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
