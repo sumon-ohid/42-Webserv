@@ -50,7 +50,7 @@ void	Server::createPorts(ServerManager& sm, const std::string& hostname)
 {
 	std::vector<int> ports = _serverConfig.getListenPorts();
 	for (size_t i = 0; i < ports.size(); ++i)
-	
+
 		if (!createSockets(sm, hostname, ports[i]))
 			break;
 	if (ports.empty())
@@ -71,7 +71,7 @@ bool	Server::createSockets(ServerManager& sm, const std::string& hostname, int p
 		if (tmp.getFdSocket() != -1)
 			close (tmp.getFdSocket());
 		std::cerr << e.what() << std::endl;
-		std::cerr << "Couldn't create a socket that listens at host " << hostname << " at port:\t" << port << std::endl;
+		std::cerr << RED << "Couldn't create a socket that listens at host " << hostname << " at port:\t" << port << RESET << std::endl;
 		if (std::string(e.what()) == "Name or service not known")
 			return (false);
 	}
