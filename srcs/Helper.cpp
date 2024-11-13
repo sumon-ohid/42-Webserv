@@ -193,7 +193,6 @@ long	Helper::checkFileSize(const std::string& path, Client* client)
 
 	if (stat(path.c_str(), &fileStat) == -1)
 		client->_request.back()._response->error(client->_request.back(), mapErrnoToHttpCodeString(), client);
-	std::cout << "path: " << path << " with file size:\t" << fileStat.st_size << std::endl;
 	return (fileStat.st_size);
 }
 

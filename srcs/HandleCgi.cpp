@@ -160,53 +160,6 @@ void HandleCgi::handleParentProcess(Client* client)
 	client->_request.begin()->_isWrite = true;
 }
 
-void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
-{
-	if (_byteTracker > -1)
-		return;
-	std::cout << strerror(errno) << std::endl;
-	client->_epoll->removeCgiClientFromEpoll(fdToClose);
-	throw std::runtime_error("500");
-}
-
-void	HandleCgi::writeToChildFd(Client* client)
-{
-	_response = std::vector<char>(client->_request.begin()->_requestBody.begin(), client->_request.begin()->_requestBody.end());
-	_byteTracker = write(_pipeIn[1], _response.data() + _totalBytesSent, _response.size() - _totalBytesSent);
-	_totalBytesSent += _byteTracker;
-	checkReadOrWriteError(client, _pipeIn[1]);
-	if (_byteTracker == 0)
-		finishWriteAndPrepareReadFromChild(client);
-	_byteTracker = 0;
-}
-
-void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
-{
-	client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-	client->_epoll->registerSocket(_pipeOut[0], EPOLLIN);
-    client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client);
-	_byteTracker = 0;
-	_totalBytesSent = 0;
-	_response.clear();
-	client->_request.begin()->_response->setIsChunk(true);
-}
-
-void	HandleCgi::processCgiDataFromChild(Client* client)
-{
-	checkWaitPid();
-	readFromChildFd();
-	checkReadOrWriteError(client, _pipeOut[0]);
-	if (_byteTracker == 0)
-		finishReadingFromChild(client);
-	if (!_mimeCheckDone)
-		MimeTypeCheck(client);
-	else
-		_responseStr = std::string(_response.data(), _byteTracker);
-
-	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
-	_byteTracker = 0;
-}
-
 void	HandleCgi::checkWaitPid()
 {
 	if (_childReaped)
@@ -218,63 +171,12 @@ void	HandleCgi::checkWaitPid()
 	else if (result > 0)
 	{
 		// Child process has terminated
-		if (WIFEXITED(status))
-			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
-		else if (WIFSIGNALED(status))
-			std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
+		// if (WIFEXITED(status))
+		// 	std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+		// else if (WIFSIGNALED(status))
+		// 	std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
 		_childReaped = true;
 	}
-}
-
-void	HandleCgi::readFromChildFd()
-{
-	_response.resize(64000, '\0');
-	if (_pipeOut[0] > 0)
-		_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
-	_totalBytesSent += _byteTracker;
-}
-
-void	HandleCgi::finishReadingFromChild(Client* client)
-{
-	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
-	if (!_mimeCheckDone)
-		MimeTypeCheck(client);
-	_cgiDone = true;
-}
-
-void	HandleCgi::MimeTypeCheck(Client* client)
-{
-	//*** This is to handle mime types for cgi scripts
-	_responseStr = std::string(_response.data(), _byteTracker);
-	size_t pos = _responseStr.find("Content-Type:");
-	std::string setMime;
-	extractMimeType(pos, setMime);
-	client->_request.begin()->setMethodMimeType(setMime);
-	_mimeCheckDone = true;
-	size_t bodyStart = _responseStr.find("\r\n\r\n");
-	if (bodyStart != std::string::npos)
-		_responseStr.erase(0, bodyStart += 5);
-}
-
-void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
-{
-	if (pos != std::string::npos)
-	{
-		std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
-		std::cout << "extractMime: " << mimeType << std::endl;
-		std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
-		std::map<std::string, std::string>::iterator it;
-		for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
-		{
-			if (mimeType == it->second)
-			{
-				setMime = it->first;
-				break;
-			}
-		}
-	}
-	if (setMime.empty())
-    	setMime = ".html"; // BP: here throw error?
 }
 
 void	HandleCgi::closeCgi(Client* client)

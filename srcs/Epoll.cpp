@@ -116,44 +116,28 @@ int	Epoll::checkEpollWait(int epollWaitReturn)
 	return (_nfds);
 }
 
-bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if client is still connected
+bool	Epoll::cgi(int eventFd, uint32_t events)
 {
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(eventFd);
 	if (it == _mpCgiClient.end())
 		return (false);
 	Client* client = it->second;
-	if (events & EPOLLERR)
-		cgiErrorOrHungUp(eventFd);
 	if (events & (EPOLLHUP | EPOLLRDHUP))
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
-			client->_cgi.processCgiDataFromChild(client);
+			client->_io.readFromChildFd(client);
 		else
-			removeCgiClientFromEpoll(eventFd);
+			removeClientIo(client);
 	}
+	if (events & EPOLLERR)
+		cgiErrorOrHungUp(eventFd);
 	if (client->_isCgi)
 	{
 		if (events & EPOLLIN)
-		{
 			client->_io.readFromChildFd(client);
-			// _cgi.processCgiDataFromChild(client);
-		}
-		if (events & EPOLLOUT && client->_request.begin()->_isWrite) {
+		if (events & EPOLLOUT && client->_request.begin()->_isWrite)
 			client->_io.writeToChildFd(client);
-		}
-		// if (events & EPOLLOUT && client->_request.begin()->_isRead) {
-		// 	std::cout << "1234" << std::endl;
-		// 	client->_io.readFromChildFd(client);
-		// }
-		// _cgi.writeToChildFd(client);
 	}
-	// for later when reading from bigger file
-	// else
-	// {
-	// 	if (events & EPOLLIN)
-	// 		client->_request->readFile();
-	// 	return (true);
-	// }
 	return (true);
 }
 

@@ -44,7 +44,6 @@ void	IO::writeToFd(Client* client)
 	_byteTracker = write(_fd, _response.data(), bytesToWrite);
 	checkReadOrWriteError(client);
 	_response.erase(_response.begin(), _response.begin() + _byteTracker);
-	std::cout << _totalBytesSent << " & " << _byteTracker << " &" << _size << std::endl;
 	if ((_totalBytesSent += _byteTracker) >= _size)
 		finishWrite(client);
 }
@@ -53,7 +52,7 @@ void	IO::checkReadOrWriteError(Client* client)
 {
 	if (_byteTracker > -1)
 		return;
-	std::cerr << strerror(errno) << std::endl;
+	// std::cerr << strerror(errno) << std::endl;
 	client->_epoll->removeCgiClientFromEpoll(_fd);
 	throw std::runtime_error("500");
 }
@@ -77,6 +76,7 @@ void	IO::finishWriteCgi(Client* client)
 void	IO::resetIO(Client* client)
 {
 	(void) client; // BP: remove client
+	close (_fd);
 	_fd = -1;
 	_size = 0;
 	_byteTracker = 0;
@@ -88,6 +88,7 @@ void	IO::resetIO(Client* client)
 
 void	IO::readFromChildFd(Client* client)
 {
+	client->_cgi.checkWaitPid();
 	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
@@ -128,11 +129,6 @@ void	IO::finishReadingFromFd(Client* client)
 			MimeTypeCheck(client);
 		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
-	}
-	else
-	{
-		// client->_epoll->removeClientIo(client);
-		close (_fd);
 	}
 	resetIO(client);
 }

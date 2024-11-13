@@ -380,7 +380,6 @@ void Request::createHttpMethod(const std::string& method) {
 	else
 		throw std::runtime_error("400");
 	_method->setName(method);
-	std::cout << _method->getName() << std::endl;
 }
 
 void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {

@@ -241,16 +241,11 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
     }
 	int fd = open(path.c_str(), O_NONBLOCK);
 	if (fd == -1)
-    {
-        //std::cerr << BOLD RED << "Error: 404 not found" << RESET << std::endl;
-        request._response->error(request, "404", client);
-        return;
-    }
+        return (request._response->error(request, "404", client));
 	setMimeType(path);
     Helper::prepareIO(client, fd, path, "read");
 	if (client->_io.getSize() > CHUNK_SIZE)
 		client->_request.back()._response->setIsChunk(true);
-    // std::cout << "header will be chunked: " << (client->_request.back()._response->getIsChunk() ? "true" : "false") << std::endl;
 }
 
 //-- Handle CGI script execution.
