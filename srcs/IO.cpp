@@ -44,6 +44,7 @@ void	IO::writeToFd(Client* client)
 	_byteTracker = write(_fd, _response.data(), bytesToWrite);
 	checkReadOrWriteError(client);
 	_response.erase(_response.begin(), _response.begin() + _byteTracker);
+	std::cout << _totalBytesSent << " & " << _byteTracker << " &" << _size << std::endl;
 	if ((_totalBytesSent += _byteTracker) >= _size)
 		finishWrite(client);
 }
@@ -59,14 +60,13 @@ void	IO::checkReadOrWriteError(Client* client)
 
 void	IO::finishWrite(Client* client)
 {
-	if (client->_isCgi)
+	if (client->_isCgi && client->_request.begin()->_isWrite == true)
 		finishWriteCgi(client); // pass _pipeOut[0]
 	resetIO(client);
 }
 
 void	IO::finishWriteCgi(Client* client)
 {
-	std::cout << "three" << std::endl;
 	if (client->_request.begin()->_isRead == false)
 		Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN); // pass _pipeOut[0]
 	client->_request.begin()->_isWrite = false;
@@ -144,7 +144,7 @@ void	IO::MimeTypeCheck(Client* client)
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
 	extractMimeType(pos, setMime);
-	std::cout << (client->_request.begin()->hasMethod() ? "method there" : "no method") << std::endl;
+	// std::cout << (client->_request.begin()->hasMethod() ? "method there" : "no method") << std::endl;
 	client->_request.begin()->setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");

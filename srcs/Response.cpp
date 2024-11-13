@@ -131,10 +131,10 @@ void	Response::prepareChunk(Client* client)
 {
 	if (!_headerSent)
 	{
-		std::cout << "\n------------" << std::endl;
-		std::cout << client->getFd() << std::endl;
-		std::cout << _header << std::endl;
-		std::cout << "------------\n" << std::endl;
+		// std::cout << "\n------------" << std::endl;
+		// std::cout << client->getFd() << std::endl;
+		// std::cout << _header << std::endl;
+		// std::cout << "------------\n" << std::endl;
 		_bytesSent = send(client->getFd(), _header.c_str(), _header.size(), 0);
 		_headerSent = true;
 	}

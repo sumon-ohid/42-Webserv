@@ -138,8 +138,13 @@ bool	Epoll::cgi(int eventFd, uint32_t events) //have additional check here if cl
 			client->_io.readFromChildFd(client);
 			// _cgi.processCgiDataFromChild(client);
 		}
-		if (events & EPOLLOUT)
+		if (events & EPOLLOUT && client->_request.begin()->_isWrite) {
 			client->_io.writeToChildFd(client);
+		}
+		// if (events & EPOLLOUT && client->_request.begin()->_isRead) {
+		// 	std::cout << "1234" << std::endl;
+		// 	client->_io.readFromChildFd(client);
+		// }
 		// _cgi.writeToChildFd(client);
 	}
 	// for later when reading from bigger file
@@ -265,8 +270,8 @@ void	Epoll::clientResponse(Client* client)
 {
 	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone())) {
 		client->_request.begin()->_response->sendResponse(client);
-		std::cout << "\n" << client->_request.begin()->_response->getIsFinished() << std::endl;
-		std::cout << client->_request.begin()->_response->getBodySize() << std::endl;
+		// std::cout << "\n" << client->_request.begin()->_response->getIsFinished() << std::endl;
+		// std::cout << client->_request.begin()->_response->getBodySize() << std::endl;
 	}
 	if (client->_request.begin()->_response->getIsFinished())
 	{
