@@ -50,7 +50,6 @@ void	Server::createPorts(ServerManager& sm, const std::string& hostname)
 {
 	std::vector<int> ports = _serverConfig.getListenPorts();
 	for (size_t i = 0; i < ports.size(); ++i)
-
 		if (!createSockets(sm, hostname, ports[i]))
 			break;
 	if (ports.empty())

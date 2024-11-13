@@ -24,6 +24,8 @@ if "HTTP_COOKIE" in os.environ:
         if user:
             # User is already logged in
             print("""
+            Content-Type: text/html\r\n
+            \r\n\r\n
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -146,11 +148,13 @@ if user:
     cookie = SimpleCookie()
     cookie["session"] = login
     cookie["session"]["path"] = "/"
-    
+
     # Set the session cookie to expire in 1 hour
     cookie["session"]["max-age"] = 3600
 
     print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -249,6 +253,8 @@ if user:
 else:
     # Display an error message
     print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>

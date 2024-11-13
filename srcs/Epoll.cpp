@@ -2,6 +2,8 @@
 #include "../includes/Server.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/Helper.hpp"
+#include "../includes/main.hpp"
+
 
 #include <fcntl.h>
 #include <iostream>
@@ -92,12 +94,13 @@ void Epoll::Monitoring(vSrv& servers)
 	while (1)
 	{
 		// Wait for events on the epoll instance
-		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1)
+		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1 || stopSignal)
 			break;
-		for (int i = 0; i < _nfds; ++i)
+		for (int i = 0; i < _nfds; ++i) {
 			// Handle events on existing client connections
 			if (!cgi(_events[i].data.fd, _events[i].events) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
 				existingClient(servers, _events[i].events, _events[i].data.fd);
+		}
 	}
 }
 
