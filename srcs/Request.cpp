@@ -131,7 +131,7 @@ std::string Request::getMethodProtocol() const {
 std::string Request::getMethodMimeType() const {
 	if (this->_method)
 		return this->_method->getMimeType();
-	return "text/plain"; // BP: or throw error?
+	return "text/plain";
 }
 
 bool	Request::getFirstLineChecked() const {
@@ -383,8 +383,7 @@ void Request::createHttpMethod(const std::string& method) {
 }
 
 void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
-	// checkLineLastChars(strLine);
-	if (strLine.length() == 0) {
+	if (strLine.length() == 2 && strLine == "\r\n") {
 		return;
 	}
 	extractHttpMethod(strLine);

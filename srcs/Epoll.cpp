@@ -2,7 +2,10 @@
 #include "../includes/Server.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/Helper.hpp"
+#include "../includes/main.hpp"
 
+
+#include <fcntl.h>
 #include <fcntl.h>
 #include <iostream>
 #include <cerrno>
@@ -46,9 +49,10 @@ void	Epoll::Routine(std::vector<Server> &servers)
 
 void	Epoll::createEpoll()
 {
-	_epollFd = epoll_create1(EPOLL_CLOEXEC);
+	_epollFd = epoll_create(MAX_EVENTS);
 	if (_epollFd == -1)
 		std::runtime_error("epoll - creation failed");
+	Helper::setCloexec(_epollFd);
 }
 
 void	Epoll::registerLstnSockets(vSrv& servers)
@@ -93,9 +97,9 @@ void Epoll::Monitoring(vSrv& servers)
 	while (1)
 	{
 		// Wait for events on the epoll instance
-		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1)
+		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1 || stopSignal)
 			break;
-		for (int i = 0; i < _nfds; ++i)
+		for (int i = 0; i < _nfds; ++i) {
 			// Handle events on existing client connections
 			if (!cgi(_events[i].data.fd, _events[i].events) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
 				existingClient(servers, _events[i].events, _events[i].data.fd);
@@ -180,13 +184,15 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	socklen_t _addrlen = sizeof(sockIt->getAddress()); //implement function in Socket: setAddrlen
 	// sockIt->getAddressLen();
 	// Accept a new client connection on the listening socket
-	_connSock = accept4(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	_connSock = accept(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen);
 	if (_connSock < 0)
 	{
 		std::cerr << gai_strerror(_connSock);
 		throw std::runtime_error("Error:\taccept4 failed");
 		  // Skip to the next socket if accept fails
 	}
+	Helper::setCloexec(_connSock);
+	Helper::setFdFlags(_connSock, O_NONBLOCK);
 	std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))

@@ -48,6 +48,8 @@ existing_user = cursor.fetchone()
 if existing_user:
     # Display an error message if the email or username already exists
     print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -144,7 +146,7 @@ else:
     cookie = SimpleCookie()
     cookie["session"] = login
     cookie["session"]["path"] = "/"
-    
+
     # Set the session cookie to expire in 1 hour
     cookie["session"]["max-age"] = 3600
 
@@ -156,6 +158,8 @@ else:
 
     # Display a success message
     print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -254,4 +258,3 @@ else:
     """.format(login=login))
     # Close the connection
     conn.close()
-    

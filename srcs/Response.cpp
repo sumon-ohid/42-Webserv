@@ -95,7 +95,7 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	else
 		ss << "Connection: " << "keep-alive" << "\r\n";
 	if (!_sessionId.empty() && !isRedirection) //-- BONUS : cookies
-        ss << "Set-Cookie: session=" << _sessionId << "; Path=/; HttpOnly; Max-Age=3600;\r\n";
+        ss << "Set-Cookie: session=" << _sessionId << ";SameSite=Lax; Path=/; HttpOnly; Max-Age=3600;r\n";
 	ss << "\r\n";
 
 	// std::cout << "\n------------" << std::endl;
@@ -238,7 +238,7 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 			if (request.hasMethod())
 				request.setMethodMimeType("error.html");
 
-				// request.setMethodMimeType(errorHandle.getNewErrorFile()); // BP: no mime type here, maybe just set it to HTML?
+				// request.setMethodMimeType(errorHandle.getNewErrorFile());
 			// std::cout << "mime-type: "<< request.getMethodMimeType() << std::endl;
 			// std::cout << "file: "<< errorHandle.getNewErrorFile() << std::endl;
 			//-- this will create a new error file, error code will be the file name

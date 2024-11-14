@@ -11,8 +11,10 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <iostream>
 #include <netdb.h>
+#include <stdexcept>
 #include <string>
 #include <algorithm>
 #include <sys/epoll.h>
@@ -70,8 +72,9 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
-    if (locationFinder.isDirectory(_locationPath))
+    if (locationFinder.isDirectory(_locationPath)) {
         throw std::runtime_error("404");
+	}
     if (_method != "GET" && _method != "POST")
         throw std::runtime_error("405");
     if (locationFinder._allowedMethodFound && locationFinder._cgiFound)
@@ -177,6 +180,56 @@ void	HandleCgi::checkWaitPid()
 		// 	std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
 		_childReaped = true;
 	}
+}
+
+void	HandleCgi::readFromChildFd()
+{
+	_response.resize(64000, '\0');
+	_byteTracker = read(_pipeOut[0], _response.data(), _response.size());
+	_totalBytesSent += _byteTracker;
+}
+
+void	HandleCgi::finishReadingFromChild(Client* client)
+{
+	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+	if (!_mimeCheckDone)
+		MimeTypeCheck(client);
+	_cgiDone = true;
+}
+
+void	HandleCgi::MimeTypeCheck(Client* client)
+{
+	//*** This is to handle mime types for cgi scripts
+	_responseStr = std::string(_response.data(), _byteTracker);
+	size_t pos = _responseStr.find("Content-Type:");
+	std::string setMime;
+	extractMimeType(pos, setMime);
+	client->_request.setMethodMimeType(setMime);
+	_mimeCheckDone = true;
+	size_t bodyStart = _responseStr.find("\r\n\r\n");
+	if (bodyStart != std::string::npos)
+		_responseStr.erase(0, bodyStart += 5);
+}
+
+void	HandleCgi::extractMimeType(size_t pos, std::string& setMime)
+{
+	if (pos != std::string::npos)
+	{
+		std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
+		std::cout << "extractMime: " << mimeType << std::endl;
+		std::map<std::string, std::string> mimeTypes = Helper::mimeTypes;
+		std::map<std::string, std::string>::iterator it;
+		for (it = mimeTypes.begin(); it != mimeTypes.end(); it++)
+		{
+			if (mimeType == it->second)
+			{
+				setMime = it->first;
+				break;
+			}
+		}
+	}
+	if (setMime.empty())
+    	throw std::runtime_error("415");
 }
 
 void	HandleCgi::closeCgi(Client* client)

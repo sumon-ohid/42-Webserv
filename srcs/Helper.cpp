@@ -73,6 +73,7 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".mp4"] = "video/mp4";
 	mimes[".xml"] = "application/xml";
 	mimes[".json"] = "application/json";
+	mimes[".webmanifest"] = "application/json";
 	mimes[".svg"] = "image/svg+xml";
 	// BP: don't forget the point when adding a new mimetype - example: ".css"
 	return mimes;
@@ -226,6 +227,18 @@ void	Helper::setCloexec(int fd)
 	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags
 	if (fcntl(fd, F_SETFD, flags) == -1)
 		throw std::runtime_error("500");
+}
+
+void	Helper::setFdFlags(int fd, uint32_t mask)
+{
+	int flags = fcntl(fd, F_GETFL);
+    if (flags == -1) {
+        throw std::runtime_error("500");
+    }
+    flags |= mask;
+    if (fcntl(fd, F_SETFL, flags) == -1) {
+        throw std::runtime_error("500");
+    }
 }
 
 #include <iostream>

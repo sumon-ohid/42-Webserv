@@ -32,6 +32,7 @@ class Helper {
 		static std::string generateRandomId(); //-- BONUS : cookies
 
 		static void			setCloexec(int fd);
+		static void			setFdFlags(int fd, uint32_t mask);
 
 		static void			toLower(std::string& str);
 };

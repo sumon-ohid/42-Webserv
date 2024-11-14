@@ -51,7 +51,7 @@ class Request {
 		bool		getFirstLineChecked() const;
 		bool		getReadingFinished() const;
 		std::map<std::string, std::string> getHeaderMap() const;
-		std::string getHeaderFromHeaderMap(std::string headerName) const; // BP: to create
+		std::string getHeaderFromHeaderMap(std::string headerName) const;
 		std::string getHost() const;
 		std::string getSessionId() const; //-- BONUS : cookies
 		std::string	getUri(); //-- Extract Referer

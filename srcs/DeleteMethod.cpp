@@ -69,29 +69,45 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 
 void	DeleteMethod::deleteObject()
 {
-	std::ifstream file(_pathToDelete.c_str());
-	if (!file.is_open())
-	{
-		std::cerr << BOLD RED << "File Does not exist! : " << _pathToDelete << RESET << std::endl;
-		_statusCode = "404";
-		return;
-	}
-	file.close();
+	// std::ifstream file(_pathToDelete.c_str());
+	// if (!file.is_open())
+	// {
+	// 	std::cerr << BOLD RED << "File Does not exist! : " << _pathToDelete << RESET << std::endl;
+	// 	_statusCode = "404";
+	// 	return;
+	// }
+	// file.close();
 
 	struct stat statInfo;
 	if (stat(_pathToDelete.c_str(), &statInfo) == -1)
+	{
 		checkStatError();
+		return;
+	}
+	//-- Check if the file has write permissions
+    if (access(_pathToDelete.c_str(), W_OK) == -1)
+    {
+        _statusCode = "403";
+        std::cerr << BOLD RED << "Permission denied: " << _pathToDelete << RESET << std::endl;
+        return;
+    }
 	if (S_ISREG(statInfo.st_mode) || S_ISLNK(statInfo.st_mode))
 	{
 		if (std::remove(_pathToDelete.c_str()) == -1)
+		{
 			checkStatError();
+			return;
+		}
 		std::cout << BOLD RED << "FILE REMOVED : " << _pathToDelete << RESET << " 📁🗑️" << std::endl;
 		_statusCode = "204";
 	}
 	else if (S_ISDIR(statInfo.st_mode))
 	{
 		if (std::remove(_pathToDelete.c_str()) == -1)
+		{
 			checkStatError();
+			return;
+		}
 		std::cout << BOLD RED << "FILE REMOVED : " << _pathToDelete << RESET << " 📁🗑️" << std::endl;
 		_statusCode = "204";
 	}

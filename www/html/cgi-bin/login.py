@@ -25,7 +25,7 @@ if "HTTP_COOKIE" in os.environ:
         if user:
             # User is already logged in
             print("""
-            Content-Type:text/html\r\n
+            Content-Type: text/html\r\n
             \r\n\r\n
             <!DOCTYPE html>
             <html lang="en">
@@ -156,8 +156,8 @@ if user:
     # Set the session cookie to expire in 1 hour
     cookie["session"]["max-age"] = 3600
 
-    print(f"""
-    Content-Type:text/html\r\n
+    print("""
+    Content-Type: text/html\r\n
     \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
@@ -249,7 +249,7 @@ if user:
 else:
     # Display an error message
     print("""
-    Content-Type:text/html\r\n
+    Content-Type: text/html\r\n
     \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
