@@ -389,7 +389,7 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	extractHttpMethod(strLine);
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
-		throw std::runtime_error("400");
+		throw std::runtime_error("505");
 	this->_method->setPath(strLine.substr(0, spacePos2));
 
 	endPos = strLine.find("\r\n", spacePos2 + 1);
@@ -554,7 +554,6 @@ int Request::clientRequest(Client* client)
 	}
 
 	writeFlag = false;
-	std::cout << "-------------------------------------" << std::endl;
 	return 0;
 }
 

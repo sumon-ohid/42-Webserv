@@ -75,6 +75,7 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".json"] = "application/json";
 	mimes[".webmanifest"] = "application/json";
 	mimes[".svg"] = "image/svg+xml";
+	mimes[".ico"] = "image/png";
 	// BP: don't forget the point when adding a new mimetype - example: ".css"
 	return mimes;
 }

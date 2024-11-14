@@ -98,10 +98,6 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
         ss << "Set-Cookie: session=" << _sessionId << ";SameSite=Lax; Path=/; HttpOnly; Max-Age=3600;r\n";
 	ss << "\r\n";
 
-	// std::cout << "\n------------" << std::endl;
-	// std::cout << ss.str() << std::endl;
-	// std::cout << "------------\n" << std::endl;
-
 	return ss.str();
 }
 
@@ -131,10 +127,6 @@ void	Response::prepareChunk(Client* client)
 {
 	if (!_headerSent)
 	{
-		// std::cout << "\n------------" << std::endl;
-		// std::cout << client->getFd() << std::endl;
-		// std::cout << _header << std::endl;
-		// std::cout << "------------\n" << std::endl;
 		_bytesSent = send(client->getFd(), _header.c_str(), _header.size(), 0);
 		_headerSent = true;
 	}

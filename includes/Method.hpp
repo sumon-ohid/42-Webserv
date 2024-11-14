@@ -6,7 +6,7 @@ class Client;
 
 #include <string>
 
-#define ARRAY_SIZE 5
+#define ARRAY_SIZE 3
 
 class Method {
 	protected:
