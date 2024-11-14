@@ -225,11 +225,12 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 	signal(SIGPIPE, SIG_IGN);
 
 	std::map<std::string, std::string> errorPages;
+	std::string errorPage;
 	if (request._servConf)
-		errorPages = request._servConf->getErrorPages();
+		errorPage = request._servConf->getErrorPage();
 	else
 		errorPages = client->_server->getServerConfig().getErrorPages();
-	if (errorPages.find(statusCode) != errorPages.end() || errorPages.empty())
+	if (errorPages.find(statusCode) != errorPages.end() || !errorPage.empty())
 	{
 		try
 		{
