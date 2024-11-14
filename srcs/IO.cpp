@@ -75,7 +75,8 @@ void	IO::finishWriteCgi(Client* client)
 void	IO::resetIO(Client* client)
 {
 	(void) client; // BP: remove client
-	close (_fd);
+	if (_fd > 0)
+		close (_fd);
 	_fd = -1;
 	_size = 0;
 	_byteTracker = 0;
