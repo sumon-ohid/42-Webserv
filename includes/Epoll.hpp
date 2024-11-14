@@ -29,6 +29,7 @@ private:
 	struct epoll_event 		_ev;
 	struct epoll_event		_events[MAX_EVENTS];
 	std::map<int, Client*>	_mpCgiClient;
+	std::list<Client*>		_lstIoClients;
 
 	// ------------- Epoll setup -------------
     // Initializes the epoll file descriptor with EPOLL_CLOEXEC.
@@ -70,7 +71,8 @@ private:
 	// outputs the corresponding error message and removes the client from epoll
 	void	clientRetrievalError(int);
 	// outputs the corresponding error message and removes the client from epoll and the corresponding server
-	void	clientErrorOrHungUp(Client*);
+	void	clientHungUp(Client*);
+	void	clientError(Client*);
 	/**
 	 * Handles communication with an existing client by reading data from the
 	 * specified file descriptor. Responds to the client with a simple message
@@ -80,6 +82,7 @@ private:
 	// int		clientRequest(Client*);
 	// DISCUSS: should be handled in Request
 
+	void	IOFiles();
 
 	void	clientResponse(Client*);
 
@@ -113,6 +116,9 @@ public:
 	void	removeClientEpoll(int);
 	// removes fd from clients and from epoll and closes it
 	void	removeClient(Client*);
+
+	void	addClientIo(Client*, std::string mode);
+	void	removeClientIo(Client*);
 
 	// ------------- Getters -------------
 	// returns the epoll fd

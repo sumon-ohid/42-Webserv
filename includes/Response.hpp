@@ -9,7 +9,7 @@
 
 class Request;
 
-#define CHUNK_SIZE 100000
+#define CHUNK_SIZE 64000
 
 class Response {
 	private:

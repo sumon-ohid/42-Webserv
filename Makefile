@@ -26,6 +26,7 @@ SRCS		= 	$(addprefix $(SRCS_DIR),\
 				PostMethod.cpp \
 				LocationFinder.cpp \
 				DeleteMethod.cpp \
+				IO.cpp \
 				)
 
 OBJS		= $(SRCS:$(SRCS_DIR)%.cpp=$(OBJ_DIR)/%.o)
@@ -54,7 +55,7 @@ re:	fclean all
 
 -include $(DEPS)
 
-valgrind:
-	valgrind ./$(NAME)
+valgrind: $(NAME)
+	valgrind --track-fds=yes ./$(NAME)
 
 .PHONY: all clean fclean re

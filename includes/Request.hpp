@@ -20,7 +20,6 @@ class Request {
 		bool	_headerChecked;
 		bool	_readingFinished;
 		bool	_isChunked;
-		int		_type; // request or response
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
 		std::size_t	_contentRead;
@@ -30,14 +29,15 @@ class Request {
 		void	storeHeadersInMap(const std::string& oneLine, std::size_t& endPos);
 
 	public:
-		std::size_t	_contentLength;
-		std::string	_requestBody;
-		std::string	_postFilename;
+		std::size_t		_contentLength;
+		std::string		_requestBody;
+		std::string		_postFilename;
 		ServerConfig*	_servConf;
-		Response*	_response;
+		Response*		_response;
+		bool			_isRead;
+		bool			_isWrite;
 
 		Request();
-		Request(std::string method);
 		Request(const Request& other);
 		Request&	operator=(const Request& other);
 		bool		operator==(const Request& other) const;

@@ -95,7 +95,7 @@ void HandleCgi::proccessCGI(Client* client)
 	if (_pid < 0)
 		throw std::runtime_error("500");
 	else if (_pid == 0)
-		handleChildProcess(_locationPath, client->_request);
+		handleChildProcess(_locationPath, *client->_request.begin());
 	else
 		handleParentProcess(client);
 }
@@ -158,63 +158,9 @@ void HandleCgi::handleParentProcess(Client* client)
 {
 	close(_pipeIn[0]); //-- Close read end of the pipe
 	close(_pipeOut[1]); //-- Close write end of the pipe
-	client->_epoll->registerSocket(_pipeIn[1], EPOLLOUT);
-	client->_epoll->addCgiClientToEpollMap(_pipeIn[1], client);
-}
-
-void	HandleCgi::checkReadOrWriteError(Client* client, int fdToClose)
-{
-	if (_byteTracker > -1)
-		return;
-	std::cout << strerror(errno) << std::endl;
-	client->_epoll->removeCgiClientFromEpoll(fdToClose);
-	throw std::runtime_error("500");
-}
-
-void	HandleCgi::writeToChildFd(Client* client)
-{
-	_response = std::vector<char>(client->_request._requestBody.begin(), client->_request._requestBody.end());
-	_byteTracker = write(_pipeIn[1], _response.data() + _totalBytesSent, _response.size() - _totalBytesSent);
-	_totalBytesSent += _byteTracker;
-	checkReadOrWriteError(client, _pipeIn[1]);
-	if (_byteTracker == 0)
-		finishWriteAndPrepareReadFromChild(client);
-	_byteTracker = 0;
-}
-
-void	HandleCgi::finishWriteAndPrepareReadFromChild(Client* client)
-{
-	client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-	client->_epoll->registerSocket(_pipeOut[0], EPOLLIN);
-    client->_epoll->addCgiClientToEpollMap(_pipeOut[0], client);
-	_byteTracker = 0;
-	_totalBytesSent = 0;
-	_response.clear();
-	client->_request._response->setIsChunk(true);
-}
-
-void	HandleCgi::processCgiDataFromChild(Client* client)
-{
-	try
-	{
-		checkWaitPid();
-		readFromChildFd();
-		checkReadOrWriteError(client, _pipeOut[0]);
-		if (_byteTracker == 0)
-			finishReadingFromChild(client);
-		if (!_mimeCheckDone)
-			MimeTypeCheck(client);
-		else
-			_responseStr = std::string(_response.data(), _byteTracker);
-		client->_request._response->createHeaderAndBodyString(client->_request, _responseStr, "200", client);
-		_byteTracker = 0;
-	}
-	catch (std::exception &e)
-	{
-		client->_request._response->error(client->_request, e.what(), client);
-		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
-		_cgiDone = true;
-	}
+	Helper::addFdToEpoll(client, _pipeIn[1], EPOLLOUT);
+	client->_io.setFd(_pipeIn[1]);
+	client->_request.begin()->_isWrite = true;
 }
 
 void	HandleCgi::checkWaitPid()
@@ -228,10 +174,10 @@ void	HandleCgi::checkWaitPid()
 	else if (result > 0)
 	{
 		// Child process has terminated
-		if (WIFEXITED(status))
-			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
-		else if (WIFSIGNALED(status))
-			std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
+		// if (WIFEXITED(status))
+		// 	std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+		// else if (WIFSIGNALED(status))
+		// 	std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
 		_childReaped = true;
 	}
 }
@@ -258,7 +204,7 @@ void	HandleCgi::MimeTypeCheck(Client* client)
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
 	extractMimeType(pos, setMime);
-	client->_request.setMethodMimeType(setMime);
+	client->_request.begin()->setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
 	if (bodyStart != std::string::npos)
@@ -292,9 +238,28 @@ void	HandleCgi::closeCgi(Client* client)
 	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
 }
 
+void	HandleCgi::setCgiDone(bool value)
+{
+	_cgiDone = value;
+}
+
 bool    HandleCgi::getCgiDone() const
 {
     return (_cgiDone);
+}
+
+int		HandleCgi::getPipeIn(unsigned i) const
+{
+	if (i > 1)
+		throw (500);
+	return (_pipeIn[i]);
+}
+
+int		HandleCgi::getPipeOut(unsigned i) const
+{
+	if (i > 1)
+		throw (500);
+	return (_pipeOut[i]);
 }
 
 HandleCgi::~HandleCgi()

@@ -3,7 +3,9 @@
 #include <ctime>
 #include "Epoll.hpp"
 #include "HandleCgi.hpp"
+#include "IO.hpp"
 #include "Request.hpp"
+#include <list>
 
 class	Server;
 class	Socket;
@@ -20,12 +22,14 @@ private:
 	unsigned		_numRequests;
 
 public:
-	Epoll*			_epoll;
-	Server*			_server;
-	Socket*			_socket;
-	Request			_request;
-	HandleCgi		_cgi;
-	bool			_isCgi;
+	Epoll*				_epoll;
+	Server*				_server;
+	Socket*				_socket;
+	std::list<Request>	_request;
+	HandleCgi			_cgi;
+	IO					_io;
+	bool				_isCgi;
+
 
 	// Coplien's form
 	Client();

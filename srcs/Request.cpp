@@ -22,7 +22,6 @@
 #include "../includes/Helper.hpp"
 
 Request::Request() {
-	_type = -1;
 	_firstLineChecked = false;
 	_headerChecked = false;
 	_readingFinished = false;
@@ -32,10 +31,11 @@ Request::Request() {
 	_contentLength = 0;
 	_contentRead = 0;
 	_servConf = NULL;
+	_isRead =false;
+	_isWrite = false;
 }
 
 Request::Request(const Request& other) {
-	_type = other._type;
 	_firstLineChecked = other._firstLineChecked;
 	_headerChecked = other._headerChecked;
 	_readingFinished = other._readingFinished;
@@ -53,6 +53,8 @@ Request::Request(const Request& other) {
 	_contentRead = other._contentRead;
 	_host = other._host;
 	_servConf = other._servConf;
+	_isRead = other._isRead;
+	_isWrite = other._isWrite;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -63,7 +65,6 @@ Request&	Request::operator=(const Request& other) {
 	_headerChecked = other._headerChecked;
 	_readingFinished = other._readingFinished;
 	_isChunked = other._isChunked;
-	_type = other._type;
 	delete _method;
 	_method = NULL;
 	if (other._method)
@@ -77,6 +78,8 @@ Request&	Request::operator=(const Request& other) {
 	_contentRead = other._contentRead;
 	_host = other._host;
 	_servConf = other._servConf;
+	_isRead = other._isRead;
+	_isWrite = other._isWrite;
 	return *this;
 }
 
@@ -86,13 +89,14 @@ bool		Request::operator==(const Request& other) const
 			_headerChecked == other._headerChecked &&
 			_readingFinished == other._readingFinished &&
 			_isChunked == other._isChunked &&
-			_type == other._type &&
 			_method == other._method &&
 			_headerMap == other._headerMap &&
 			_contentLength == other._contentLength &&
 			_contentRead == other._contentRead &&
 			_host == other._host &&
-			_servConf == other._servConf);
+			_servConf == other._servConf &&
+			_isRead == other._isRead &&
+			_isWrite == other._isWrite);
 }
 
 Request::~Request() {
@@ -149,7 +153,10 @@ std::string Request::getHeaderFromHeaderMap(std::string headerName) const {
 }
 
 void Request::setMethodMimeType(std::string path) {
-	this->_method->setMimeType(path);
+	if (this->hasMethod())
+		this->_method->setMimeType(path);
+	else
+		std::cout << "whooopsie daisy" << std::endl;
 }
 
 static void	checkTelnetInterruption(std::vector<char>& line) {
@@ -164,7 +171,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 
 	// std::cout << "$" << oneLine << "$" << std::endl;
 	std::size_t pos = oneLine.find(":");
-	if (pos == std::string::npos)
+	if (pos == std::string::npos || pos == 0) // BP check key is str _- num?
 		return;
 	std::string	key = oneLine.substr(0, pos);
 	Helper::toLower(key);
@@ -415,16 +422,6 @@ void	Request::executeMethod(int socketFd, Client *client)
 	this->_method->executeMethod(socketFd, client, *this);
 }
 
-//-- This is not ALLOWED
-// int	Request::invalidRequest(Client* client)
-// {
-// 	if (errno == EINTR)
-// 		return (-1);
-// 	// Handle read error (ignore EAGAIN and EWOULDBLOCK errors)
-// 	if (errno != EAGAIN && errno != EWOULDBLOCK)
-// 		client->_server->_epoll->removeClient(client);  // Close the socket on other read errors
-// 	return (-1); // Move to the next event
-// }
 
 int	Request::emptyRequest(Client* client)
 {
@@ -449,18 +446,6 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	if (request.getFirstLineChecked() && !request._headerChecked && endPos != std::string::npos) {
 		storeHeadersInMap(strLine, endPos);
 	}
-	//-- SUMON commented
-	// if (request._firstLineChecked && request._headerChecked && !request._readingFinished && endPos != std::string::npos) {
-	// 	if (this->_method->getName() == "POST") {
-	// 		storeRequestBody(strLine, endPos);
-	// 	}
-	// }
-	//-- OLD POST BODY
-	// if (request._firstLineChecked && request._headerChecked && endPos != std::string::npos) {
-	// 	if (this->_method->getName() == "POST") {
-	// 		storeRequestBody(strLine, endPos);
-	// 	}
-	// }
 }
 
 
@@ -473,9 +458,9 @@ std::string fileName = "/tmp/" + Helper::generateRandomId();
 
 int Request::clientRequest(Client* client)
 {
-    int event_fd = client->getFd();
-    bool writeFlag = false;
-    bool contentLengthFound = false;
+	int event_fd = client->getFd();
+	bool writeFlag = false;
+	bool contentLengthFound = false;
 
 	std::ofstream bodyFile(fileName.c_str(), std::ios::out | std::ios::app | std::ios::binary);
 	if (!bodyFile.is_open())
@@ -483,21 +468,21 @@ int Request::clientRequest(Client* client)
 
     std::vector<char> buffer(SOCKET_BUFFER_SIZE);
 
-    try
-    {
-        buffer.resize(SOCKET_BUFFER_SIZE);
-        ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
-        if (count == -1)
-        {
+	try
+	{
+		buffer.resize(SOCKET_BUFFER_SIZE);
+		ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
+		if (count == -1)
+		{
 			//-- Maybe should write some error message
-            //Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			//Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
 			return (1);
-        }
-        else if (count == 0)
-            return emptyRequest(client);
+		}
+		else if (count == 0)
+			return emptyRequest(client);
 
-        buffer.resize(count);
-        validRequest(client->_server, buffer, count, client->_request);
+		buffer.resize(count);
+		validRequest(client->_server, buffer, count, *this);
 
         //-- Append data to requestBody
         //requestBody.append(buffer.data(), count);
@@ -518,12 +503,12 @@ int Request::clientRequest(Client* client)
             }
         }
 
-        //-- Stop reading if we have reached Content-Length
-        if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
-        {
-            _readingFinished = true;
+		//-- Stop reading if we have reached Content-Length
+		if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
+		{
+			_readingFinished = true;
 			totalBytesRead = 0;
-        }
+		}
 
         //-- Process the request body if headers are fully checked and reading is finished
 		if (_firstLineChecked && _headerChecked && _readingFinished)
@@ -535,43 +520,46 @@ int Request::clientRequest(Client* client)
 			std::remove(fileName.c_str());
         }
 		else
-        {
-            // Not finished reading, return to epoll event loop
-            Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
-            return 0;
-        }
-    }
-    catch (std::exception &e)
-    {
-        if (std::string(e.what()) == TELNETSTOP) {
-            client->_server->_epoll->removeClient(client);
-        } else {
-            client->_request._response->error(client->_request, e.what(), client);
-        }
-        std::cerr << "Exception: " << e.what() << std::endl;
-        writeFlag = true;
-        return OK;
-    }
+		{
+			// Not finished reading, return to epoll event loop
+			Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			return 0;
+		}
+	}
+	catch (std::exception &e)
+	{
+		if (std::string(e.what()) == TELNETSTOP) {
+			client->_server->_epoll->removeClient(client);
+		} else {
+			_response->error(*this, e.what(), client);
+		}
+		std::cerr << "Exception: " << e.what() << std::endl;
+		writeFlag = true;
+		return OK;
+	}
 
-    // Execute the method if reading is finished and no errors occurred
-    if (!writeFlag && _readingFinished)
-    {
-        try {
-            client->_request.executeMethod(event_fd, client);
-        }
-        catch (std::exception &e) {
-            client->_request._response->error(client->_request, e.what(), client);
-        }
-    }
+	// Execute the method if reading is finished and no errors occurred
+	if (!writeFlag && _readingFinished)
+	{
+		if (this == &(*client->_request.begin()))
+		{
+			try {
+				executeMethod(event_fd, client);
+			}
+			catch (std::exception &e) {
+				_response->error(*this, e.what(), client);
+			}
+		}
+		client->_request.push_back(Request());
+	}
 
-    writeFlag = false;
-    std::cout << "-------------------------------------" << std::endl;
-    return 0;
+	writeFlag = false;
+	std::cout << "-------------------------------------" << std::endl;
+	return 0;
 }
 
 
 void	Request::requestReset() {
-	_type = -1;
 	_firstLineChecked = false;
 	_headerChecked = false;
 	_readingFinished = false;

@@ -1,15 +1,18 @@
 #include "../includes/Helper.hpp"
+#include "../includes/Response.hpp"
 
 #include <cstddef>
 #include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <stdexcept>
 #include <sys/epoll.h>
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
-#include <sys/types.h>
+#include <sys/stat.h>
+#include <cerrno>
 
 Helper::Helper() {}
 
@@ -135,6 +138,26 @@ void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t event
 	}
 }
 
+void	Helper::addFdToEpoll(Client* client, int fd, uint32_t event)
+{
+	if (!client->_epoll->registerSocket(fd, event))
+		return ;
+    client->_epoll->addCgiClientToEpollMap(fd, client);
+}
+
+void	Helper::prepareIO(Client* client, int fd, std::string& path, std::string mode)
+{
+	client->_io.setSize(Helper::checkFileSize(path, client));
+	client->_io.setFd(fd);
+	client->_epoll->addClientIo(client, mode);
+	if (mode == "read")
+		client->_request.begin()->_isRead = true;
+	else if (mode == "write")
+		client->_request.begin()->_isWrite = true;
+	else
+		throw std::runtime_error("500");
+}
+
 std::string Helper::decodeUrl(std::string url)
 {
     std::string decodedUrl;
@@ -163,6 +186,25 @@ std::string Helper::decodeUrl(std::string url)
             decodedUrl += url[i];
     }
     return decodedUrl;
+}
+
+long	Helper::checkFileSize(const std::string& path, Client* client)
+{
+	struct stat fileStat;
+
+	if (stat(path.c_str(), &fileStat) == -1)
+		client->_request.back()._response->error(client->_request.back(), mapErrnoToHttpCodeString(), client);
+	return (fileStat.st_size);
+}
+
+std::string	Helper::mapErrnoToHttpCodeString() {
+	switch (errno) {
+		case ENOENT: return "404"; // Not Found
+		case EACCES: return "403"; // Forbidden
+		case ENAMETOOLONG: return "414"; // URI Too Long
+		case ENOTDIR: return "404"; // Not Found
+		default: return "500"; // Internal Server Error
+	}
 }
 
 // BONUS : cookies

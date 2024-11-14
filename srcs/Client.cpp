@@ -1,10 +1,18 @@
 #include "../includes/Client.hpp"
 
 // ------------- Coplien's Form -------------
-Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _epoll(NULL), _server(NULL), _socket(NULL), _isCgi(false) {};
-Client::Client(int fd, int port, Server *serv, Socket* socket, Epoll* epoll) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _epoll(epoll), _server(serv), _socket(socket), _isCgi(false) {}
-Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _epoll(orig._epoll), _server(orig._server), _socket(orig._socket), _request(orig._request), _isCgi(false) {}
+Client::Client() : _fd(-1), _port(-1), _lastActive(0), _numRequests(0), _epoll(NULL), _server(NULL), _socket(NULL), _isCgi(false) {
+	_request.push_back(Request());
+};
+
+Client::Client(int fd, int port, Server *serv, Socket* socket, Epoll* epoll) : _fd(fd), _port(port), _lastActive(0), _numRequests(0), _epoll(epoll), _server(serv), _socket(socket), _isCgi(false) {
+	_request.push_back(Request());
+}
+
+Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _epoll(orig._epoll), _server(orig._server), _socket(orig._socket), _request(orig._request), _isCgi(orig._isCgi) {}
+
 Client::~Client() {}
+
 Client&	Client::operator=(const Client& rhs)
 {
 	if (this != &rhs)
