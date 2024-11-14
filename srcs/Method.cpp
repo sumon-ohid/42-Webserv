@@ -6,13 +6,13 @@
 
 
 
-const std::string Method::_methodArray[ARRAY_SIZE] = {"OPTIONS", "HEAD", "GET", "POST", "DELETE"};
+const std::string Method::_methodArray[ARRAY_SIZE] = {"GET", "POST", "DELETE"};
 
 Method::Method() {
-	this->_name = "";
-	this->_path = "";
-	this->_protocol = "HTTP/1.1";
-	this->_mimeType = "";
+	_name = "";
+	_path = "";
+	_protocol = "HTTP/1.1";
+	_mimeType = "";
 }
 
 Method::Method(const Method& other) : _name(other._name), _path(other._path), _protocol(other._protocol), _mimeType(other._mimeType) {}
@@ -20,10 +20,10 @@ Method::Method(const Method& other) : _name(other._name), _path(other._path), _p
 Method& Method::operator=(const Method& other) {
 	if (this == &other)
 		return *this;
-	this->_name = other._name;
-	this->_path = other._path;
-	this->_protocol = other._protocol;
-	this->_mimeType = other._mimeType;
+	_name = other._name;
+	_path = other._path;
+	_protocol = other._protocol;
+	_mimeType = other._mimeType;
 	return *this;
 }
 
@@ -37,19 +37,19 @@ bool	Method::operator==(const Method& other) const
 Method::~Method() {}
 
 std::string Method::getName() const {
-	return this->_name;
+	return _name;
 }
 
 std::string Method::getPath() const {
-	return this->_path;
+	return _path;
 }
 
 std::string Method::getProtocol() const {
-	return this->_protocol;
+	return _protocol;
 }
 
 std::string Method::getMimeType() const {
-	return this->_mimeType;
+	return _mimeType;
 }
 
 void	Method::setName(std::string name) {
@@ -69,7 +69,7 @@ void	Method::setPath(std::string path) {
 	if (path.empty())
 		throw std::runtime_error("400");
 
-	//-- If path is endoded, this will decode it.
+	//-- If path is encoded, this will decode it.
 	path = Helper::decodeUrl(path);
 	if (path.find("..") != std::string::npos)
 		throw std::runtime_error("403");
@@ -79,7 +79,6 @@ void	Method::setPath(std::string path) {
 
 void	Method::setProtocol(std::string protocol) {
 	if (protocol.empty()) {
-		// HTTP/0.9 not supported
 		throw std::runtime_error("505");
 	}
 	if (protocol == "HTTP/2" || protocol == "HTTP/1.0")

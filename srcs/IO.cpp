@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstring>
 #include <features.h>
+#include <stdexcept>
 #include <sys/types.h>
 #include <cerrno>
 
@@ -89,13 +90,18 @@ void	IO::resetIO(Client* client)
 void	IO::readFromChildFd(Client* client)
 {
 	client->_cgi.checkWaitPid();
+	if (client->_cgi.getPipeOut(0) < 0)
+		return;
 	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
-	if (_byteTracker == 0)
+	if (_byteTracker == 0) {
 		finishReadingFromFd(client);
-	if (!_mimeCheckDone)
+		return;
+	}
+	if (!_mimeCheckDone) {
 		MimeTypeCheck(client);
+	}
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
@@ -166,7 +172,7 @@ void	IO::extractMimeType(size_t pos, std::string& setMime)
 		}
 	}
 	if (setMime.empty())
-    	setMime = ".html";
+    	throw std::runtime_error("415");
 }
 
 size_t	IO::getSize() const
