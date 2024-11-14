@@ -95,10 +95,8 @@ void	IO::readFromChildFd(Client* client)
 	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
-	if (_byteTracker == 0) {
-		finishReadingFromFd(client);
-		return;
-	}
+	if (_byteTracker == 0)
+		return (finishReadingFromFd(client));
 	if (!_mimeCheckDone) {
 		MimeTypeCheck(client);
 	}
@@ -171,6 +169,7 @@ void	IO::extractMimeType(size_t pos, std::string& setMime)
 			}
 		}
 	}
+	std::cout << setMime << " " << (setMime.empty() ? "empty" : "not empty") << std::endl;
 	if (setMime.empty())
     	throw std::runtime_error("415");
 }

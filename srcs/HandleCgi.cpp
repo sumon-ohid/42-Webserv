@@ -20,14 +20,17 @@
 
 HandleCgi::HandleCgi()
 {
-    _locationPath = "";
+    _pipeIn[0] = -1;
+    _pipeIn[1] = -1;
+    _pipeOut[0] = -1;
+    _pipeOut[1] = -1;
+	_locationPath = "";
     _method = "";
     _postBody = "";
     _fileName = "";
 	_pid = -1;
 	_childReaped = false;
 	_byteTracker = 0;
-	_totalBytesSent = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
@@ -66,6 +69,10 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     _postBody = request._requestBody;
     _fileName = request._postFilename;
 	_pid = -1;
+	_pipeIn[0] = -1;
+    _pipeIn[1] = -1;
+    _pipeOut[0] = -1;
+    _pipeOut[1] = -1;
 	_childReaped = false;
 	_byteTracker = 0;
 	_totalBytesSent = 0;
@@ -183,8 +190,11 @@ void	HandleCgi::checkWaitPid()
 
 void	HandleCgi::closeCgi(Client* client)
 {
-	client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+	if (client->_isCgi)
+	{
+		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
+		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+	}
 }
 
 void	HandleCgi::setCgiDone(bool value)

@@ -128,6 +128,7 @@ bool	Epoll::cgi(int eventFd, uint32_t events)
 	if (it == _mpCgiClient.end())
 		return (false);
 	Client* client = it->second;
+	std::cout << eventFd << std::endl;
 	if (events & (EPOLLHUP | EPOLLRDHUP))
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
@@ -304,8 +305,9 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 
 void	Epoll:: removeClientEpoll(int fd)
 {
+	std::cout << fd << std::endl;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1)
-		std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
+		std::cerr << "Error removing fd " << fd << " from epoll: " << strerror(errno) << std::endl;
 	// Close the client socket
 	close(fd);
 }
