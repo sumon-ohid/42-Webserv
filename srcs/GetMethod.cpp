@@ -199,28 +199,13 @@ void GetMethod::handleRedirection(Client* client, Request& request, std::string 
             url = redirectUrl.substr(spacePos + 1);
         }
     }
-
     std::cout << BOLD YELLOW << "Redirecting to: " << url << RESET << std::endl;
     request._response->createHeaderAndBodyString(request, url, redirectCode, client);
-    // std::ostringstream redirectHeader;
-    // redirectHeader << "HTTP/1.1 " << redirectCode << " " << redirectCodes[redirectCode] << "\r\n"
-    //                << "Location: " << url << "\r\n"
-    //                << "Content-Length: 0\r\n"
-    //                << "Connection: close\r\n\r\n";
-    // std::string response = redirectHeader.str();
-    // ssize_t bytes_written = write(socketFd, response.c_str(), response.size());
-    // if (bytes_written == -1)
-    //     throw std::runtime_error("Error writing to socket in GetMethod::handleRedirection!!");
-    // else if (bytes_written == 0)
-    //     std::cerr << BOLD RED << "Error: 0 bytes written to socket in GetMethod::handleRedirection" << RESET << std::endl;
-    // else
-    // std::cout << BOLD GREEN << "Redirect response sent successfully" << RESET << std::endl;
 }
 
 void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &path, Request &request, Client *client)
 {
     signal (SIGPIPE, SIG_IGN);
-
     //-- Check if the allowed methods include GET
     //-- If not, return 405 Method Not Allowed
     //-- It will check in the matched location block

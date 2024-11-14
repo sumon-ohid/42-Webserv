@@ -98,10 +98,6 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
         ss << "Set-Cookie: session=" << _sessionId << ";SameSite=Lax; Path=/; HttpOnly; Max-Age=3600;r\n";
 	ss << "\r\n";
 
-	// std::cout << "\n------------" << std::endl;
-	// std::cout << ss.str() << std::endl;
-	// std::cout << "------------\n" << std::endl;
-
 	return ss.str();
 }
 
@@ -131,10 +127,6 @@ void	Response::prepareChunk(Client* client)
 {
 	if (!_headerSent)
 	{
-		// std::cout << "\n------------" << std::endl;
-		// std::cout << client->getFd() << std::endl;
-		// std::cout << _header << std::endl;
-		// std::cout << "------------\n" << std::endl;
 		_bytesSent = send(client->getFd(), _header.c_str(), _header.size(), 0);
 		_headerSent = true;
 	}
@@ -173,8 +165,7 @@ void	Response::sendNullChunk(Client* client)
 	{
 		_bytesSent -= 5;
 		_finishedSending = true;
-		// std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << RESET << std::endl;
-    	// std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
+    	std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 	}
 }
 
@@ -186,8 +177,9 @@ void	Response::sendSimpleResponse(Client* client)
 	if (_bytesSent < 0)
 		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
 	_finishedSending = true;
-	// std::cout << client->_request.getMethodName() << " " << client->_request.getMethodPath() << RESET << std::endl;
-    // std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
+	if (client->_io.getFd() > -1)
+		close(client->_io.getFd() );
+    std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 }
 
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {

@@ -30,4 +30,5 @@ int main(int argc, char **argv)
 		std::cerr << BOLD RED "\nError:\t" << e.what() << RESET << std::endl;
 	}
 	serverManager.shutdown();
+
 }
