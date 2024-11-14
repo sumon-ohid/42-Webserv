@@ -55,7 +55,7 @@ re:	fclean all
 
 -include $(DEPS)
 
-valgrind:
-	valgrind ./$(NAME)
+valgrind: $(NAME)
+	valgrind --track-fds=yes ./$(NAME)
 
 .PHONY: all clean fclean re
