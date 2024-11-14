@@ -204,7 +204,7 @@ void	HandleCgi::MimeTypeCheck(Client* client)
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
 	extractMimeType(pos, setMime);
-	client->_request.setMethodMimeType(setMime);
+	client->_request.begin()->setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
 	if (bodyStart != std::string::npos)
