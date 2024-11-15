@@ -116,6 +116,7 @@ void HandleCgi::handleChildProcess(const std::string &_locationPath, Request &re
     close(_pipeIn[0]); //-- Close write end of the pipe
     close(_pipeOut[1]); //-- Close read end of the pipe
 
+
     initEnv(request);
     std::string executable = getExecutable(_locationPath);
 
@@ -180,10 +181,10 @@ void	HandleCgi::checkWaitPid()
 	else if (result > 0)
 	{
 		// Child process has terminated
-		// if (WIFEXITED(status))
-		// 	std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
-		// else if (WIFSIGNALED(status))
-		// 	std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
+		if (WIFEXITED(status))
+			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+		else if (WIFSIGNALED(status))
+			throw ("500");
 		_childReaped = true;
 	}
 }
@@ -219,6 +220,11 @@ int		HandleCgi::getPipeOut(unsigned i) const
 	if (i > 1)
 		throw (500);
 	return (_pipeOut[i]);
+}
+
+std::string	HandleCgi::getLocationPath() const
+{
+	return (_locationPath);
 }
 
 HandleCgi::~HandleCgi()

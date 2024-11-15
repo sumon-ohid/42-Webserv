@@ -1,4 +1,6 @@
 #!/bin/bash
+echo -e 'Content-Type: text/html\r\n'
+echo -e '\r\n\r\n'
 echo '<!DOCTYPE html>'
 echo '<html lang="en">'
 echo '<head>'

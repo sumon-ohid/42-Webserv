@@ -23,13 +23,8 @@ Config::Config(std::string configFile) : configFile(configFile)
     readConfig(configFile);
     if (validationCheck() == false || syntaxCheck() == false)
         throw std::runtime_error(BOLD + configFile + RED + " [ KO ] " + RESET);
-
-    //-- removing ; from line after validation
     for (size_t i = 0; i < configVector.size(); i++)
-    {
         configVector[i].erase(remove(configVector[i].begin(), configVector[i].end(), ';'), configVector[i].end());
-    }
-    //std::cout << BOLD << configFile << GREEN << " [ OK ] " << RESET << std::endl;
 }
 
 Config::~Config()

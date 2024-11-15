@@ -68,6 +68,8 @@ void	IO::finishWriteCgi(Client* client)
 {
 	if (client->_request.begin()->_isRead == false)
 		Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN); // pass _pipeOut[0]
+	client->_epoll->removeCgiClientFromEpoll(client->_cgi.getPipeIn(1));
+	_fd = -1;
 	client->_request.begin()->_isWrite = false;
 	client->_request.begin()->_isRead = true;
 	client->_request.begin()->_response->setIsChunk(true);
@@ -111,7 +113,7 @@ void	IO::readFromFile(Client* client)
 	readFromFd();
 	checkReadOrWriteError(client);
 	if (_byteTracker == 0)
-		finishReadingFromFd(client);
+		return (finishReadingFromFd(client));
 	_responseStr = std::string(_response.data(), _byteTracker);
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
@@ -131,6 +133,7 @@ void	IO::finishReadingFromFd(Client* client)
 	{
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
+		client->_isCgi = false;
 		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
 	}
@@ -143,8 +146,7 @@ void	IO::MimeTypeCheck(Client* client)
 	_responseStr = std::string(_response.data(), _byteTracker);
 	size_t pos = _responseStr.find("Content-Type:");
 	std::string setMime;
-	extractMimeType(pos, setMime);
-	// std::cout << (client->_request.begin()->hasMethod() ? "method there" : "no method") << std::endl;
+	extractMimeType(pos, setMime, client);
 	client->_request.begin()->setMethodMimeType(setMime);
 	_mimeCheckDone = true;
 	size_t bodyStart = _responseStr.find("\r\n\r\n");
@@ -152,7 +154,7 @@ void	IO::MimeTypeCheck(Client* client)
 		_responseStr.erase(0, bodyStart += 5);
 }
 
-void	IO::extractMimeType(size_t pos, std::string& setMime)
+void	IO::extractMimeType(size_t pos, std::string& setMime, Client* client)
 {
 	if (pos != std::string::npos)
 	{
@@ -169,9 +171,11 @@ void	IO::extractMimeType(size_t pos, std::string& setMime)
 			}
 		}
 	}
-	std::cout << setMime << " " << (setMime.empty() ? "empty" : "not empty") << std::endl;
 	if (setMime.empty())
-    	throw std::runtime_error("415");
+    {
+		std::cout << "path before throwing 415 " << client->_cgi.getLocationPath() << std::endl;
+		throw std::runtime_error("415");
+	}
 }
 
 size_t	IO::getSize() const
