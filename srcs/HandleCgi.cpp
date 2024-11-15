@@ -20,14 +20,17 @@
 
 HandleCgi::HandleCgi()
 {
-    _locationPath = "";
+    _pipeIn[0] = -1;
+    _pipeIn[1] = -1;
+    _pipeOut[0] = -1;
+    _pipeOut[1] = -1;
+	_locationPath = "";
     _method = "";
     _postBody = "";
     _fileName = "";
 	_pid = -1;
 	_childReaped = false;
 	_byteTracker = 0;
-	_totalBytesSent = 0;
 	_totalBytesSent = 0;
 	_mimeCheckDone = false;
 	_cgiDone = false;
@@ -66,6 +69,10 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
     _postBody = request._requestBody;
     _fileName = request._postFilename;
 	_pid = -1;
+	_pipeIn[0] = -1;
+    _pipeIn[1] = -1;
+    _pipeOut[0] = -1;
+    _pipeOut[1] = -1;
 	_childReaped = false;
 	_byteTracker = 0;
 	_totalBytesSent = 0;
@@ -108,6 +115,7 @@ void HandleCgi::handleChildProcess(const std::string &_locationPath, Request &re
 
     close(_pipeIn[0]); //-- Close write end of the pipe
     close(_pipeOut[1]); //-- Close read end of the pipe
+
 
     initEnv(request);
     std::string executable = getExecutable(_locationPath);
@@ -173,18 +181,21 @@ void	HandleCgi::checkWaitPid()
 	else if (result > 0)
 	{
 		// Child process has terminated
-		// if (WIFEXITED(status))
-		// 	std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
-		// else if (WIFSIGNALED(status))
-		// 	std::cerr << "Child terminated by signal: " << WTERMSIG(status) << std::endl;
+		if (WIFEXITED(status))
+			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+		else if (WIFSIGNALED(status))
+			throw ("500");
 		_childReaped = true;
 	}
 }
 
 void	HandleCgi::closeCgi(Client* client)
 {
-	client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
-	client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+	if (client->_isCgi)
+	{
+		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
+		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+	}
 }
 
 void	HandleCgi::setCgiDone(bool value)
@@ -209,6 +220,11 @@ int		HandleCgi::getPipeOut(unsigned i) const
 	if (i > 1)
 		throw (500);
 	return (_pipeOut[i]);
+}
+
+std::string	HandleCgi::getLocationPath() const
+{
+	return (_locationPath);
 }
 
 HandleCgi::~HandleCgi()

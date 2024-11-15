@@ -141,7 +141,7 @@ bool	Epoll::cgi(int eventFd, uint32_t events)
 	{
 		if (events & EPOLLIN)
 			client->_io.readFromChildFd(client);
-		if (events & EPOLLOUT && client->_request.begin()->_isWrite)
+		else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
 			client->_io.writeToChildFd(client);
 	}
 	return (true);
@@ -201,7 +201,6 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 		return (false);
 	Helper::setCloexec(_connSock);
 	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt), this);
-	// addTimestamp(tmp);
 	serv.addClient(tmp);
 	return (true);
 }
@@ -260,15 +259,11 @@ void	Epoll::clientError(Client* client)
 
 void	Epoll::clientResponse(Client* client)
 {
-	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone())) {
+	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
 		client->_request.begin()->_response->sendResponse(client);
-		// std::cout << "\n" << client->_request.begin()->_response->getIsFinished() << std::endl;
-		// std::cout << client->_request.begin()->_response->getBodySize() << std::endl;
-	}
 	if (client->_request.begin()->_response->getIsFinished())
 	{
 		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
-		// client->_request.begin()->requestReset();
 		if (client->_request.size() > 1)
 			client->_request.pop_front();
 		if (client->_request.size() > 1)
@@ -286,7 +281,6 @@ void	Epoll::clientResponse(Client* client)
 
 void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)
 {
-	//std::cout << "added pipeFd:\t" << pipeFd << " to Epoll map" << std::endl;
 	_mpCgiClient.insert(std::make_pair(pipeFd, client));
 }
 
@@ -295,18 +289,24 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(pipeFd);
 	if (it != _mpCgiClient.end())
 	{
-		std::cout << "removeCgiClient from Epoll: " << pipeFd << std::endl;
-		_mpCgiClient.erase(it);
-		removeClientEpoll(pipeFd);
+		if (is_fd_valid(pipeFd))
+		{
+			_mpCgiClient.erase(it);
+			removeClientEpoll(pipeFd);
+		}
 	}
 }
 
+bool Epoll::is_fd_valid(int fd) 
+{
+	return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+}
 
 void	Epoll:: removeClientEpoll(int fd)
 {
+	std::cout << "remove fd: " << fd << std::endl;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1)
-		std::cerr << "Error removing FD from epoll: " << strerror(errno) << std::endl;
-	// Close the client socket
+		std::cerr << "Error removing fd " << fd << " from epoll: " << strerror(errno) << std::endl;
 	close(fd);
 }
 

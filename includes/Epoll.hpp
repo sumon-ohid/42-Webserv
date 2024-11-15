@@ -123,4 +123,6 @@ public:
 	// ------------- Getters -------------
 	// returns the epoll fd
 	int		getFd(void) const;
+
+	bool	is_fd_valid(int fd);
 };

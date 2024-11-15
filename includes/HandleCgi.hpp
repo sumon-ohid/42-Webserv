@@ -65,6 +65,7 @@ class HandleCgi
 		bool			getCgiDone() const;
 		int				getPipeIn(unsigned i) const;
 		int				getPipeOut(unsigned i) const;
+		std::string		getLocationPath() const;
 
         // Function template to convert various types to string
         template <typename T>

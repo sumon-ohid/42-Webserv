@@ -126,19 +126,6 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     }
     requestPath = path;
 
-    //std::cout << BOLD BLUE << "PATH " << path << RESET << std::endl;
-    //std::cout << BOLD BLUE << "REQUEST PATH " << requestPath << RESET << std::endl;
-	// std::vector<LocationConfig>* tmp = client->_server->getLocationConfig(client->_request.getHost(), client->getPort());
-	// std::cout << "host:\t" << client->_request.getHost() << std::endl;
-	// if (tmp)
-    // 	locationsVector = *tmp;
-	// else
-	// {
-	// 	std::cout << "error here" << std::endl;
-	//  	throw std::runtime_error("");
-	// }
-
-
     for (size_t i = 0; i < locationsVector.size(); i++)
     {
         std::string tempPath = locationsVector[i].getPath();

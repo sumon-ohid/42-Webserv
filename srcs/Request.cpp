@@ -152,11 +152,9 @@ std::string Request::getHeaderFromHeaderMap(std::string headerName) const {
 	return _headerMap.find(headerName)->second;
 }
 
-void Request::setMethodMimeType(std::string path) {
-	if (this->hasMethod())
-		this->_method->setMimeType(path);
-	else
-		std::cout << "whooopsie daisy" << std::endl;
+void Request::setMethodMimeType(std::string path) 
+{
+	this->_method->setMimeType(path);
 }
 
 static void	checkTelnetInterruption(std::vector<char>& line) {

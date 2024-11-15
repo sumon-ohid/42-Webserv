@@ -36,7 +36,7 @@ public:
 	void	readFromFile(Client*);
 	void	readFromFd();
 	void	MimeTypeCheck(Client*);
-	void	extractMimeType(size_t, std::string&);
+	void	extractMimeType(size_t, std::string&, Client*);
 	void	finishReadingFromFd(Client*);
 
 	// general
