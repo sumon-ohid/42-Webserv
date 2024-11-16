@@ -5,6 +5,7 @@
 #include "../includes/main.hpp"
 
 
+#include <exception>
 #include <fcntl.h>
 #include <fcntl.h>
 #include <iostream>
@@ -134,31 +135,55 @@ bool	Epoll::existingClient(int eventFd, uint32_t events)
 
 void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 {
-	if (events & (EPOLLHUP | EPOLLRDHUP))
+	try 
 	{
-		if (client->_isCgi && !client->_cgi.getCgiDone())
+		if (events & (EPOLLHUP | EPOLLRDHUP))
+		{
+			if (client->_isCgi && !client->_cgi.getCgiDone())
+				client->_io.readFromChildFd(client);
+			else
+			{
+				endCgi(client);
+				removeClientEpoll(client->getFd());
+			}
+		}
+		if (events & EPOLLERR)
+			cgiErrorOrHungUp(eventFd);
+		if (events & EPOLLIN)
 			client->_io.readFromChildFd(client);
-		else
-			removeClientIo(client);
+		else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
+			client->_io.writeToChildFd(client);
 	}
-	if (events & EPOLLERR)
-		cgiErrorOrHungUp(eventFd);
-	if (events & EPOLLIN)
-		client->_io.readFromChildFd(client);
-	else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
-		client->_io.writeToChildFd(client);
+	catch (std::exception &e)
+	{
+		endCgi(client);
+		client->_request.begin()->_response->error(*client->_request.begin(), e.what(),client);
+	}
+}
+
+void	Epoll::endCgi(Client* client)
+{
+	client->_cgi.closeCgi(client);
+	client->_isCgi = false;
 }
 
 void	Epoll::handleRegularClient(Client* client, uint32_t events)
 {
-	if (events & (EPOLLHUP | EPOLLRDHUP))
-		return (clientHungUp(client));
-	if (events & EPOLLERR)
-		return (clientError(client));
-	if (events & EPOLLIN)  // Check if the event is for reading
-		client->_request.back().clientRequest(client);
-	if (events & EPOLLOUT) // Check if the event is for writing
-		clientResponse(client);
+	try
+	{
+		if (events & (EPOLLHUP | EPOLLRDHUP))
+			return (clientHungUp(client));
+		if (events & EPOLLERR)
+			return (clientError(client));
+		if (events & EPOLLIN)  // Check if the event is for reading
+			client->_request.back().clientRequest(client);
+		if (events & EPOLLOUT) // Check if the event is for writing
+			clientResponse(client);
+	}
+	catch (std::exception &e)
+	{
+		client->_request.begin()->_response->error(*client->_request.begin(), e.what(),client);
+	}
 }
 
 
@@ -205,7 +230,7 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	if (_connSock < 0)
 	{
 		std::cerr << gai_strerror(_connSock);
-		throw std::runtime_error("Error:\taccept4 failed");
+		throw std::runtime_error("Error:\taccept failed");
 		  // Skip to the next socket if accept fails
 	}
 	Helper::setCloexec(_connSock);

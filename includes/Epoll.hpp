@@ -67,6 +67,7 @@ private:
 	// check how the event should be handled for an existing client
 	bool	existingClient(int, uint32_t);
 	void	handleCgiClient(Client*, int, uint32_t);
+	void	endCgi(Client*);
 	void	handleRegularClient(Client*, uint32_t);
 
 	// returns the client corresponding to the fd passed
