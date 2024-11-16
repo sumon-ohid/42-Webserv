@@ -466,6 +466,8 @@ int Request::clientRequest(Client* client)
 
     std::vector<char> buffer(SOCKET_BUFFER_SIZE);
 
+	std::cout << buffer << std::endl;
+
 	try
 	{
 		buffer.resize(SOCKET_BUFFER_SIZE);
@@ -474,6 +476,7 @@ int Request::clientRequest(Client* client)
 		{
 			//-- Maybe should write some error message
 			//Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			exit(4);
 			return (1);
 		}
 		else if (count == 0)

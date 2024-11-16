@@ -65,7 +65,10 @@ private:
 	 */
 	bool	AcceptNewClient(Server&, lstSocs::iterator&);
 	// check how the event should be handled for an existing client
-	void	existingClient(vSrv&, uint32_t, int);
+	bool	existingClient(int, uint32_t);
+	void	handleCgiClient(Client*, int, uint32_t);
+	void	handleRegularClient(Client*, uint32_t);
+
 	// returns the client corresponding to the fd passed
 	Client*	retrieveClient(vSrv&, int);
 	// outputs the corresponding error message and removes the client from epoll
