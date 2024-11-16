@@ -100,11 +100,8 @@ void Epoll::Monitoring(vSrv& servers)
 		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1 || stopSignal)
 			break;
 		for (int i = 0; i < _nfds; ++i)
-		{
-			// Handle events on existing client connections
-			if (!cgi(_events[i].data.fd, _events[i].events) && !NewClient(servers, _events[i].data.fd))  // Check if the event corresponds to one of the listening sockets
-				existingClient(servers, _events[i].events, _events[i].data.fd);
-		}
+			if (!existingClient(_events[i].data.fd, _events[i].events))  // Check if the event corresponds to one of the listening sockets
+				NewClient(servers, _events[i].data.fd);
 		IOFiles();
 	}
 }
@@ -122,12 +119,21 @@ int	Epoll::checkEpollWait(int epollWaitReturn)
 	return (_nfds);
 }
 
-bool	Epoll::cgi(int eventFd, uint32_t events)
+bool	Epoll::existingClient(int eventFd, uint32_t events)
 {
 	std::map<int, Client*>::iterator it = _mpCgiClient.find(eventFd);
 	if (it == _mpCgiClient.end())
 		return (false);
 	Client* client = it->second;
+	if (client->_isCgi)
+		handleCgiClient(client, eventFd, events);
+	else
+		handleRegularClient(client, events);
+	return (true);
+}
+
+void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
+{
 	if (events & (EPOLLHUP | EPOLLRDHUP))
 	{
 		if (client->_isCgi && !client->_cgi.getCgiDone())
@@ -137,15 +143,24 @@ bool	Epoll::cgi(int eventFd, uint32_t events)
 	}
 	if (events & EPOLLERR)
 		cgiErrorOrHungUp(eventFd);
-	if (client->_isCgi)
-	{
-		if (events & EPOLLIN)
-			client->_io.readFromChildFd(client);
-		else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
-			client->_io.writeToChildFd(client);
-	}
-	return (true);
+	if (events & EPOLLIN)
+		client->_io.readFromChildFd(client);
+	else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
+		client->_io.writeToChildFd(client);
 }
+
+void	Epoll::handleRegularClient(Client* client, uint32_t events)
+{
+	if (events & (EPOLLHUP | EPOLLRDHUP))
+		return (clientHungUp(client));
+	if (events & EPOLLERR)
+		return (clientError(client));
+	if (events & EPOLLIN)  // Check if the event is for reading
+		client->_request.back().clientRequest(client);
+	if (events & EPOLLOUT) // Check if the event is for writing
+		clientResponse(client);
+}
+
 
 void	Epoll::cgiErrorOrHungUp(int cgiFd)
 {
@@ -202,23 +217,8 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	Helper::setCloexec(_connSock);
 	Client	tmp(_connSock, sockIt->getPort(), &serv, &(*sockIt), this);
 	serv.addClient(tmp);
+	_mpCgiClient.insert(std::make_pair(_connSock, serv.getClient(_connSock)));
 	return (true);
-}
-
-void	Epoll::existingClient(vSrv &servers, uint32_t events, int event_fd)
-{
-	Client* client = retrieveClient(servers, event_fd);
-	if (!client)
-		return (clientRetrievalError(event_fd));
-	if (events & (EPOLLHUP | EPOLLRDHUP))
-		return (clientHungUp(client));
-	if (events & EPOLLERR)
-		return (clientError(client));
-	if (events & EPOLLIN)  // Check if the event is for reading
-		client->_request.back().clientRequest(client);
-		// should handle read events
-	if (events & EPOLLOUT) // Check if the event is for writing
-		clientResponse(client);
 }
 
 void Epoll::IOFiles()
@@ -320,7 +320,7 @@ void	Epoll::removeClient(Client* client)
 	if (!client || !client->_server)
 		return;
 	client->_cgi.closeCgi(client);
-	removeClientEpoll(client->getFd());
+	removeCgiClientFromEpoll(client->getFd());
 	removeClientIo(client);
 	removeClientFromServer(client->_server, client->getFd());
 }
