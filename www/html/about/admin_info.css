@@ -197,9 +197,47 @@ body {
     display: none;
 }
 
+.profile-picture-label {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-picture-label span {
+    visibility: hidden;
+    width: 120px;
+    height: auto;
+    background-color: black;
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 5%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.profile-picture-label span::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+}
+
+.profile-picture-label:hover span {
+    visibility: visible;
+    opacity: 1;
+}
+
 .profile-picture-label:hover {
     border: 2px solid var(--button-hover-bg);
-    
 }
 
 .mode-switch {
