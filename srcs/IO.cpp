@@ -26,7 +26,11 @@ IO&	IO::operator=(const IO& rhs)
 	}
 	return (*this);
 }
-IO::~IO() {}
+IO::~IO()
+{
+	if (_fd > 0)
+		close (_fd);
+}
 
 
 void	IO::writeToChildFd(Client* client)
