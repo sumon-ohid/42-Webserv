@@ -248,17 +248,23 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 
 void Epoll::IOFiles()
 {
-	for (std::list<Client*>::iterator clientIt = _lstIoClients.begin(); clientIt != _lstIoClients.end();)
+	try {
+		for (std::list<Client*>::iterator clientIt = _lstIoClients.begin(); clientIt != _lstIoClients.end();)
+		{
+			std::list<Client*>::iterator nextIt = clientIt;
+			++nextIt;
+			if ((*clientIt)->_request.begin()->_isRead)
+				(*clientIt)->_io.readFromFile(*clientIt);
+			else if ((*clientIt)->_request.begin()->_isWrite)
+				(*clientIt)->_io.writeToFd(*clientIt);
+			if ((*clientIt)->_io.getFd() == -1)
+				_lstIoClients.erase(clientIt);  // Erase from the list
+			clientIt = nextIt;  // Move to the next element
+		}
+	}
+	catch (std::exception &e)
 	{
-		std::list<Client*>::iterator nextIt = clientIt;
-		++nextIt;
-		if ((*clientIt)->_request.begin()->_isRead)
-			(*clientIt)->_io.readFromFile(*clientIt);
-		else if ((*clientIt)->_request.begin()->_isWrite)
-			(*clientIt)->_io.writeToFd(*clientIt);
-		if ((*clientIt)->_io.getFd() == -1)
-			_lstIoClients.erase(clientIt);  // Erase from the list
-		clientIt = nextIt;  // Move to the next element
+		std::cout << BOLD RED << "ERROR: " << e.what() << RESET << std::endl;
 	}
 }
 
