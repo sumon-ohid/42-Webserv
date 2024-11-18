@@ -25,6 +25,7 @@ class Request {
 		std::size_t	_contentRead;
 		ssize_t 	_totalBytesRead;
 		std::string _fileName;
+		std::string	_methodAndPath;
 
 
 		std::string	_host;

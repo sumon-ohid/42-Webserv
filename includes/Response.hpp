@@ -23,6 +23,8 @@ class Response {
 		ssize_t			_bytesSent;
 
 	public:
+		std::string		_methodAndPath;
+
 		Response();
 		Response(const Response& other);
 		Response& operator=(const Response& other);

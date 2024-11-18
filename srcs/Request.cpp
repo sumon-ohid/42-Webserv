@@ -317,11 +317,14 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	if (strLine.length() == 2 && strLine == "\r\n") {
 		return;
 	}
+	_response->_methodAndPath = strLine;
 	extractHttpMethod(strLine);
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("505");
 	_method->setPath(strLine.substr(0, spacePos2));
+	_response->_methodAndPath.clear();
+	_response->_methodAndPath = _method->getName() + " " + _method->getPath();
 
 	endPos = strLine.find("\r\n", spacePos2 + 1);
 	if (endPos == std::string::npos)
@@ -356,7 +359,8 @@ void	Request::executeMethod(int socketFd, Client *client)
 
 int	Request::emptyRequest(Client* client)
 {
-	std::cout << "Client disconnected: FD " << client->getFd() << std::endl;
+	if (DEBUG_MODE)
+		std::cout << "Client disconnected: FD " << client->getFd() << std::endl;
 	client->_server->_epoll->removeClient(client);
 	return (-1); // Move to the next event
 }
@@ -404,7 +408,6 @@ int Request::clientRequest(Client* client)
 		{
 			//-- Maybe should write some error message
 			//Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
-			exit(4);
 			return (1);
 		}
 		else if (count == 0)

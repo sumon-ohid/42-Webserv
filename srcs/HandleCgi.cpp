@@ -2,6 +2,7 @@
 
 #include "../includes/HandleCgi.hpp"
 #include "../includes/Client.hpp"
+#include "../includes/main.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/Helper.hpp"
@@ -181,7 +182,7 @@ void	HandleCgi::checkWaitPid()
 	else if (result > 0)
 	{
 		// Child process has terminated
-		if (WIFEXITED(status))
+		if (WIFEXITED(status) && DEBUG_MODE)
 			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
 		else if (WIFSIGNALED(status))
 			throw ("500");

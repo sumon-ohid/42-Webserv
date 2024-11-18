@@ -17,6 +17,7 @@
 
 extern volatile sig_atomic_t stopSignal;
 
+#define DEBUG_MODE false
 #define GET "GET"
 #define HEAD "HEAD"
 #define POST "POST"
