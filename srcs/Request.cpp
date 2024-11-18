@@ -152,7 +152,7 @@ std::string Request::getHeaderFromHeaderMap(std::string headerName) const {
 	return _headerMap.find(headerName)->second;
 }
 
-void Request::setMethodMimeType(std::string path) 
+void Request::setMethodMimeType(std::string path)
 {
 	this->_method->setMimeType(path);
 }
@@ -166,8 +166,6 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 }
 
 void Request::storeOneHeaderInMap(const std::string& oneLine) {
-
-	// std::cout << "$" << oneLine << "$" << std::endl;
 	std::size_t pos = oneLine.find(":");
 	if (pos == std::string::npos || pos == 0) // BP check key is str _- num?
 		return;
@@ -285,72 +283,6 @@ void Request::storeRequestBody(std::string& fileName, std::size_t endPos) {
     _readingFinished = true;
 }
 
-// void	Request::storeRequestBody(const std::string& strLine, std::size_t endPos) {
-// 	std::size_t pos = strLine.find("filename=", endPos);
-// 	char* end;
-// 	unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
-// 	// std::atoi(getHeaderFromHeaderMap("Content-Length").c_str())
-// 	if (pos == std::string::npos && num > strLine.substr(endPos).size() ) {
-// 		return;
-// 	}
-
-// 	//-- SUMON commented this out to handle post without filename
-// 	if (pos == std::string::npos)
-// 	{
-// 		//-- Find the start of the Content-Type header
-// 		//-- It is useful to know if we have to decode URL
-// 		std::string contentTypeHeader = "content-type: ";
-// 		std::size_t contentTypePos = strLine.find(contentTypeHeader);
-// 		if (contentTypePos != std::string::npos)
-// 		{
-// 			//-- Extract the Content-Type value
-// 			std::size_t start = contentTypePos + contentTypeHeader.length();
-// 			std::size_t end = strLine.find("\r\n", start);
-// 			std::string contentType = strLine.substr(start, end - start);
-// 		}
-
-// 		//-- Find the start of the body (after the double CRLF)
-// 		std::string bodyDelimiter = "\r\n\r\n";
-// 		std::size_t bodyPos = strLine.find(bodyDelimiter);
-// 		if (bodyPos != std::string::npos) {
-// 			//-- Body starts after the double CRLF
-// 			_requestBody = strLine.substr(bodyPos + bodyDelimiter.length());
-// 		}
-// 		_readingFinished = true;
-// 		return;
-// 	}
-
-// 	_postFilename = strLine.substr(pos + 10, strLine.find('"', pos + 10) - pos - 10);
-// 	// std::cout << _postFilename << "\n\n" << std::endl;
-// 	pos = strLine.find("\r\n\r\n", endPos + 4);
-// 	// std::cout << "rnrn: " << pos << std::endl;
-// 	// std::cout << "$" << _postFilename << "$" << std::endl;
-// 	std::map<std::string, std::string>::iterator it = _headerMap.find("content-type");
-// 	// std::cout << "content: " << it->second << std::endl;
-// 	std::string boundary;
-// 	if (it != _headerMap.end()) {
-// 		// BP: check when there is no boundary
-// 		std::string contentType = it->second;
-// 		size_t boundaryPos = contentType.find("boundary=");
-// 		if (boundaryPos != std::string::npos) {
-// 			boundary = "--" + contentType.substr(boundaryPos + 9);
-
-// 			//-- SUMON :
-// 			//-- first find the start and end positions of the file data
-// 			//-- In the previous implementation, we used the boundary to find the start and end positions
-// 			//-- So some sections after boundary were included in the file data
-// 			//-- Which caused the file to be corrupted
-// 			size_t boundaryPos = strLine.find(boundary, pos);
-// 			size_t startPos = strLine.find("\r\n\r\n", boundaryPos);
-// 			size_t endPos = strLine.find(boundary, startPos);
-
-// 			_requestBody = strLine.substr(startPos + 4, endPos - startPos - 4); //-- 4 is for "\r\n\r\n" and --\r\n at the end
-// 		}
-// 	}
-// 	_readingFinished = true;
-// }
-
-
 void	Request::extractHttpMethod(std::string& requestLine)
 {
 	std::string	methodContainer = requestLine.substr(0, 8);
@@ -363,16 +295,10 @@ void	Request::extractHttpMethod(std::string& requestLine)
 }
 
 void Request::createHttpMethod(const std::string& method) {
-	// _bufferSize = 4096; //could be set at init already
 	if (method == "GET")
 		_method = new GetMethod();
 	else if (method == "POST")
-	{
-		// _bufferSize = 8192;
 		_method = new PostMethod();
-	}
-	// else if (method == "OPTIONS")
-	// 	return new OptionsMethod();
 	else if (method == "DELETE")
 		_method = new DeleteMethod();
 	else
@@ -388,13 +314,13 @@ void	Request::checkFirstLine(std::string& strLine, std::size_t& endPos) {
 	std::size_t spacePos2 = strLine.find(" ");
 	if (spacePos2 == std::string::npos)
 		throw std::runtime_error("505");
-	this->_method->setPath(strLine.substr(0, spacePos2));
+	_method->setPath(strLine.substr(0, spacePos2));
 
 	endPos = strLine.find("\r\n", spacePos2 + 1);
 	if (endPos == std::string::npos)
-		this->_method->setProtocol(strLine.substr(spacePos2 + 1));
+		_method->setProtocol(strLine.substr(spacePos2 + 1));
 	else {
-		this->_method->setProtocol(strLine.substr(spacePos2 + 1, endPos - (spacePos2 + 1)));
+		_method->setProtocol(strLine.substr(spacePos2 + 1, endPos - (spacePos2 + 1)));
 	}
 	_firstLineChecked = true;
 }
