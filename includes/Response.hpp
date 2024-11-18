@@ -13,20 +13,18 @@ class Request;
 
 class Response {
 	private:
-		int 			_socketFd;
 		bool			_isChunk;
 		bool			_headerSent;
 		bool			_finishedSending;
 		bool			_closeConnection;
-		unsigned long	_bytesSentOfBody;
 		std::string		_header;
 		std::string		_body;
-		std::string		_mimeType;
-		std::string	_sessionId; //-- BONUS : cookies
+		std::string		_sessionId; //-- BONUS : cookies
 		ssize_t			_bytesSent;
-		size_t			_totalBytesSent;
 
 	public:
+		std::string		_methodAndPath;
+
 		Response();
 		Response(const Response& other);
 		Response& operator=(const Response& other);

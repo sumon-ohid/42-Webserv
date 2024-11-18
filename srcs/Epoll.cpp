@@ -135,7 +135,7 @@ bool	Epoll::existingClient(int eventFd, uint32_t events)
 
 void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 {
-	try 
+	try
 	{
 		if (events & (EPOLLHUP | EPOLLRDHUP))
 		{
@@ -235,7 +235,8 @@ bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 	}
 	Helper::setCloexec(_connSock);
 	Helper::setFdFlags(_connSock, O_NONBLOCK);
-	std::cout << "New client connected: FD " << _connSock << std::endl;
+	if (DEBUG_MODE)
+		std::cout << "New client connected: FD " << _connSock << std::endl;
 	// Add the new client file descriptor to the server's list of connected clients
 	if (!registerSocket(_connSock, EPOLLIN | EPOLLET))
 		return (false);
@@ -277,7 +278,8 @@ void	Epoll::clientRetrievalError(int event_fd)
 void	Epoll::clientHungUp(Client* client)
 {
 	// Handle error or hung up situation
-	std::cerr << "Client hung up on fd: " << client->getFd() << std::endl;
+	if (DEBUG_MODE)
+		std::cerr << "Client hung up on fd: " << client->getFd() << std::endl;
 	removeClient(client); // Remove the client from epoll and close the connection
 }
 
@@ -328,14 +330,15 @@ void	Epoll::removeCgiClientFromEpoll(int pipeFd)
 	}
 }
 
-bool Epoll::is_fd_valid(int fd) 
+bool Epoll::is_fd_valid(int fd)
 {
 	return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
 }
 
 void	Epoll:: removeClientEpoll(int fd)
 {
-	std::cout << "remove fd: " << fd << std::endl;
+	if (DEBUG_MODE)
+		std::cout << "remove fd: " << fd << std::endl;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1)
 		std::cerr << "Error removing fd " << fd << " from epoll: " << strerror(errno) << std::endl;
 	close(fd);

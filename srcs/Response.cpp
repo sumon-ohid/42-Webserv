@@ -14,30 +14,26 @@
 #include "../includes/Request.hpp"
 #include "../includes/Helper.hpp"
 
-Response::Response() : _socketFd(-1), _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false),
- _bytesSentOfBody(0), _header(""), _body(""), _mimeType(""), _sessionId(""), _bytesSent(0), _totalBytesSent(0) {}
+Response::Response() : _isChunk(false), _headerSent(false), _finishedSending(false), _closeConnection(false), _header(""), _body(""), _sessionId(""), _bytesSent(0) {}
 
-Response::Response(const Response& other) : _socketFd(other._socketFd), _isChunk(other._isChunk),
+Response::Response(const Response& other) : _isChunk(other._isChunk),
 _headerSent(other._headerSent), _finishedSending(other._finishedSending), _closeConnection(other._closeConnection),
- _bytesSentOfBody(other._bytesSentOfBody), _header(other._header), _body(other._body), _mimeType(other._mimeType), _sessionId(other._sessionId),
- _bytesSent(other._bytesSent), _totalBytesSent(other._totalBytesSent) {}
+ _header(other._header), _body(other._body), _sessionId(other._sessionId),
+ _bytesSent(other._bytesSent), _methodAndPath(other._methodAndPath) {}
 
 Response& Response::operator=(const Response& other) {
 	if (this == &other)
 		return *this;
 
-	_socketFd = other._socketFd;
 	_isChunk = other._isChunk;
 	_headerSent = other._headerSent;
 	_finishedSending = other._finishedSending;
 	_closeConnection = other._closeConnection;
-	_bytesSentOfBody = other._bytesSentOfBody;
 	_header = other._header;
 	_body = other._body;
-	_mimeType = other._mimeType;
 	_sessionId = other._sessionId;
 	_bytesSent = other._bytesSent;
-	_totalBytesSent = other._totalBytesSent;
+	_methodAndPath = other._methodAndPath;
 	return *this;
 }
 
@@ -100,9 +96,6 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	return ss.str();
 }
 
-// Connection: keep-alive
-// Connection: Transfer-Encoding
-
 void Response::createHeaderAndBodyString(Request& request,std::string& body, std::string statusCode, Client* client) {
 	if ( body.size() > CHUNK_SIZE)
 		_isChunk = true;
@@ -134,7 +127,6 @@ void	Response::prepareChunk(Client* client)
 			sendContentChunk(client);
 		else
 			sendNullChunk(client);
-		_bytesSentOfBody += _bytesSent;
 	}
 	if (_bytesSent < 0)
 	{
@@ -163,7 +155,9 @@ void	Response::sendNullChunk(Client* client)
 	{
 		_bytesSent -= 5;
 		_finishedSending = true;
+		std::cout << _methodAndPath << std::endl;
     	std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
+		std::cout << "--------------------------------------" << std::endl;
 	}
 }
 
@@ -177,7 +171,9 @@ void	Response::sendSimpleResponse(Client* client)
 	_finishedSending = true;
 	if (client->_io.getFd() > -1)
 		close(client->_io.getFd() );
+	std::cout << _methodAndPath << std::endl;
     std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
+	std::cout << "--------------------------------------" << std::endl;
 }
 
 void	Response::fallbackError(Request& request, std::string statusCode, Client* client) {
@@ -198,7 +194,7 @@ void	Response::fallbackError(Request& request, std::string statusCode, Client* c
 
 	std::string body = ss.str();
 	createHeaderAndBodyString(request, body, statusCode, client);
-	std::cerr << BOLD RED << "Error: " + statusCode << ", method: " << request.getMethodName() << ", path: " << request.getMethodPath() << RESET << std::endl;
+	std::cerr << BOLD RED << "Error: " + statusCode << ", method & path: " << _methodAndPath << RESET << std::endl;
 }
 
 //hardcoding of internal server Error (check case stringsteam fails)
@@ -234,6 +230,7 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 			//-- this will return the modified error page as a string
 			std::string errorBody = errorHandle.modifyErrorPage();
 			createHeaderAndBodyString(request, errorBody, statusCode, client);
+			std::cerr << BOLD RED << "Error: " + statusCode << ", method & path: " << _methodAndPath << RESET << std::endl;
 		}
 		catch (std::exception &e)
 		{

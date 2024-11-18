@@ -23,6 +23,10 @@ class Request {
 		Method*	_method;
 		std::map<std::string, std::string> _headerMap;
 		std::size_t	_contentRead;
+		ssize_t 	_totalBytesRead;
+		std::string _fileName;
+		std::string	_methodAndPath;
+
 
 		std::string	_host;
 		void	storeOneHeaderInMap(const std::string& oneLine);
