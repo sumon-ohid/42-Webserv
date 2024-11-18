@@ -1,5 +1,7 @@
+#include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <sys/types.h>
 
 #include "../includes/Method.hpp"
 #include "../includes/Helper.hpp"
@@ -65,16 +67,22 @@ void	Method::setName(std::string name) {
 	throw std::runtime_error("400");
 }
 
+
+
 void	Method::setPath(std::string path) {
 	if (path.empty())
 		throw std::runtime_error("400");
 
 	//-- If path is encoded, this will decode it.
 	path = Helper::decodeUrl(path);
-	if (path.find("..") != std::string::npos)
+	if (path.find("..") != std::string::npos) // BP check this
 		throw std::runtime_error("403");
-
-	this->_path = path;
+	std::size_t pos = path.find("//");
+	while (pos != std::string::npos) {
+		path.erase(pos, 1);
+		pos = path.find("//");
+	}
+	_path = path;
 }
 
 void	Method::setProtocol(std::string protocol) {
