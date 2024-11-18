@@ -33,6 +33,8 @@ Request::Request() {
 	_servConf = NULL;
 	_isRead =false;
 	_isWrite = false;
+	_totalBytesRead = 0;
+	_fileName = "/tmp/" + Helper::generateRandomId();
 }
 
 Request::Request(const Request& other) {
@@ -55,6 +57,8 @@ Request::Request(const Request& other) {
 	_servConf = other._servConf;
 	_isRead = other._isRead;
 	_isWrite = other._isWrite;
+	_totalBytesRead  = other._totalBytesRead;
+	_fileName = other._fileName;
 }
 
 Request&	Request::operator=(const Request& other) {
@@ -80,6 +84,8 @@ Request&	Request::operator=(const Request& other) {
 	_servConf = other._servConf;
 	_isRead = other._isRead;
 	_isWrite = other._isWrite;
+	_totalBytesRead = other._totalBytesRead;
+	_fileName = other._fileName;
 	return *this;
 }
 
@@ -96,7 +102,9 @@ bool		Request::operator==(const Request& other) const
 			_host == other._host &&
 			_servConf == other._servConf &&
 			_isRead == other._isRead &&
-			_isWrite == other._isWrite);
+			_isWrite == other._isWrite &&
+			_totalBytesRead == other._totalBytesRead &&
+			_fileName == other._fileName);
 }
 
 Request::~Request() {
@@ -375,9 +383,6 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 //-- SUMON: Moved requestBody and totalBytesRead to global scope
 //-- to handle multiple requests in the same connection
 //-- Reset the values after each request
-std::string requestBody;
-ssize_t totalBytesRead = 0;
-std::string fileName = "/tmp/" + Helper::generateRandomId();
 
 int Request::clientRequest(Client* client)
 {
@@ -385,7 +390,7 @@ int Request::clientRequest(Client* client)
 	bool writeFlag = false;
 	bool contentLengthFound = false;
 
-	std::ofstream bodyFile(fileName.c_str(), std::ios::out | std::ios::app | std::ios::binary);
+	std::ofstream bodyFile(_fileName.c_str(), std::ios::out | std::ios::app | std::ios::binary);
 	if (!bodyFile.is_open())
 		throw std::runtime_error("500");
 
@@ -414,7 +419,7 @@ int Request::clientRequest(Client* client)
 
 		// Append data to the file
 		bodyFile.write(buffer.data(), count);
-		totalBytesRead += count;
+		_totalBytesRead += count;
 
         //-- Check for Content-Length.
         //-- If has a content length, means request has a body.
@@ -428,10 +433,10 @@ int Request::clientRequest(Client* client)
         }
 
 		//-- Stop reading if we have reached Content-Length
-		if (contentLengthFound && totalBytesRead >= (ssize_t) _contentLength)
+		if (contentLengthFound && _totalBytesRead >= (ssize_t) _contentLength)
 		{
 			_readingFinished = true;
-			totalBytesRead = 0;
+			_totalBytesRead = 0;
 		}
 
         //-- Process the request body if headers are fully checked and reading is finished
@@ -440,8 +445,8 @@ int Request::clientRequest(Client* client)
             //-- SUMON: client_max_body_size check moved to PostMethod
 			bodyFile.close();
             if (this->_method->getName() == "POST")
-                storeRequestBody(fileName, 0);
-			std::remove(fileName.c_str());
+                storeRequestBody(_fileName, 0);
+			std::remove(_fileName.c_str());
         }
 		else
 		{
@@ -498,6 +503,8 @@ void	Request::requestReset() {
 	_servConf = NULL;
 	delete _response;
 	_response = new Response();
+	_totalBytesRead = 0;
+	_fileName = "/tmp/" + Helper::generateRandomId();
 }
 
 std::string	Request::getHost() const
