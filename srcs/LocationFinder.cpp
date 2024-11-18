@@ -167,7 +167,6 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
             {
                 std::string path = _defaultRoot + tempPath;
                 searchIndexHtml(path, _pathToServe);
-                //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
                 return true;
             }
 
@@ -177,7 +176,6 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
                     _defaultRoot = locationsVector[0].getLocationMap().find("root")->second;
                 std::string path = _defaultRoot + tempPath;
                 searchIndexHtml(path, _pathToServe);
-                //std::cout << BOLD BLUE << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
                 return true;
             }
 

@@ -177,7 +177,6 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	}
 	if (_headerMap.find(key) == _headerMap.end()) {
 		_headerMap[key] = value;
-		// std::cout << key << "$" << value << std::endl;
 	}
 	else
 		_headerMap[key] += value; // BP: to test, add delimiter
@@ -392,8 +391,6 @@ int Request::clientRequest(Client* client)
 
     std::vector<char> buffer(SOCKET_BUFFER_SIZE);
 
-	std::cout << buffer << std::endl;
-
 	try
 	{
 		buffer.resize(SOCKET_BUFFER_SIZE);
@@ -511,14 +508,7 @@ std::string	Request::getHost() const
 //-- BONUS : cookies
 std::string Request::getSessionId() const
 {
-	// std::cout << _headerMap.size() << "\n\n" << std::endl;
-	// for (std::map<std::string, std::string>::const_iterator it = _headerMap.begin(); it != _headerMap.end(); it++)
-	// {
-	// 	std::cout << "$" << it->first << ": " << it->second << "$" << std::endl;
-	// }
-
 	std::string cookie = getHeaderFromHeaderMap("cookie");
-	//std::cout << "\n\nCookie: " << cookie << std::endl;
 	std::size_t pos = cookie.find("session=");
 	if (pos == std::string::npos)
 		return ("");
@@ -540,21 +530,3 @@ std::string	Request::getUri()
 		uri = "/";
 	return (uri);
 }
-
-
-// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
-// Accept-Encoding: gzip, deflate, br, zstd
-// Accept-Language: en-US,en;q=0.9
-// Connection: keep-alive
-// Cookie: session=lVH6A0QDpBNrQNfXfPPCeQSj1gIuFJWQ
-// Host: 127.0.0.1:8000
-// Referer: http://127.0.0.1:8000/about/index.html
-// Sec-Fetch-Dest: document
-// Sec-Fetch-Mode: navigate
-// Sec-Fetch-Site: same-origin
-// Sec-Fetch-User: ?1
-// Upgrade-Insecure-Requests: 1
-// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36
-// sec-ch-ua: "Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"
-// sec-ch-ua-mobile: ?0
-// sec-ch-ua-platform: "Linux"
