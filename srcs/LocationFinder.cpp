@@ -109,6 +109,12 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     std::string requestPath;
     socketFd = _socketFd;
     locationsVector = client->_request.back()._servConf->getLocations();
+    if (locationsVector.empty()) {
+        LocationConfig locConfig;
+        locConfig.setPath("/");
+        locConfig.insertInMap("root", _defaultRoot);
+        locationsVector.push_back(locConfig);
+    }
 
     //-- Remove the last slash from the path to avoid mismatch.
     if (path != "/" && path[path.size() - 1] == '/')
@@ -193,8 +199,11 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     size_t pos = requestPath.rfind(".");
     if (pos != std::string::npos)
         extension = requestPath.substr(pos);
-
-    _root = locationsVector[0].getLocationMap().find("root")->second;
+    
+    _root = _defaultRoot;
+    if (locationsVector[0].getLocationMap().find("root") != locationsVector[0].getLocationMap().end())
+        _root = locationsVector[0].getLocationMap().find("root")->second;
+    
     _pathToServe = _root + _locationPath + path;
     if (isDirectory(_pathToServe))
     {
