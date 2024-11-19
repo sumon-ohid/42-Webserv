@@ -210,12 +210,16 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
 
+	std::string statusMessage = "";
+    Helper::checkStatus(statusCode, statusMessage);
+
 	std::map<std::string, std::string> errorPages;
 	std::string errorPage;
 	if (request._servConf)
 		errorPage = request._servConf->getErrorPage();
 	else
 		errorPages = client->_server->getServerConfig().getErrorPages();
+
 	if (errorPages.find(statusCode) != errorPages.end() || !errorPage.empty())
 	{
 		try
@@ -235,7 +239,7 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 		catch (std::exception &e)
 		{
 			try {
-				std::cerr << BOLD RED << e.what() << RESET << std::endl;
+				std::cerr << BOLD RED << "ERROR: " << e.what() << " " << statusMessage << RESET << std::endl;
 				fallbackError(request, statusCode, client);
 			} catch (std::exception& e) {
 				std::cerr << BOLD RED << e.what() << RESET << std::endl;

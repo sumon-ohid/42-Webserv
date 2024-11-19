@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 ErrorHandle::ErrorHandle()
 {
@@ -86,6 +87,12 @@ void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
                 errorPage = itError->second;
                 break;
             }
+            else
+            {
+                errorPage = client->_request.begin()->_servConf->getErrorPage();
+                if (errorPage.empty())
+                    throw std::runtime_error(statusCode);
+            }
         }
     }
 
@@ -93,6 +100,10 @@ void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
     Helper::checkStatus(statusCode, statusMessage);
 
     errorFile = errorPage;
+    std::ifstream file(errorFile.c_str());
+    if (!file.is_open())
+        throw std::runtime_error("404");
+
     errorStatusCode = statusCode;
     errorMessage = statusMessage;
     pageTitle = statusCode + " " + statusMessage;
