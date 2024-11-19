@@ -123,8 +123,6 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
              << path << "</title></head><body><h1>Index of "
              << path << "</h1><hr><pre>";
 
-        //body << "<a href=\"../\">../</a>\n";
-
         while ((ent = readdir(dir)) != NULL)
         {
             std::string fullPath = path + "/" + ent->d_name;

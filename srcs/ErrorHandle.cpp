@@ -57,10 +57,6 @@ std::string ErrorHandle::modifyErrorPage()
 
     errorBody = body;
     return body;
-
-    // -- Remove the files before quiting the program
-
-    //std::remove(tempFileName.c_str());
 }
 
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)

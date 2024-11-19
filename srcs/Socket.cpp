@@ -119,14 +119,14 @@ void	Socket::socketSetUpAddress(const std::string& hostname, Server& server, Ser
 	std::string portStr = portStream.str();
 
 	// Resolve the hostname
-	try 
+	try
 	{
 		int status = getaddrinfo(hostname.c_str(), portStr.c_str(), &hints, &res);
 		if (status != 0)
 			throw std::runtime_error(gai_strerror(status));
 		createSocketForAddress(hostname, res, server, sm);
-	} 
-	catch (std::exception &e) 
+	}
+	catch (std::exception &e)
 	{
 		freeaddrinfo(res);
 		throw;
@@ -154,7 +154,6 @@ void	Socket::createSocketForAddress(const std::string& hostname, struct addrinfo
 		{
 			createSocket(p);
 			bindToSocketAndListen(p);
-			// sm.addNewSocketIpCombination(*this, _ip);
 			if (_configs.find(hostname) == _configs.end())
 				_configs.insert(std::make_pair(hostname, server.getServerConfig()));
 		}

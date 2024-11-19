@@ -77,7 +77,6 @@ bool	Server::createSockets(ServerManager& sm, const std::string& hostname, int p
 	return (true);
 }
 
-
 bool	Server::ipPortCombinationNonExistent(const std::string& hostname, std::string& IpHost, int port)
 {
 	for (lstSocs::iterator socIt = _listenSockets.begin(); socIt != _listenSockets.end(); ++socIt)
@@ -104,7 +103,6 @@ void	Server::removeClientFromServer(int fd)
 	if (it != _clients.end())
 		_clients.erase(it);
 }
-
 
 void	Server::listClients() const
 {

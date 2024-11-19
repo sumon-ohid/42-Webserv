@@ -175,7 +175,7 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 
 void Request::storeOneHeaderInMap(const std::string& oneLine) {
 	std::size_t pos = oneLine.find(":");
-	if (pos == std::string::npos || pos == 0) // BP check key is str _- num?
+	if (pos == std::string::npos || pos == 0)
 		return;
 	std::string	key = oneLine.substr(0, pos);
 	Helper::toLower(key);
@@ -187,7 +187,7 @@ void Request::storeOneHeaderInMap(const std::string& oneLine) {
 		_headerMap[key] = value;
 	}
 	else
-		_headerMap[key] += value; // BP: to test, add delimiter
+		_headerMap[key] += value;
 }
 
 void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
@@ -211,7 +211,6 @@ void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos)
 			_readingFinished = true;
 	}
 	while (pos <= endPos) {
-		// std:: cout << "my pos: " << pos2 << " & " << pos << std::endl;
 		storeOneHeaderInMap(strLine.substr(pos2 + 2, pos - (pos2 + 2)));
 		pos2 = pos;
 		pos = strLine.find("\r\n", pos2 + 2);
@@ -295,7 +294,7 @@ void	Request::extractHttpMethod(std::string& requestLine)
 	std::string	methodContainer = requestLine.substr(0, 8);
 	size_t endPos = methodContainer.find_first_of(" ");
 	if (endPos == std::string::npos)
-		throw std::runtime_error("400"); // SUMON: sometimes this get thrown
+		throw std::runtime_error("400");
 	std::string method = requestLine.substr(0, endPos);
 	requestLine.erase(0, endPos + 1);
 	createHttpMethod(method);
@@ -349,13 +348,11 @@ void	Request::checkHost(Client* client) {
 	_host = host;
 }
 
-
 void	Request::executeMethod(int socketFd, Client *client)
 {
 	this->checkHost(client);
 	this->_method->executeMethod(socketFd, client, *this);
 }
-
 
 int	Request::emptyRequest(Client* client)
 {
@@ -383,7 +380,6 @@ void	Request::validRequest(Server* serv, std::vector<char> buffer, ssize_t count
 	}
 }
 
-
 //-- SUMON: Moved requestBody and totalBytesRead to global scope
 //-- to handle multiple requests in the same connection
 //-- Reset the values after each request
@@ -406,8 +402,7 @@ int Request::clientRequest(Client* client)
 		ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
 		if (count == -1)
 		{
-			//-- Maybe should write some error message
-			//Helper::modifyEpollEventClient(*client->_server->_epoll, client, EPOLLIN | EPOLLET);
+			//-- Maybe should write some error message BP:?
 			return (1);
 		}
 		else if (count == 0)
@@ -415,9 +410,6 @@ int Request::clientRequest(Client* client)
 
 		buffer.resize(count);
 		validRequest(client->_server, buffer, count, *this);
-
-        //-- Append data to requestBody
-        //requestBody.append(buffer.data(), count);
 
 
 		// Append data to the file
@@ -445,7 +437,6 @@ int Request::clientRequest(Client* client)
         //-- Process the request body if headers are fully checked and reading is finished
 		if (_firstLineChecked && _headerChecked && _readingFinished)
         {
-            //-- SUMON: client_max_body_size check moved to PostMethod
 			bodyFile.close();
             if (this->_method->getName() == "POST")
                 storeRequestBody(_fileName, 0);
@@ -489,7 +480,6 @@ int Request::clientRequest(Client* client)
 	return 0;
 }
 
-
 void	Request::requestReset() {
 	_firstLineChecked = false;
 	_headerChecked = false;
@@ -526,7 +516,6 @@ std::string Request::getSessionId() const
 	std::string _sessionId = cookie.substr(pos + 10, end - pos - 10);
 	return (_sessionId);
 }
-
 
 std::string	Request::getUri()
 {

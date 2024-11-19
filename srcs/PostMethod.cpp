@@ -44,7 +44,6 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         try
         {
             client->_cgi = HandleCgi(requestPath, socketFd, *client, request);
-			// HandleCgi cgi(requestPath, socketFd, *client, request);
             std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
         }
         catch (std::exception &e)
@@ -57,12 +56,6 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
     bool isLocation = false;
     LocationFinder locationFinder;
     isLocation = locationFinder.locationMatch(client, request.getMethodPath(), socketFd);
-    //-- SUMON I think this is not needed
-    // if (!isLocation)
-    // {
-    //     request._response->error(socketFd, request, "404", client);
-    //     return;
-    // }
 
     //-- Check if the allowed methods include POST
     if (isLocation && locationFinder._allowedMethodFound)
@@ -136,7 +129,7 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
         request._response->error(request, "500", client);
         return;
     }
-   
+
     std::string body =  " <html><head> <title>File uploaded</title>"
         "  <style> body { display: flex; justify-content: center;"
         "  align-items: center; height: 100vh; font-family: Arial, sans-serif;"
@@ -151,7 +144,7 @@ void PostMethod::handlePostRequest(Request &request, Client *client)
     size_t pos = fileToCreate.find("//");
     if (pos != std::string::npos)
         fileToCreate.erase(pos, 1);
-    
+
     //-- Print the file size
     size_t fileSize = fileBody.size();
     double fileSizeInMB = static_cast<double>(fileSize) / (1024.0 * 1024.0);

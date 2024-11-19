@@ -47,8 +47,6 @@ bool	Response::getIsChunk() {
 	return _isChunk;
 }
 
-// to check if the statusCode exists - else respond with internal server error
-
 std::string Response::createHeaderString(Request& request, const std::string& body, std::string statusCode) {
 	std::stringstream ss;
 	std::string statusMessage = "";

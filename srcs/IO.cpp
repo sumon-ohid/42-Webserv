@@ -10,10 +10,11 @@
 #include <cerrno>
 
 IO::IO() : _fd(-1), _size(0), _byteTracker(0), _totalBytesSent(0), _mimeCheckDone(false) {}
+
 IO::IO(const IO& orig) : _byteTracker(orig._byteTracker), _totalBytesSent(orig._totalBytesSent),
-_response(orig._response), _responseStr(orig._responseStr),
-_mimeCheckDone(orig._mimeCheckDone)
-{}
+	_response(orig._response), _responseStr(orig._responseStr),
+	_mimeCheckDone(orig._mimeCheckDone) {}
+
 IO&	IO::operator=(const IO& rhs)
 {
 	if (this != &rhs)
@@ -26,6 +27,7 @@ IO&	IO::operator=(const IO& rhs)
 	}
 	return (*this);
 }
+
 IO::~IO()
 {
 	if (_fd > 0)
