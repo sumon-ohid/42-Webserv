@@ -86,7 +86,7 @@ std::string Response::createHeaderString(Request& request, const std::string& bo
 	else
 		ss << "Content-Length: 0\r\n";
 	if (_closeConnection || isRedirection)
-		ss << "Connection: " << "close" << "\r\n"; // BP: to check
+		ss << "Connection: " << "close" << "\r\n";
 	else
 		ss << "Connection: " << "keep-alive" << "\r\n";
 	if (!_sessionId.empty() && !isRedirection) //-- BONUS : cookies
@@ -130,7 +130,7 @@ void	Response::prepareChunk(Client* client)
 	}
 	if (_bytesSent < 0)
 	{
-		std::cerr << "Error sending chunk response" << std::endl; // BP: client closed? change
+		std::cerr << "Error sending chunk response" << std::endl;
 		client->_cgi.closeCgi(client);
 		_finishedSending = true;
 	}
@@ -161,13 +161,12 @@ void	Response::sendNullChunk(Client* client)
 	}
 }
 
-
 void	Response::sendSimpleResponse(Client* client)
 {
 	_body = _header + _body + "\r\n";
 	_bytesSent = send(client->getFd() , _body.c_str(), _body.size(), 0);
 	if (_bytesSent < 0)
-		throw std::runtime_error("Error writing to socket in Response::fallbackError!!"); // BP: check where it is catched
+		throw std::runtime_error("Error writing to socket in Response::fallbackError!!");
 	_finishedSending = true;
 	if (client->_io.getFd() > -1)
 		close(client->_io.getFd() );
@@ -197,15 +196,6 @@ void	Response::fallbackError(Request& request, std::string statusCode, Client* c
 	std::cerr << BOLD RED << "Error: " + statusCode << ", method & path: " << _methodAndPath << RESET << std::endl;
 }
 
-//hardcoding of internal server Error (check case stringsteam fails)
-// what if connection was closed due to no connection, whatever?
-// check what happens with a fd if the connection is closed
-// what happens in case of a write error?
-// try again mechanism?
-// how to decide implement if we keep a connection open or closing?
-
-//-- SUMON: Trying to make it work with ErrorHandle class
-// what if we have a write error?
 void	Response::error(Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);

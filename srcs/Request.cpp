@@ -352,7 +352,7 @@ void	Request::checkHost(Client* client) {
 
 void	Request::executeMethod(int socketFd, Client *client)
 {
-	this->checkHost(client); // BP: first check which hostname else it would use the standardhostname
+	this->checkHost(client);
 	this->_method->executeMethod(socketFd, client, *this);
 }
 

@@ -65,7 +65,7 @@ void	IO::finishWrite(Client* client)
 {
 	if (client->_isCgi && client->_request.begin()->_isWrite == true)
 		finishWriteCgi(client); // pass _pipeOut[0]
-	resetIO(client);
+	resetIO();
 }
 
 void	IO::finishWriteCgi(Client* client)
@@ -79,9 +79,8 @@ void	IO::finishWriteCgi(Client* client)
 	client->_request.begin()->_response->setIsChunk(true);
 }
 
-void	IO::resetIO(Client* client)
+void	IO::resetIO()
 {
-	(void) client; // BP: remove client
 	if (_fd > 0)
 		close (_fd);
 	_fd = -1;
@@ -141,7 +140,7 @@ void	IO::finishReadingFromFd(Client* client)
 		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
 	}
-	resetIO(client);
+	resetIO();
 }
 
 void	IO::MimeTypeCheck(Client* client)
