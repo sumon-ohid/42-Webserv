@@ -37,6 +37,7 @@ LocationFinder&	LocationFinder::operator=(const LocationFinder& other)
 	return *this;
 }
 
+
 LocationFinder::~LocationFinder() {}
 
 //-- Check if the path is a directory.
@@ -69,6 +70,8 @@ bool LocationFinder::isDirectory(const std::string &path)
     return false;
 }
 
+bool _autoIndexMode = false;
+
 bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &foundPaths)
 {
     DIR* dir = opendir(directory.c_str());
@@ -86,18 +89,18 @@ bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &
             std::string path = directory + "/" + ent->d_name;
             struct stat st;
             if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode))
+            {
                 foundPaths = path;
+                closedir(dir);
+                return true;
+            }
             else if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
                 searchIndexHtml(path, foundPaths);
         }
-        else
-        {
-            closedir(dir);
-            return false;
-        }
     }
+    _autoIndexMode = true;
     closedir(dir);
-    return true;
+    return false;
 }
 
 //-- RequestPath should be the location of the request.
@@ -205,12 +208,16 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         _root = locationsVector[0].getLocationMap().find("root")->second;
     
     _pathToServe = _root + _locationPath + path;
+
     if (isDirectory(_pathToServe))
-    {
+    {   
         if (searchIndexHtml(_pathToServe, _pathToServe))
+        {
             return true;
+        }
         else
         {
+            _autoIndexMode = true;
             _pathToServe = _root + _locationPath + path + "/";
             _autoIndexFound = true;
             _autoIndex = "on";
@@ -223,6 +230,8 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         _cgiFound = true;
         return true;
     }
+    // else if (!isDirectory(_pathToServe) && !_autoIndexFound)
+    //     _autoIndexMode = false;
     //std::cout << BOLD RED << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
     return false;
 }
