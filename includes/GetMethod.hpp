@@ -16,7 +16,7 @@ class ServerConfig;
 class GetMethod : public Method
 {
 	private:
-		int socketFd;
+		int _socketFd;
 
 	public:
 		GetMethod();

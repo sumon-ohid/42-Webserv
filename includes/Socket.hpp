@@ -20,75 +20,75 @@ class ServerManager;
 
 class Socket
 {
-private:
-	int				_fd;
-	std::string		_ip;
-	int				_port;
-	socklen_t		_addrlen;
-	sockaddr_in		_address;
+	private:
+		int				_fd;
+		std::string		_ip;
+		int				_port;
+		socklen_t		_addrlen;
+		sockaddr_in		_address;
 
 
-	// ------------- Socket Setup -------------
-	/**
-	* Creates a socket file descriptor for TCP communication.
-	*
-	* Initializes a socket with:
-	* - Address family: IPv4 (AF_INET)
-	* - Socket type: TCP (SOCK_STREAM)
-	* - Mode: Non-blocking (SOCK_NONBLOCK)
-	* - Protocol: Default (0)
-	*/
-	void			createSocket(struct addrinfo*);
-	/**
- 	* Binds the socket to a specific port and IP address.
- 	*
- 	* Instructs the socket to listen for incoming connection requests.
- 	*/
-	void			bindToSocketAndListen(struct addrinfo*);
-	/**
- 	* Sets up the socket address for binding.
- 	*
- 	* This function:
- 	* - Initializes the address structure for IPv4.
- 	* - Binds to all interfaces (INADDR_ANY).
- 	* - Sets the port number.
- 	* - Clears the padding field.
- 	* - Logs the port number.
- 	*/
-	void			socketSetUpAddress(const std::string&, Server&, ServerManager&);
-	void			hostnameResolveError();
-	bool			IpPortCombinationNonExistent(std::string&, ServerManager&, Server&);
-	void			createSocketForAddress(const std::string&, struct addrinfo*, Server&, ServerManager&);
+		// ------------- Socket Setup -------------
+		/**
+		* Creates a socket file descriptor for TCP communication.
+		*
+		* Initializes a socket with:
+		* - Address family: IPv4 (AF_INET)
+		* - Socket type: TCP (SOCK_STREAM)
+		* - Mode: Non-blocking (SOCK_NONBLOCK)
+		* - Protocol: Default (0)
+		*/
+		void			createSocket(struct addrinfo*);
+		/**
+		* Binds the socket to a specific port and IP address.
+		*
+		* Instructs the socket to listen for incoming connection requests.
+		*/
+		void			bindToSocketAndListen(struct addrinfo*);
+		/**
+		* Sets up the socket address for binding.
+		*
+		* This function:
+		* - Initializes the address structure for IPv4.
+		* - Binds to all interfaces (INADDR_ANY).
+		* - Sets the port number.
+		* - Clears the padding field.
+		* - Logs the port number.
+		*/
+		void			socketSetUpAddress(const std::string&, Server&, ServerManager&);
+		void			hostnameResolveError();
+		bool			IpPortCombinationNonExistent(std::string&, ServerManager&, Server&);
+		void			createSocketForAddress(const std::string&, struct addrinfo*, Server&, ServerManager&);
 
-public:
-	Socket();
-	Socket(int);
-	~Socket();
-	Socket(const Socket&);
-	Socket&			operator=(const Socket&);
-	bool			operator==(const Socket& other) const;
-	bool 			operator<(const Socket& other) const;
-	mHstConfs			_configs;
+	public:
+		Socket();
+		Socket(int);
+		~Socket();
+		Socket(const Socket&);
+		Socket&			operator=(const Socket&);
+		bool			operator==(const Socket& other) const;
+		bool 			operator<(const Socket& other) const;
+		mHstConfs			_configs;
 
-	// ------------- Socket setup -------------
-	// sets up a socket to use at a specified port
-	void			setUpSocket(const std::string&, Server&, ServerManager&);
+		// ------------- Socket setup -------------
+		// sets up a socket to use at a specified port
+		void			setUpSocket(const std::string&, Server&, ServerManager&);
 
-	void			addConfig(const std::string&, ServerConfig);
-	// ------------- Getters -------------
-	// returns the fd of the socket
-	int				getFdSocket(void) const;
-	// returns the port the socket is listening to
-	int				getPort(void) const;
-	// returns the addressLen
-	socklen_t		getAddressLen(void) const;
-	// returns the address
-	sockaddr_in		getAddress(void) const;
-	// returns the a reference to the address
-	sockaddr_in&	getAddress(void);
-	std::string		getIp(void) const;
-	ServerConfig*	getConfig(std::string&);
-	int				getConfigSize() const;
+		void			addConfig(const std::string&, ServerConfig);
+		// ------------- Getters -------------
+		// returns the fd of the socket
+		int				getFdSocket(void) const;
+		// returns the port the socket is listening to
+		int				getPort(void) const;
+		// returns the addressLen
+		socklen_t		getAddressLen(void) const;
+		// returns the address
+		sockaddr_in		getAddress(void) const;
+		// returns the a reference to the address
+		sockaddr_in&	getAddress(void);
+		std::string		getIp(void) const;
+		ServerConfig*	getConfig(std::string&);
+		int				getConfigSize() const;
 };
 
 std::ostream&	operator<<(std::ostream &os, const std::vector<char> &vc);
