@@ -214,6 +214,8 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         else
         {
             _pathToServe = _root + _locationPath + path + "/";
+            if (!_autoIndexMode)
+                return true;
             _autoIndexFound = true;
             _autoIndex = "on";
             return true;
