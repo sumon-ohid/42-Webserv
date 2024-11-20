@@ -26,6 +26,7 @@ LocationFinder::LocationFinder()
     _allowedMethodFound = false;
     _redirectFound = false;
     _clientBodySizeFound = false;
+    _autoIndexMode = false;
 
     locationsVector.clear();
 }
@@ -36,6 +37,7 @@ LocationFinder&	LocationFinder::operator=(const LocationFinder& other)
 		return *this;
 	return *this;
 }
+
 
 LocationFinder::~LocationFinder() {}
 
@@ -86,18 +88,17 @@ bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &
             std::string path = directory + "/" + ent->d_name;
             struct stat st;
             if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode))
+            {
                 foundPaths = path;
+                closedir(dir);
+                return true;
+            }
             else if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
                 searchIndexHtml(path, foundPaths);
         }
-        else
-        {
-            closedir(dir);
-            return false;
-        }
     }
     closedir(dir);
-    return true;
+    return false;
 }
 
 //-- RequestPath should be the location of the request.
@@ -109,6 +110,12 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     std::string requestPath;
     socketFd = _socketFd;
     locationsVector = client->_request.back()._servConf->getLocations();
+    if (locationsVector.empty()) {
+        LocationConfig locConfig;
+        locConfig.setPath("/");
+        locConfig.insertInMap("root", _defaultRoot);
+        locationsVector.push_back(locConfig);
+    }
 
     //-- Remove the last slash from the path to avoid mismatch.
     if (path != "/" && path[path.size() - 1] == '/')
@@ -193,12 +200,16 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
     size_t pos = requestPath.rfind(".");
     if (pos != std::string::npos)
         extension = requestPath.substr(pos);
-
-    _root = locationsVector[0].getLocationMap().find("root")->second;
+    
+    _root = _defaultRoot;
+    if (locationsVector[0].getLocationMap().find("root") != locationsVector[0].getLocationMap().end())
+        _root = locationsVector[0].getLocationMap().find("root")->second;
+    
     _pathToServe = _root + _locationPath + path;
+
     if (isDirectory(_pathToServe))
-    {
-        if (searchIndexHtml(_pathToServe, _pathToServe))
+    {   
+        if (!_autoIndexMode && searchIndexHtml(_pathToServe, _pathToServe))
             return true;
         else
         {
@@ -214,6 +225,8 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
         _cgiFound = true;
         return true;
     }
+    // else if (!isDirectory(_pathToServe) && !_autoIndexFound)
+    //     _autoIndexMode = false;
     //std::cout << BOLD RED << "PATH TO SERVE " << _pathToServe << RESET << std::endl;
     return false;
 }

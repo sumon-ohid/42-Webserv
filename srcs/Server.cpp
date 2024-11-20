@@ -8,7 +8,6 @@
 #include <netdb.h>
 #include <utility>
 #include <vector>
-#include <cerrno>
 
 // ------------- Coplien's form -------------
 

@@ -27,6 +27,7 @@ class LocationFinder
         bool _allowedMethodFound;
         bool _redirectFound;
         bool _clientBodySizeFound;
+        bool _autoIndexMode;
 
         LocationFinder();
         LocationFinder& operator=(const LocationFinder& other);
