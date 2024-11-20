@@ -50,6 +50,11 @@ void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
     std::string requestPath = request.getMethodPath();
 
     LocationFinder locationFinder;
+    if (requestPath.find("$autoFlag=on") != std::string::npos) {
+        locationFinder._autoIndexMode = true;
+        std::size_t pos = requestPath.find("$autoFlag=on");
+        requestPath.erase(pos);
+    }
     locationMatched = locationFinder.locationMatch(client, requestPath, _socketFd);
     if (locationMatched)
     {
@@ -160,7 +165,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
                         body << file; //-- Directory link
                     else
                         body << file; //-- File link with directory
-                    body << "\">" << std::setw(30) << std::left << file << "</a>"
+                    body << "$autoFlag=on\">" << std::setw(30) << std::left << file << "</a>"
                          << std::setw(30) << std::left << timeBuffer
                          << size
                          << "<br>";

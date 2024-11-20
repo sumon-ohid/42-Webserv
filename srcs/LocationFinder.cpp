@@ -26,6 +26,7 @@ LocationFinder::LocationFinder()
     _allowedMethodFound = false;
     _redirectFound = false;
     _clientBodySizeFound = false;
+    _autoIndexMode = false;
 
     locationsVector.clear();
 }
@@ -70,8 +71,6 @@ bool LocationFinder::isDirectory(const std::string &path)
     return false;
 }
 
-bool _autoIndexMode = false;
-
 bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &foundPaths)
 {
     DIR* dir = opendir(directory.c_str());
@@ -98,7 +97,6 @@ bool LocationFinder::searchIndexHtml(const std::string &directory, std::string &
                 searchIndexHtml(path, foundPaths);
         }
     }
-    _autoIndexMode = true;
     closedir(dir);
     return false;
 }
@@ -211,13 +209,10 @@ bool LocationFinder::locationMatch(Client *client, std::string path, int _socket
 
     if (isDirectory(_pathToServe))
     {   
-        if (searchIndexHtml(_pathToServe, _pathToServe))
-        {
+        if (!_autoIndexMode && searchIndexHtml(_pathToServe, _pathToServe))
             return true;
-        }
         else
         {
-            _autoIndexMode = true;
             _pathToServe = _root + _locationPath + path + "/";
             _autoIndexFound = true;
             _autoIndex = "on";
