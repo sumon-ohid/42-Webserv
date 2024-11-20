@@ -226,6 +226,8 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
         return;
     }
 	int fd = open(path.c_str(), O_NONBLOCK);
+    std::cout << request._response->_methodAndPath << std::endl;
+    std::cout << "fd: " << fd << std::endl;
 	if (fd == -1)
         return (request._response->error(request, "404", client));
 	setMimeType(path);
