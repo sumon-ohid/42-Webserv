@@ -403,7 +403,7 @@ void ServerConfig::makePortVector()
             break;
         ports.erase(0, pos + 1);
     }
-    listenPorts = tempPorts;
+    listenPorts.insert(listenPorts.end(), tempPorts.begin(), tempPorts.end());
 }
 
 //--- > Make a vector of server names
