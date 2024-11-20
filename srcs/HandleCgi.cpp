@@ -178,7 +178,7 @@ void	HandleCgi::checkWaitPid()
 	int status = 0;
 	pid_t result = waitpid(_pid, &status, WNOHANG);
 	if (result == -1)
-		throw (500);
+		throw ("500");
 	else if (result > 0)
 	{
 		// Child process has terminated
@@ -212,14 +212,14 @@ bool    HandleCgi::getCgiDone() const
 int		HandleCgi::getPipeIn(unsigned i) const
 {
 	if (i > 1)
-		throw (500);
+		throw ("500");
 	return (_pipeIn[i]);
 }
 
 int		HandleCgi::getPipeOut(unsigned i) const
 {
 	if (i > 1)
-		throw (500);
+		throw ("500");
 	return (_pipeOut[i]);
 }
 
