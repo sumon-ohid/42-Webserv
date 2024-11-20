@@ -393,8 +393,8 @@ void ServerConfig::makePortVector()
         std::stringstream ss(temp);
         int port;
         ss >> port;
-        if (port < 0 || port > 65535)
-            throw std::runtime_error("Invalid port number !! [KO] [RANGE : 0 - 65535]");
+        if (port <= 0 || port > 65535)
+            throw std::runtime_error("Invalid port number !! [KO] [RANGE : 1 - 65535]");
         if (portSet.find(port) != portSet.end())
             throw std::runtime_error("Duplicate listen port number found [KO]");
         portSet.insert(port);

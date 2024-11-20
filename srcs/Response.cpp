@@ -128,7 +128,7 @@ void	Response::prepareChunk(Client* client)
 	}
 	if (_bytesSent < 0)
 	{
-		std::cerr << "Error sending chunk response" << std::endl;
+		std::cerr << RED << "Error sending chunk response" << RESET << std::endl;
 		client->_cgi.closeCgi(client);
 		_finishedSending = true;
 	}
