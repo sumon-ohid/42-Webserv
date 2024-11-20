@@ -22,29 +22,27 @@
 #include <iomanip>
 #include <fcntl.h>
 
-GetMethod::GetMethod() : Method() { socketFd = -1; }
+GetMethod::GetMethod() : Method() { _socketFd = -1; }
 
-GetMethod::GetMethod(const GetMethod& other) : Method(other) {}
+GetMethod::GetMethod(const GetMethod& other) : Method(other), _socketFd(other._socketFd) {}
 
 GetMethod&	GetMethod::operator=(const GetMethod& other) {
 	if (this == &other)
 		return *this;
 	Method::operator=(other);
+    _socketFd = other._socketFd;
 	return *this;
 }
 
 GetMethod::~GetMethod() {}
 
-std::string holdLocationPath;
-std::string matchLocationPath;
-
 //-- This function can execute the request.
 //-- Store the request path,
 //-- compare it with location path.
 //-- if match get root and index and other values.
-void GetMethod::executeMethod(int _socketFd, Client* client, Request& request)
+void GetMethod::executeMethod(int socketFd, Client* client, Request& request)
 {
-    socketFd = _socketFd;
+    _socketFd = socketFd;
     std::string pathToServe;
     bool locationMatched = false;
     std::string requestPath = request.getMethodPath();
@@ -107,7 +105,7 @@ void GetMethod::handleAutoIndexOrError(LocationFinder &locationFinder, Request& 
 
 //-- Function template to convert various types to string
 template <typename T>
-std::string anyToString(const T& value)
+static std::string  anyToString(const T& value)
 {
     std::stringstream ss;
     ss << value;
@@ -129,8 +127,6 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
         body << "<html><head><title>Index of "
              << path << "</title></head><body><h1>Index of "
              << path << "</h1><hr><pre>";
-
-        //body << "<a href=\"../\">../</a>\n";
 
         while ((ent = readdir(dir)) != NULL)
         {
@@ -243,7 +239,7 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
 {
     try
     {
-        client->_cgi = HandleCgi(requestPath, socketFd, *client, request);
+        client->_cgi = HandleCgi(requestPath, _socketFd, *client, request);
         std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
     }
     catch (std::exception &e)

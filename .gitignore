@@ -34,6 +34,7 @@ webserv
 
 .vscode
 .DS_Store
+test.conf
 
 # SUMON
 www/html/gallery/

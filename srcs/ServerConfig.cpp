@@ -14,9 +14,7 @@
 #include <sstream>
 #include <map>
 
-ServerConfig::ServerConfig() : LocationConfig()
-{
-}
+ServerConfig::ServerConfig() : LocationConfig() {}
 
 bool    ServerConfig::operator==(const ServerConfig& other) const
 {
@@ -103,7 +101,7 @@ void ServerConfig::checkRedirect(std::string value)
     std::string word;
     while (ss >> word)
          redirect.push_back(word);
-    
+
     //-- Only URL is provided, consider it valid
     if (redirect.size() == 1)
     {
@@ -122,15 +120,15 @@ void ServerConfig::checkRedirect(std::string value)
     }
     else
         throw std::runtime_error(BOLD RED + value + " [ NOT VALID ]" RESET);
-}   
+}
 
 void ServerConfig::checkAllowedMethods(std::string value, std::string locationPath)
 {
     std::vector<std::string> methods;
-   
+
     locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), ' '), locationPath.end());
     locationPath.erase(std::remove(locationPath.begin(), locationPath.end(), '{'), locationPath.end());
-    
+
     std::stringstream ss(value);
     std::string word;
     while (ss >> word)
@@ -139,7 +137,7 @@ void ServerConfig::checkAllowedMethods(std::string value, std::string locationPa
     for (size_t i = 0; i < methods.size(); i++)
     {
         //-- NOTE : if you want to handle more methods, add them here.
-        if (methods[i] != "GET" && methods[i] != "POST" && methods[i] != "DELETE" && methods[i] != "OPTIONS")
+        if (methods[i] != "GET" && methods[i] != "POST" && methods[i] != "DELETE")
             throw std::runtime_error(BOLD RED "ERROR : " + value + " [ NOT VALID ]" RESET);
         if (locationPath == "/cgi-bin")
         {
@@ -176,11 +174,6 @@ void ServerConfig::handleErrorPages(std::string line, ServerConfig &server)
             throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         server.errorPages.insert(std::pair<std::string, std::string>(errorCodes[i], errorPagePath));
     }
-
-    //std::cout << BOLD YELLOW << errorPagePath << RESET << std::endl;
-
-    // if (server.errorPage.empty())
-    //     throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
 }
 
 void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile)
@@ -190,7 +183,6 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         line = configVector[i];
         size_t pos = line.find_last_not_of(" ");
         line = line.substr(0, pos + 1);
-        //std::cout << "line: " << line << std::endl;
         if (line.find('}') != std::string::npos)
             break;
         // Process server directives
@@ -257,7 +249,7 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
             i++;
             continue;
         }
-        else  
+        else
             throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         i++;
     }
@@ -314,15 +306,14 @@ bool ServerConfig::checkLocations()
             }
 
             locationPaths.insert(locationPath);
-            
+
             //-- Check inside location block
             //--- Check if the location block has valid directives
             //--- can not have duplicate directives
             std::multimap<std::string, std::string > locationMap = location.getLocationMap();
             std::multimap<std::string, std::string >::iterator it;
-            
+
             std::set<std::string> locationSet;
-            //locationPaths.clear();
             for ( it = locationMap.begin(); it != locationMap.end(); ++it)
             {
                 locationPath = it->first;
@@ -402,8 +393,8 @@ void ServerConfig::makePortVector()
         std::stringstream ss(temp);
         int port;
         ss >> port;
-        if (port < 0 || port > 65535)
-            throw std::runtime_error("Invalid port number !! [KO] [RANGE : 0 - 65535]");
+        if (port <= 0 || port > 65535)
+            throw std::runtime_error("Invalid port number !! [KO] [RANGE : 1 - 65535]");
         if (portSet.find(port) != portSet.end())
             throw std::runtime_error("Duplicate listen port number found [KO]");
         portSet.insert(port);
@@ -493,6 +484,4 @@ std::map<std::string, std::string> ServerConfig::getErrorPages()
     return (errorPages);
 }
 
-ServerConfig::~ServerConfig()
-{
-}
+ServerConfig::~ServerConfig() {}

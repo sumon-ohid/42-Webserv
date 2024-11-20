@@ -166,7 +166,6 @@ static bool semiColonCheck(std::string line, std::string keyword)
     return (true);
 }
 
-//-- SORRY for ugly code but it works !!
 bool Config::syntaxCheck()
 {
     size_t i = 0;

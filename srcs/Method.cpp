@@ -6,8 +6,6 @@
 #include "../includes/Method.hpp"
 #include "../includes/Helper.hpp"
 
-
-
 const std::string Method::_methodArray[ARRAY_SIZE] = {"GET", "POST", "DELETE"};
 
 Method::Method() {
@@ -67,15 +65,13 @@ void	Method::setName(std::string name) {
 	throw std::runtime_error("400");
 }
 
-
-
 void	Method::setPath(std::string path) {
 	if (path.empty())
 		throw std::runtime_error("400");
 
 	//-- If path is encoded, this will decode it.
 	path = Helper::decodeUrl(path);
-	if (path.find("..") != std::string::npos) // BP check this
+	if (path.find("..") != std::string::npos)
 		throw std::runtime_error("403");
 	std::size_t pos = path.find("//");
 	while (pos != std::string::npos) {
