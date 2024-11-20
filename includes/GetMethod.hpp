@@ -17,6 +17,7 @@ class GetMethod : public Method
 {
 	private:
 		int _socketFd;
+		int _fd;
 
 	public:
 		GetMethod();

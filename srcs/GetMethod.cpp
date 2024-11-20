@@ -22,19 +22,26 @@
 #include <iomanip>
 #include <fcntl.h>
 
-GetMethod::GetMethod() : Method() { _socketFd = -1; }
+GetMethod::GetMethod() : Method() {
+    _socketFd = -1;
+    _fd = -1;
+}
 
-GetMethod::GetMethod(const GetMethod& other) : Method(other), _socketFd(other._socketFd) {}
+GetMethod::GetMethod(const GetMethod& other) : Method(other), _socketFd(other._socketFd), _fd(other._fd) {}
 
 GetMethod&	GetMethod::operator=(const GetMethod& other) {
 	if (this == &other)
 		return *this;
 	Method::operator=(other);
     _socketFd = other._socketFd;
+    _fd = other._fd;
 	return *this;
 }
 
-GetMethod::~GetMethod() {}
+GetMethod::~GetMethod() {
+    if (_fd > 0)
+        close(_fd);
+}
 
 //-- This function can execute the request.
 //-- Store the request path,
@@ -225,13 +232,11 @@ void GetMethod::serveStaticFile(LocationFinder &locationFinder, std::string &pat
         handleAutoIndexOrError(locationFinder, request, client);
         return;
     }
-	int fd = open(path.c_str(), O_NONBLOCK);
-    std::cout << request._response->_methodAndPath << std::endl;
-    std::cout << "fd: " << fd << std::endl;
-	if (fd == -1)
+	_fd = open(path.c_str(), O_NONBLOCK);
+	if (_fd == -1)
         return (request._response->error(request, "404", client));
 	setMimeType(path);
-    Helper::prepareIO(client, fd, path, "read");
+    Helper::prepareIO(client, _fd, path, "read");
 	if (client->_io.getSize() > CHUNK_SIZE)
 		client->_request.back()._response->setIsChunk(true);
 }
