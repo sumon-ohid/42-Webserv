@@ -173,47 +173,21 @@ static void	checkTelnetInterruption(std::vector<char>& line) {
 	}
 }
 
-void trim(std::string& str)
-{
-    //-- Trim leading whitespace
-    std::string::iterator it = std::find_if(str.begin(), str.end(), std::not1(std::ptr_fun<int, int>(std::isspace)));
-    str.erase(str.begin(), it);
-    //-- Trim trailing whitespace
-    std::string::reverse_iterator rit = std::find_if(str.rbegin(), str.rend(), std::not1(std::ptr_fun<int, int>(std::isspace)));
-    str.erase(rit.base(), str.end());
-}
-
-bool isValidKey(const std::string& key)
-{
-    for (std::string::const_iterator it = key.begin(); it != key.end(); ++it)
-	{
-        if (!std::isalnum(*it) && *it != '-' && *it != '_')
-            return false;
-    }
-    return true;
-}
-
-void Request::storeOneHeaderInMap(const std::string& oneLine)
-{
-    if (oneLine.empty())
-        return;
-
-    std::size_t pos = oneLine.find(":");
-    if (pos == std::string::npos || pos == 0)
-        return;
-
-    std::string key = oneLine.substr(0, pos);
-    std::string value = oneLine.substr(pos + 1);
-    trim(key);
-    trim(value);
-    if (!isValidKey(key))
-        return;
-
-    Helper::toLower(key);
-	if (_headerMap.find(key) == _headerMap.end())
-        _headerMap[key] = value;
+void Request::storeOneHeaderInMap(const std::string& oneLine) {
+	std::size_t pos = oneLine.find(":");
+	if (pos == std::string::npos || pos == 0) // BP check key is str _- num?
+		return;
+	std::string	key = oneLine.substr(0, pos);
+	Helper::toLower(key);
+	std::string value = oneLine.substr(pos + 1);
+	while (!value.empty() && value[0] == ' ') {
+		value.erase(0, 1);
+	}
+	if (_headerMap.find(key) == _headerMap.end()) {
+		_headerMap[key] = value;
+	}
 	else
-        _headerMap[key] += ", " + value; //-- Add delimiter when appending values
+		_headerMap[key] += value; // BP: to test, add delimiter
 }
 
 void Request::storeHeadersInMap(const std::string& strLine, std::size_t& endPos) {
