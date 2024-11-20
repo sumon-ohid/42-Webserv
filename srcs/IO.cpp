@@ -10,10 +10,11 @@
 #include <cerrno>
 
 IO::IO() : _fd(-1), _size(0), _byteTracker(0), _totalBytesSent(0), _mimeCheckDone(false) {}
+
 IO::IO(const IO& orig) : _byteTracker(orig._byteTracker), _totalBytesSent(orig._totalBytesSent),
-_response(orig._response), _responseStr(orig._responseStr),
-_mimeCheckDone(orig._mimeCheckDone)
-{}
+	_response(orig._response), _responseStr(orig._responseStr),
+	_mimeCheckDone(orig._mimeCheckDone) {}
+
 IO&	IO::operator=(const IO& rhs)
 {
 	if (this != &rhs)
@@ -26,6 +27,7 @@ IO&	IO::operator=(const IO& rhs)
 	}
 	return (*this);
 }
+
 IO::~IO()
 {
 	if (_fd > 0)
@@ -65,7 +67,7 @@ void	IO::finishWrite(Client* client)
 {
 	if (client->_isCgi && client->_request.begin()->_isWrite == true)
 		finishWriteCgi(client); // pass _pipeOut[0]
-	resetIO(client);
+	resetIO();
 }
 
 void	IO::finishWriteCgi(Client* client)
@@ -79,9 +81,8 @@ void	IO::finishWriteCgi(Client* client)
 	client->_request.begin()->_response->setIsChunk(true);
 }
 
-void	IO::resetIO(Client* client)
+void	IO::resetIO()
 {
-	(void) client; // BP: remove client
 	if (_fd > 0)
 		close (_fd);
 	_fd = -1;
@@ -141,7 +142,7 @@ void	IO::finishReadingFromFd(Client* client)
 		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
 	}
-	resetIO(client);
+	resetIO();
 }
 
 void	IO::MimeTypeCheck(Client* client)

@@ -4,7 +4,6 @@
 #include "../includes/Response.hpp"
 
 #include <cerrno>
-#include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <cstdio>
@@ -53,7 +52,6 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 
 	if (_statusCode == "204")
 	{
-		//-- headerAndBody is always 200, but we need for different codes as well.
 		std::string body =  " <html><head> <title>File uploaded</title>"
         "  <style> body { display: flex; justify-content: center;"
         "  align-items: center; height: 100vh; font-family: Arial, sans-serif;"
@@ -69,15 +67,6 @@ void	DeleteMethod::executeMethod(int socketFd, Client* client, Request& request)
 
 void	DeleteMethod::deleteObject()
 {
-	// std::ifstream file(_pathToDelete.c_str());
-	// if (!file.is_open())
-	// {
-	// 	std::cerr << BOLD RED << "File Does not exist! : " << _pathToDelete << RESET << std::endl;
-	// 	_statusCode = "404";
-	// 	return;
-	// }
-	// file.close();
-
 	struct stat statInfo;
 	if (stat(_pathToDelete.c_str(), &statInfo) == -1)
 	{

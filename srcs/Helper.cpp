@@ -23,7 +23,7 @@ Helper::Helper(const Helper& other) {
 Helper& Helper::operator=(const Helper& other) {
 	if (this == &other)
 		return *this;
-	// copy variables here
+
 	return *this;
 }
 
@@ -36,7 +36,7 @@ static std::map<std::string, std::string> initStatusCodesMap() {
 	codes["204"] = "No Content";
 	codes["301"] = "Moved Permanently";
 	codes["302"] = "Found";
-	codes["303"] = "See Other"; //-- redirect after a POST request
+	codes["303"] = "See Other";
 	codes["307"] = "Temporary Redirect";
 	codes["308"] = "Permanent Redirect";
 	codes["400"] = "Bad Request";
@@ -76,7 +76,6 @@ static std::map<std::string, std::string> initMimeMap() {
 	mimes[".webmanifest"] = "application/json";
 	mimes[".svg"] = "image/svg+xml";
 	mimes[".ico"] = "image/png";
-	// BP: don't forget the point when adding a new mimetype - example: ".css"
 	return mimes;
 }
 
@@ -133,7 +132,7 @@ void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t event
 	event.data.fd = client->getFd();
 	if (epoll_ctl(epoll.getFd(), EPOLL_CTL_MOD, event.data.fd, &event) == -1)
 	{
-		// return to client that there was an internal server error - (is that possible? we would have to change the event then to EPOLLOUT to be able to send the response to the client; maybe this was the one not working, we don't know for sure; but even if not, we would have to change the events, which failed before)
+		// return to client that there was an internal server error - (is that possible? we would have to change the event then to EPOLLOUT to be able to send the response to the client; maybe this was the one not working, we don't know for sure; but even if not, we would have to change the events, which failed before) BP:?
 		// then remove client (?)
 		epoll.removeClient(client);
 	}
@@ -225,7 +224,7 @@ void	Helper::setCloexec(int fd)
 	int flags = fcntl(fd, F_GETFD);
 	if (flags == -1)
 		throw std::runtime_error("500");
-	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags
+	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags BP:?
 	if (fcntl(fd, F_SETFD, flags) == -1)
 		throw std::runtime_error("500");
 }

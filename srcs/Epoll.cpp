@@ -7,7 +7,6 @@
 
 #include <exception>
 #include <fcntl.h>
-#include <fcntl.h>
 #include <iostream>
 #include <cerrno>
 #include <cstddef>
@@ -204,7 +203,7 @@ Client*	Epoll::retrieveClient(vSrv& servers, int event_fd)
 	return (NULL);
 }
 
-bool	Epoll::NewClient(vSrv &servers, int event_fd) // possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
+bool	Epoll::NewClient(vSrv &servers, int event_fd)
 {
 	for (vSrv::iterator servIt = servers.begin();servIt != servers.end(); ++servIt)
 	{
@@ -223,8 +222,7 @@ bool	Epoll::NewClient(vSrv &servers, int event_fd) // possible change: implement
 bool	Epoll::AcceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 {
 	// Get the length of the address associated with the current listening socket
-	socklen_t _addrlen = sizeof(sockIt->getAddress()); //implement function in Socket: setAddrlen
-	// sockIt->getAddressLen();
+	socklen_t _addrlen = sizeof(sockIt->getAddress()); //implement function in Socket: setAddrlen BP:?
 	// Accept a new client connection on the listening socket
 	_connSock = accept(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen);
 	if (_connSock < 0)

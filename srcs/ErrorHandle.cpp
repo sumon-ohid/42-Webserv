@@ -44,8 +44,6 @@ std::string ErrorHandle::modifyErrorPage()
             newErrorFile << line << std::endl;
         }
     }
-    // else
-    //     throw std::runtime_error("No error file found in Config!!"); // BP: this error is thrown with favicon
 
     newErrorFile.close();
     defaultErrorFile.close();
@@ -59,10 +57,6 @@ std::string ErrorHandle::modifyErrorPage()
 
     errorBody = body;
     return body;
-
-    // -- Remove the files before quiting the program
-
-    //std::remove(tempFileName.c_str());
 }
 
 void ErrorHandle::prepareErrorPage(Client *client, std::string statusCode)
