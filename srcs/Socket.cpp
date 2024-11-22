@@ -1,7 +1,6 @@
 #include "../includes/Socket.hpp"
 #include "../includes/ServerConfig.hpp"
 
-#include <cerrno>
 #include <exception>
 #include <netinet/in.h>
 #include <cstring>
@@ -110,7 +109,7 @@ void	Socket::socketSetUpAddress(const std::string& hostname, Server& server, Ser
     struct addrinfo hints, *res;
 
 	// Prepare the hints structure
-	memset(&hints, 0, sizeof(hints));
+	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;	  // IPv4
 	hints.ai_socktype = SOCK_STREAM; // TCP
 

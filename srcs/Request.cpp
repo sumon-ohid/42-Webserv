@@ -244,7 +244,7 @@ void Request::storeRequestBody(std::string& fileName, std::size_t endPos) {
 
 	std::size_t pos = strLine.find("filename=", endPos);
     char* end;
-    unsigned long num = strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
+    unsigned long num = std::strtoul(getHeaderFromHeaderMap("content-length").c_str(), &end, 10);
 
     if (pos == std::string::npos && num > strLine.substr(endPos).size()) {
         return;

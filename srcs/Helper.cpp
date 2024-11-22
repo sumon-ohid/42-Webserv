@@ -214,7 +214,7 @@ std::string Helper::generateRandomId()
 	std::string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	for (int i = 0; i < 32; i++)
 	{
-		sessionId += chars[rand() % chars.size()];
+		sessionId += chars[std::rand() % chars.size()];
 	}
 	return sessionId;
 }
