@@ -18,7 +18,6 @@
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <iomanip>
 #include <fcntl.h>
 
@@ -160,7 +159,7 @@ void GetMethod::handleAutoIndex(std::string &path, Request &request, Client *cli
 
                     //-- Format last modified time
                     char timeBuffer[30];
-                    strftime(timeBuffer, sizeof(timeBuffer), "%d-%b-%Y %H:%M", localtime(&fileStat.st_mtime));
+                    std::strftime(timeBuffer, sizeof(timeBuffer), "%d-%b-%Y %H:%M", std::localtime(&fileStat.st_mtime));
 
                     //-- Make links for each file and directory
                     body << "<a href=\"";

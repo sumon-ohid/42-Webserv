@@ -157,6 +157,7 @@ void	IO::MimeTypeCheck(Client* client)
 
 void	IO::extractMimeType(size_t pos, std::string& setMime, Client* client)
 {
+	(void) client;
 	if (pos != std::string::npos)
 	{
 		std::string mimeType = _responseStr.substr(pos + 14, _responseStr.find("\r\n", pos) - pos - 14);
@@ -174,7 +175,11 @@ void	IO::extractMimeType(size_t pos, std::string& setMime, Client* client)
 	}
 	if (setMime.empty())
     {
-		std::cout << "path before throwing 415 " << client->_cgi.getLocationPath() << std::endl;
+		// std::cout << "path before throwing 415 " << client->_cgi.getLocationPath() << std::endl;
+		client->_isCgi = false;
+		client->_cgi.setCgiDone(true);
+		client->_epoll->removeCgiClientFromEpoll(_fd);
+		resetIO();
 		throw std::runtime_error("415");
 	}
 }

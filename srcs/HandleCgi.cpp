@@ -89,6 +89,11 @@ HandleCgi::HandleCgi(std::string requestBuffer, int nSocket, Client &client, Req
         if (locationFinder._allowed_methods.find(_method) == std::string::npos)
             throw std::runtime_error("405");
     }
+	if (access(_locationPath.c_str(), W_OK) == -1)
+    {
+        std::cerr << BOLD RED << "Permission denied: " << _locationPath << RESET << std::endl;
+        throw std::runtime_error("403");
+    }
     client._isCgi = true;
     proccessCGI(&client);
 }
@@ -107,10 +112,13 @@ void HandleCgi::proccessCGI(Client* client)
 		handleParentProcess(client);
 }
 
+#include <sys/stat.h>
 
 //-- Function to handle the child process
 void HandleCgi::handleChildProcess(const std::string &_locationPath, Request &request)
 {
+	//-- Check if the file has write permissions
+
     dup2(_pipeIn[0], STDIN_FILENO); //-- Redirect stdin to read end of the pipe
     dup2(_pipeOut[1], STDOUT_FILENO); //-- Redirect stdout to write end of the pipe
 
