@@ -62,20 +62,33 @@ static std::map<std::string, std::string> initExecMap() {
 
 static std::map<std::string, std::string> initMimeMap() {
 	std::map<std::string, std::string> mimes;
+	mimes[".bmp"] = "image/bmp";
 	mimes[".css"] = "text/css";
-	mimes[".html"] = "text/html";
-	mimes[".js"] = "text/javascript";
-	mimes[".jpg"] = "image/jpeg";
-	mimes[".jpeg"] = "image/jpeg";
-	mimes[".png"] = "image/png";
+	mimes[".csv"] = "text/csv";
 	mimes[".gif"] = "image/gif";
-	mimes[".pdf"] = "application/pdf";
-	mimes[".mp4"] = "video/mp4";
-	mimes[".xml"] = "application/xml";
-	mimes[".json"] = "application/json";
-	mimes[".webmanifest"] = "application/json";
-	mimes[".svg"] = "image/svg+xml";
+	mimes[".html"] = "text/html";
 	mimes[".ico"] = "image/png";
+	mimes[".ics"] = "text/calendar";
+	mimes[".jpeg"] = "image/jpeg";
+	mimes[".jpg"] = "image/jpeg";
+	mimes[".js"] = "text/javascript";
+	mimes[".json"] = "application/json";
+	mimes[".mp3"] = "audio/mpeg";
+	mimes[".mp4"] = "video/mp4";
+	mimes[".otf"] = "font/otf";
+	mimes[".pdf"] = "application/pdf";
+	mimes[".png"] = "image/png";
+	mimes[".php"] = "application/x-httpd-php";
+	mimes[".svg"] = "image/svg+xml";
+	mimes[".ttf"] = "font/ttf";
+	mimes[".txt"] = "text/plain";
+	mimes[".wav"] = "audio/wav";
+	mimes[".woff"] = "font/woff";
+	mimes[".woff2"] = "font/woff2";
+	mimes[".webmanifest"] = "application/json";
+	mimes[".xhtml"] = "application/xhtml+xml";
+	mimes[".xml"] = "application/xml";
+
 	return mimes;
 }
 
