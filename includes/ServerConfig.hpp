@@ -33,6 +33,7 @@ class ServerConfig : public LocationConfig
         std::vector<std::string> serverNames;
         std::string _configFile;
         std::string clientMaxBodySize;
+        std::string timeout;
         std::map<std::string, std::string> errorPages;
 
     public:
@@ -48,6 +49,7 @@ class ServerConfig : public LocationConfig
         std::string getCgiFile();
         std::string getTryFiles();
         std::string getClientMaxBodySize();
+        std::string getTimeout();
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
         std::map<std::string, std::string> getErrorPages();
@@ -61,6 +63,7 @@ class ServerConfig : public LocationConfig
         void checkRedirect(std::string value);
         bool checkAutoIndex(std::string line);
         bool checkClientMaxBodySize(std::string value);
+        bool timeoutCheck(std::string line, ServerConfig &server);
 
         void serverBlock(std::string line, size_t &i, std::vector<std::string> configVector, ServerConfig &server, std::string configFile);
         void handleErrorPages(std::string line, ServerConfig &server);

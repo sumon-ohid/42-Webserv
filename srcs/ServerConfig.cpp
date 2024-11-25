@@ -82,6 +82,27 @@ bool ServerConfig::checkClientMaxBodySize(std::string line)
     return true;
 }
 
+bool ServerConfig::timeoutCheck(std::string line, ServerConfig &server)
+{
+    size_t pos = line.find_first_not_of(" ");
+    size_t end = line.find_last_not_of(" ");
+    std::string temp = line.substr(pos, end + 1);
+    if (temp.empty())
+        return false;
+    
+    if (temp.at(temp.size() - 1) != 's')
+        return false;
+
+    temp = temp.substr(0, temp.size() - 1);
+    for (size_t i = 0; i < temp.size(); i++)
+    {
+        if (!std::isdigit(temp[i]))
+            return false;
+    }
+    server.timeout = temp.substr(0, temp.size());
+    return true;
+}
+
 bool ServerConfig::checkAutoIndex(std::string line)
 {
     size_t pos = line.find_first_not_of(" ");
@@ -242,6 +263,16 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
             server.clientMaxBodySize.erase(std::remove(server.clientMaxBodySize.begin(), server.clientMaxBodySize.end(), ' '), server.clientMaxBodySize.end());
             if (server.clientMaxBodySize.empty())
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+        }
+        else if (line.find("set_timeout") == 0)
+        {
+            size_t pos = line.find(" ");
+            if (pos != std::string::npos)
+                server.timeout = line.substr(pos + 1);
+            if (timeoutCheck(line.substr(pos + 1), server) == false)
+                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
+            if (server.timeout.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
         else if (line == "{" || line.empty())
@@ -467,6 +498,11 @@ std::vector<int> ServerConfig::getListenPorts()
 std::string ServerConfig::getClientMaxBodySize()
 {
     return (clientMaxBodySize);
+}
+
+std::string ServerConfig::getTimeout()
+{
+    return (timeout);
 }
 
 std::vector<std::string> ServerConfig::getServerNames()
