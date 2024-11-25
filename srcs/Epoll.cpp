@@ -290,7 +290,7 @@ void	Epoll::checkTimeouts()
 	for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end();)
 	{
 		std::map<int, Client*>::iterator nextIt = it;
-			++nextIt;
+		++nextIt;
 		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
 			removeClient(it->second);
 		it = nextIt;
