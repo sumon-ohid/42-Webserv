@@ -153,9 +153,12 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 		}
 		else if (events & EPOLLERR)
 			cgiErrorOrHungUp(eventFd);
-		else if (events & EPOLLIN)
+		else if (client->_request.begin()->_isRead)
+		{
 			client->_io.readFromChildFd(client);
-		else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
+			handleRegularClient(client, events);
+		}
+		else if (client->_request.begin()->_isWrite)
 			client->_io.writeToChildFd(client);
 	}
 	catch (std::exception &e)
@@ -180,7 +183,7 @@ void	Epoll::handleRegularClient(Client* client, uint32_t events)
 			return (clientHungUp(client));
 		else if (events & EPOLLERR)
 			return (clientError(client));
-		if (events & (EPOLLIN | EPOLLOUT))
+		if ((events & (EPOLLIN | EPOLLOUT)) && !client->_isCgi)
 			client->setLastActive();
 		if (events & EPOLLIN)  // Check if the event is for reading
 			client->_request.back().clientRequest(client);

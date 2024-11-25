@@ -106,6 +106,7 @@ void	IO::readFromChildFd(Client* client)
 	}
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
+	std::cout << "bytes read " << _byteTracker << std::endl;
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }

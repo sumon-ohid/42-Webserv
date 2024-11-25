@@ -123,7 +123,7 @@ void	Response::prepareChunk(Client* client)
 	{
 		if (!_body.empty())
 			sendContentChunk(client);
-		else
+		else if (client->_cgi.getCgiDone())
 			sendNullChunk(client);
 	}
 	if (_bytesSent < 0)
