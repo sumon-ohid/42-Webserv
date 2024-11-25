@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <ctime>
 #include <map>
 #include <string>
 #include <vector>
@@ -33,7 +34,7 @@ class ServerConfig : public LocationConfig
         std::vector<std::string> serverNames;
         std::string _configFile;
         std::string clientMaxBodySize;
-        std::string timeout;
+        time_t      timeout;
         std::map<std::string, std::string> errorPages;
 
     public:
@@ -49,7 +50,7 @@ class ServerConfig : public LocationConfig
         std::string getCgiFile();
         std::string getTryFiles();
         std::string getClientMaxBodySize();
-        std::string getTimeout();
+        time_t      getTimeout();
         std::vector<LocationConfig> getLocations();
         std::vector<ServerConfig> getServers();
         std::map<std::string, std::string> getErrorPages();
