@@ -324,19 +324,28 @@ void	Epoll::clientResponse(Client* client)
 		client->_request.begin()->_response->sendResponse(client);
 	if (client->_request.begin()->_response->getIsFinished())
 	{
-		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
-		if (client->_request.size() > 1)
-			client->_request.pop_front();
-		if (client->_request.size() > 1)
+		if (client->_io.getTimeout())
 		{
-			try {
-				client->_request.begin()->executeMethod(client->getFd(), client);
-			}
-			catch (std::exception &e) {
-				client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
-			}
+			client->_isCgi = false;
+			client->_request.begin()->_response->setIsChunk(false);
+			client->_io.resetIO();
+			client->_request.begin()->_response->error(*client->_request.begin(), "504", client);
 		}
-		client->_cgi = HandleCgi();
+		else {
+			Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
+			if (client->_request.size() > 1)
+				client->_request.pop_front();
+			if (client->_request.size() > 1)
+			{
+				try {
+					client->_request.begin()->executeMethod(client->getFd(), client);
+				}
+				catch (std::exception &e) {
+					client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
+				}
+			}
+			client->_cgi = HandleCgi();
+		}
 	}
 }
 
@@ -400,7 +409,7 @@ void	Epoll::addClientIo(Client* client, std::string mode)
 	else if (mode == "write")
 		client->_request.begin()->_isWrite = true;
 	else
-		throw("500");
+		throw std::runtime_error("500");
 }
 
 void	Epoll::removeClientIo(Client* client)

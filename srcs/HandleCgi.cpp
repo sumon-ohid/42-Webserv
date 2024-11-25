@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <sys/epoll.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 HandleCgi::HandleCgi()
 {
@@ -209,7 +210,8 @@ bool	HandleCgi::checkCgiTimeout(Client *client)
 	client->_io.setTimeout(true);
 	kill (client->_cgi.getPid(), SIGKILL);
 	_cgiDone = true;
-	throw std::runtime_error("504");
+	closeCgi(client);
+	// throw std::runtime_error("504");
 	return (true);
 }
 
@@ -240,14 +242,14 @@ bool	HandleCgi::getChildReaped() const
 int		HandleCgi::getPipeIn(unsigned i) const
 {
 	if (i > 1)
-		throw ("500");
+		throw std::runtime_error("500");
 	return (_pipeIn[i]);
 }
 
 int		HandleCgi::getPipeOut(unsigned i) const
 {
 	if (i > 1)
-		throw ("500");
+		throw std::runtime_error("500");
 	return (_pipeOut[i]);
 }
 

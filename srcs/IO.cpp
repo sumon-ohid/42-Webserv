@@ -96,6 +96,8 @@ void	IO::readFromChildFd(Client* client)
 	if (_timeout || client->_cgi.getPipeOut(0) < 0)
 		return;
 	client->_cgi.checkWaitPid(client);
+	if (_timeout)
+		return;
 	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
@@ -106,7 +108,6 @@ void	IO::readFromChildFd(Client* client)
 	}
 	else
 		_responseStr = std::string(_response.data(), _byteTracker);
-	std::cout << "bytes read " << _byteTracker << std::endl;
 	client->_request.begin()->_response->createHeaderAndBodyString(*client->_request.begin(), _responseStr, "200", client);
 	_byteTracker = 0;
 }
