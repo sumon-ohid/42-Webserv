@@ -210,6 +210,11 @@ bool Config::syntaxCheck()
             if (semiColonCheck(line, "client_max_body_size") == false)
                 return (false);
         }
+        else if (line.find("set_timeout") != std::string::npos)
+        {
+            if (semiColonCheck(line, "set_timeout") == false)
+                return (false);
+        }
         else if (line.find("location") != std::string::npos)
         {
             std::string temp;
@@ -231,11 +236,6 @@ bool Config::syntaxCheck()
                 temp = line.substr(0, pos);
             temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());
             if (temp != "location")
-                return (false);
-        }
-        else if (line.find("try_files") != std::string::npos)
-        {
-            if (semiColonCheck(line, "try_files") == false)
                 return (false);
         }
         else if (line.find("allowed_methods") != std::string::npos)
