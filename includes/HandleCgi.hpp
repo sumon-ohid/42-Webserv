@@ -56,7 +56,7 @@ class HandleCgi
 		void			processCgiDataFromChild(Client*);
 		void			checkWaitPid(Client*);
 		void			readFromChildFd();
-		void			checkCgiTimeout(Client*);
+		bool			checkCgiTimeout(Client*);
 		void			finishReadingFromChild(Client*);
 		// void			MimeTypeCheck(Client *client);
 		void			extractMimeType(size_t, std::string&);
@@ -64,6 +64,7 @@ class HandleCgi
 
 		void			setCgiDone(bool);
 		bool			getCgiDone() const;
+		bool			getChildReaped() const;
 		int				getPipeIn(unsigned) const;
 		int				getPipeOut(unsigned) const;
 		pid_t			getPid(void) const; 

@@ -9,11 +9,11 @@
 #include <sys/types.h>
 #include <cerrno>
 
-IO::IO() : _fd(-1), _size(0), _byteTracker(0), _totalBytesSent(0), _mimeCheckDone(false) {}
+IO::IO() : _fd(-1), _size(0), _byteTracker(0), _totalBytesSent(0), _mimeCheckDone(false), _timeout(false) {}
 
 IO::IO(const IO& orig) : _byteTracker(orig._byteTracker), _totalBytesSent(orig._totalBytesSent),
 	_response(orig._response), _responseStr(orig._responseStr),
-	_mimeCheckDone(orig._mimeCheckDone) {}
+	_mimeCheckDone(orig._mimeCheckDone), _timeout(orig._timeout) {}
 
 IO&	IO::operator=(const IO& rhs)
 {
@@ -24,6 +24,7 @@ IO&	IO::operator=(const IO& rhs)
 		_response = rhs._response;
 		_responseStr = rhs._responseStr;
 		_mimeCheckDone = rhs._mimeCheckDone;
+		_timeout = rhs._timeout;
 	}
 	return (*this);
 }
@@ -54,7 +55,6 @@ void	IO::checkReadOrWriteError(Client* client)
 {
 	if (_byteTracker > -1)
 		return;
-	// std::cerr << strerror(errno) << std::endl;
 	client->_epoll->removeCgiClientFromEpoll(_fd);
 	throw std::runtime_error("500");
 }
@@ -88,13 +88,14 @@ void	IO::resetIO()
 	_response.clear();
 	_responseStr.clear();
 	_mimeCheckDone = false;
+	_timeout = false;
 }
 
 void	IO::readFromChildFd(Client* client)
 {
-	client->_cgi.checkWaitPid(client);
-	if (client->_cgi.getPipeOut(0) < 0)
+	if (_timeout || client->_cgi.getPipeOut(0) < 0)
 		return;
+	client->_cgi.checkWaitPid(client);
 	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
@@ -175,7 +176,6 @@ void	IO::extractMimeType(size_t pos, std::string& setMime, Client* client)
 	}
 	if (setMime.empty())
     {
-		// std::cout << "path before throwing 415 " << client->_cgi.getLocationPath() << std::endl;
 		client->_isCgi = false;
 		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
@@ -202,4 +202,14 @@ void	IO::setFd(int fd)
 void	IO::setSize(size_t size)
 {
 	_size = size;
+}
+
+void	IO::setTimeout(bool val)
+{
+	_timeout = val;
+}
+
+bool	IO::getTimeout() const
+{
+	return (_timeout);
 }

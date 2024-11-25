@@ -182,31 +182,34 @@ void HandleCgi::handleParentProcess(Client* client)
 
 void	HandleCgi::checkWaitPid(Client* client)
 {
-	if (_childReaped)
+	if (_childReaped || client->_io.getTimeout() || checkCgiTimeout(client))
 		return;
-	checkCgiTimeout(client);
 	int status = 0;
 	pid_t result = waitpid(_pid, &status, WNOHANG);
 	if (result == -1)
-		throw ("500");
+		throw std::runtime_error("500");
 	else if (result > 0)
 	{
 		// Child process has terminated
 		if (WIFEXITED(status) && DEBUG_MODE)
+		{
 			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+	        std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
+		}
 		else if (WIFSIGNALED(status))
-			throw ("500");
+			throw std::runtime_error("500");
 		_childReaped = true;
 	}
 }
 
-void	HandleCgi::checkCgiTimeout(Client *client)
+bool	HandleCgi::checkCgiTimeout(Client *client)
 {
-	double elapsedTime = Helper::getElapsedTime(client);
-	if (elapsedTime < CGI_TIMEOUT)
-		return;
+	if (Helper::getElapsedTime(client) < CGI_TIMEOUT)
+		return (false);
+	client->_io.setTimeout(true);
 	kill (client->_cgi.getPid(), SIGKILL);
 	throw std::runtime_error("504");
+	return (true);
 }
 
 void	HandleCgi::closeCgi(Client* client)
@@ -226,6 +229,11 @@ void	HandleCgi::setCgiDone(bool value)
 bool    HandleCgi::getCgiDone() const
 {
     return (_cgiDone);
+}
+
+bool	HandleCgi::getChildReaped() const
+{
+	return (_childReaped);
 }
 
 int		HandleCgi::getPipeIn(unsigned i) const

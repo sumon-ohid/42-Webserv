@@ -97,8 +97,10 @@ void Epoll::monitoring(vSrv& servers)
 	while (1)
 	{
 		// Wait for events on the epoll instance
-		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, -1)) == -1 || stopSignal)
+		if (checkEpollWait(epoll_wait(_epollFd, _events, MAX_EVENTS, EPOLL_TIMEOUT_MS)) == -1 || stopSignal)
 			break;
+		if (!_nfds)
+			continue;
 		for (int i = 0; i < _nfds; ++i)
 			if (!existingClient(_events[i].data.fd, _events[i].events))  // Check if the event corresponds to one of the listening sockets
 				newClient(servers, _events[i].data.fd);
@@ -117,6 +119,8 @@ int	Epoll::checkEpollWait(int epollWaitReturn)
 		else
 			throw std::runtime_error("epoll_wait failed");
 	}
+	if (_nfds == 0)
+		checkTimeouts();
 	return (_nfds);
 }
 
@@ -140,15 +144,11 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 		if (events & (EPOLLHUP | EPOLLRDHUP))
 		{
 			if (client->_isCgi && !client->_cgi.getCgiDone())
-			{
-				std::cout << "Debugging" << std::endl;
 				client->_io.readFromChildFd(client);
-				client->setLastActive();
-			}
 			else
 			{
 				endCgi(client);
-				removeClientEpoll(client->getFd());
+				removeClientEpoll(eventFd);
 			}
 		}
 		else if (events & EPOLLERR)
@@ -157,13 +157,11 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 			client->_io.readFromChildFd(client);
 		else if (events & EPOLLOUT && client->_request.begin()->_isWrite)
 			client->_io.writeToChildFd(client);
-		if ((events & EPOLLIN | EPOLLOUT))
-			client->setLastActive();
 	}
 	catch (std::exception &e)
 	{
 		endCgi(client);
-		client->_request.begin()->_response->error(*client->_request.begin(), e.what(),client);
+		client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
 	}
 }
 
@@ -171,6 +169,7 @@ void	Epoll::endCgi(Client* client)
 {
 	client->_cgi.closeCgi(client);
 	client->_isCgi = false;
+	client->_io.resetIO();
 }
 
 void	Epoll::handleRegularClient(Client* client, uint32_t events)
@@ -181,12 +180,12 @@ void	Epoll::handleRegularClient(Client* client, uint32_t events)
 			return (clientHungUp(client));
 		else if (events & EPOLLERR)
 			return (clientError(client));
-		else if (events & EPOLLIN)  // Check if the event is for reading
+		if (events & (EPOLLIN | EPOLLOUT))
+			client->setLastActive();
+		if (events & EPOLLIN)  // Check if the event is for reading
 			client->_request.back().clientRequest(client);
 		else if (events & EPOLLOUT) // Check if the event is for writing
 			clientResponse(client);
-		if (events & EPOLLIN | EPOLLOUT)
-			client->setLastActive();
 	}
 	catch (std::exception &e)
 	{
@@ -285,9 +284,13 @@ void Epoll::ioFiles()
 
 void	Epoll::checkTimeouts()
 {
-	for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end(); ++it)
+	for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end();)
 	{
-		if ((it->second)->getLastActive() > (it->second)->_server->getServerConfig
+		std::map<int, Client*>::iterator nextIt = it;
+			++nextIt;
+		if (Helper::getElapsedTime(it->second) > 100)
+			removeClient(it->second);
+		it = nextIt;
 	}
 }
 
