@@ -99,7 +99,10 @@ bool ServerConfig::timeoutCheck(std::string line, ServerConfig &server)
         if (!std::isdigit(temp[i]))
             return false;
     }
-    server.timeout = temp.substr(0, temp.size());
+    int timeout = std::atoi(temp.c_str());
+    if (timeout <= 0 || timeout > 300)
+        return false;
+    server.timeout = timeout;
     return true;
 }
 
@@ -268,11 +271,8 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         else if (line.find("set_timeout") == 0)
         {
             size_t pos = line.find(" ");
-            if (pos != std::string::npos)
-                server.timeout = line.substr(pos + 1);
+    
             if (timeoutCheck(line.substr(pos + 1), server) == false)
-                throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
-            if (server.timeout.empty())
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
         else if (line == "{" || line.empty())
@@ -500,7 +500,7 @@ std::string ServerConfig::getClientMaxBodySize()
     return (clientMaxBodySize);
 }
 
-std::string ServerConfig::getTimeout()
+time_t ServerConfig::getTimeout()
 {
     return (timeout);
 }
