@@ -288,7 +288,7 @@ void	Epoll::checkTimeouts()
 	{
 		std::map<int, Client*>::iterator nextIt = it;
 			++nextIt;
-		if (Helper::getElapsedTime(it->second) > 100)
+		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
 			removeClient(it->second);
 		it = nextIt;
 	}
