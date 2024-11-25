@@ -1,6 +1,7 @@
 #include "../includes/Helper.hpp"
 #include "../includes/Response.hpp"
 
+#include <csignal>
 #include <cstddef>
 #include <iomanip>
 #include <sstream>
@@ -254,7 +255,11 @@ void	Helper::setFdFlags(int fd, uint32_t mask)
     }
 }
 
-#include <iostream>
+double	Helper::getElapsedTime(Client *client)
+{
+	time_t	currentTime = time(NULL);
+	return (difftime(currentTime, client->getLastActive()));
+}
 
 void	Helper::toLower(std::string& str) {
 	for (std::string::iterator it = str.begin(); it != str.end(); it++) {

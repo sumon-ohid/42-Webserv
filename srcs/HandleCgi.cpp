@@ -18,6 +18,7 @@
 #include <string>
 #include <algorithm>
 #include <sys/epoll.h>
+#include <sys/types.h>
 
 HandleCgi::HandleCgi()
 {
@@ -179,10 +180,11 @@ void HandleCgi::handleParentProcess(Client* client)
 	client->_request.begin()->_isWrite = true;
 }
 
-void	HandleCgi::checkWaitPid()
+void	HandleCgi::checkWaitPid(Client* client)
 {
 	if (_childReaped)
 		return;
+	checkCgiTimeout(client);
 	int status = 0;
 	pid_t result = waitpid(_pid, &status, WNOHANG);
 	if (result == -1)
@@ -196,6 +198,15 @@ void	HandleCgi::checkWaitPid()
 			throw ("500");
 		_childReaped = true;
 	}
+}
+
+void	HandleCgi::checkCgiTimeout(Client *client)
+{
+	double elapsedTime = Helper::getElapsedTime(client);
+	if (elapsedTime < CGI_TIMEOUT)
+		return;
+	kill (client->_cgi.getPid(), SIGKILL);
+	throw std::runtime_error("504");
 }
 
 void	HandleCgi::closeCgi(Client* client)
@@ -229,6 +240,11 @@ int		HandleCgi::getPipeOut(unsigned i) const
 	if (i > 1)
 		throw ("500");
 	return (_pipeOut[i]);
+}
+
+pid_t	HandleCgi::getPid() const
+{
+	return (_pid);
 }
 
 std::string	HandleCgi::getLocationPath() const

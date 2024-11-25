@@ -7,7 +7,8 @@
 
 
 // Thorben
-
+// in IO.cpp
+#define CGI_TIMEOUT 5 
 
 
 

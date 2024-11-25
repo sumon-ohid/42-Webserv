@@ -92,7 +92,7 @@ void	IO::resetIO()
 
 void	IO::readFromChildFd(Client* client)
 {
-	client->_cgi.checkWaitPid();
+	client->_cgi.checkWaitPid(client);
 	if (client->_cgi.getPipeOut(0) < 0)
 		return;
 	_fd = client->_cgi.getPipeOut(0);

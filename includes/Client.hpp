@@ -45,7 +45,7 @@ public:
 	// sets the port of the client to the value passed
 	void		setPort(int);
 	// sets lastActove of the client to the value passed
-	void		setLastActive(time_t);
+	void		setLastActive();
 	// will add 1 to numRequests of the client
 	void		numRequestAdd1();
 

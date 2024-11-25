@@ -53,9 +53,9 @@ void		Client::setPort(int port)
 	_port = port;
 }
 
-void		Client::setLastActive(time_t time)
+void		Client::setLastActive()
 {
-	_lastActive = time;
+	_lastActive = time(NULL);
 }
 
 void		Client::numRequestAdd1()

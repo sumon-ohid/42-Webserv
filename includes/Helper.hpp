@@ -34,5 +34,7 @@ class Helper {
 		static void			setCloexec(int fd);
 		static void			setFdFlags(int fd, uint32_t mask);
 
+		static double		getElapsedTime(Client *client);
+
 		static void			toLower(std::string& str);
 };
