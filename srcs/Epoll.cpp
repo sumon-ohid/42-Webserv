@@ -143,7 +143,7 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 			else
 			{
 				endCgi(client);
-				removeClientEpoll(client->getFd());
+				removeClientEpoll(eventFd);
 			}
 		}
 		if (events & EPOLLERR)
