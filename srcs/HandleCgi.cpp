@@ -9,7 +9,6 @@
 #include "../includes/Response.hpp"
 #include "../includes/LocationFinder.hpp"
 
-#include <cerrno>
 #include <cstddef>
 #include <cstring>
 #include <iostream>

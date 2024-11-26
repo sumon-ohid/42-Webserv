@@ -7,7 +7,6 @@
 #include <features.h>
 #include <stdexcept>
 #include <sys/types.h>
-#include <cerrno>
 
 IO::IO() : _fd(-1), _size(0), _byteTracker(0), _totalBytesSent(0), _mimeCheckDone(false) {}
 
@@ -56,6 +55,7 @@ void	IO::checkReadOrWriteError(Client* client)
 		return;
 	// std::cerr << strerror(errno) << std::endl;
 	client->_epoll->removeCgiClientFromEpoll(_fd);
+	client->_io.resetIO();
 	throw std::runtime_error("500");
 }
 
