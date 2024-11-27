@@ -309,7 +309,12 @@ void	Epoll::checkTimeouts()
 		else 
 		{
 			if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
-				removeClient(it->second);
+			{
+				if (it->first == it->second->getFd())
+					removeClient(it->second);
+				else
+				 	removeCgiClientFromEpoll(it->first);
+			}
 		}
 		it = nextIt;
 	}

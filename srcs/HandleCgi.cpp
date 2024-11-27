@@ -114,8 +114,6 @@ void HandleCgi::proccessCGI(Client* client)
 		handleParentProcess(client);
 }
 
-#include <sys/stat.h>
-
 //-- Function to handle the child process
 void HandleCgi::handleChildProcess(const std::string &_locationPath, Request &request)
 {
