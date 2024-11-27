@@ -246,7 +246,6 @@ void GetMethod::executeCgiScript(std::string &requestPath, Client *client, Reque
     try
     {
         client->_cgi = HandleCgi(requestPath, _socketFd, *client, request);
-        std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
     }
     catch (std::exception &e)
     {

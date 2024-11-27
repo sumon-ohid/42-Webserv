@@ -123,7 +123,7 @@ void	Response::prepareChunk(Client* client)
 	{
 		if (!_body.empty())
 			sendContentChunk(client);
-		else
+		else if (client->_cgi.getCgiDone())
 			sendNullChunk(client);
 	}
 	if (_bytesSent < 0)
@@ -199,6 +199,7 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 {
 	signal(SIGPIPE, SIG_IGN);
 
+	_header.clear();
 	std::string statusMessage = "";
     Helper::checkStatus(statusCode, statusMessage);
 
@@ -247,6 +248,11 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 
 }
 
+void	Response::clearHeader()
+{
+	_header.clear();
+}
+
 void	Response::setIsChunk(bool setBool)
 {
 	_isChunk = setBool;
@@ -265,4 +271,9 @@ size_t	Response::getBodySize() const
 bool	Response::getIsFinished()
 {
 	return (_finishedSending);
+}
+
+void	Response::setIsFinished(bool val)
+{
+	_finishedSending = val;
 }

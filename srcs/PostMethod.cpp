@@ -44,7 +44,6 @@ void PostMethod::executeMethod(int socketFd, Client *client, Request &request)
         try
         {
             client->_cgi = HandleCgi(requestPath, socketFd, *client, request);
-            std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
         }
         catch (std::exception &e)
         {

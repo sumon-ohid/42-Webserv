@@ -27,7 +27,7 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs)
 void	ServerManager::runWebservs(int argc, char **argv)
 {
 	setUp(argc, argv);
-	_epoll.Routine(_servers);
+	_epoll.routine(_servers);
 }
 
 void	ServerManager::setUp(int argc, char **argv)

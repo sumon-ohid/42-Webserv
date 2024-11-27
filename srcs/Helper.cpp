@@ -1,6 +1,7 @@
 #include "../includes/Helper.hpp"
 #include "../includes/Response.hpp"
 
+#include <csignal>
 #include <cstddef>
 #include <iomanip>
 #include <sstream>
@@ -48,6 +49,7 @@ static std::map<std::string, std::string> initStatusCodesMap() {
 	codes["415"] = "Unsupported Media Type";
 	codes["500"] = "Internal Server Error";
 	codes["503"] = "Service Unavailable";
+	codes["504"] = "Gateway Timeout";
 	codes["505"] = "HTTP Version Not Supported";
 	return codes;
 }
@@ -130,6 +132,7 @@ void	Helper::checkStatus(std::string& statusCode, std::string& statusMessage) {
 
 	it = Helper::statusCodes.find(statusCode);
 	if (it == Helper::statusCodes.end()) {
+		std::cout << "status code in check Status: " << statusCode << std::endl;
 		statusCode = "500";
 		statusMessage = "Internal Server Error";
 	} else {
@@ -144,11 +147,7 @@ void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t event
 	event.events = events;
 	event.data.fd = client->getFd();
 	if (epoll_ctl(epoll.getFd(), EPOLL_CTL_MOD, event.data.fd, &event) == -1)
-	{
-		// return to client that there was an internal server error - (is that possible? we would have to change the event then to EPOLLOUT to be able to send the response to the client; maybe this was the one not working, we don't know for sure; but even if not, we would have to change the events, which failed before) BP:?
-		// then remove client (?)
 		epoll.removeClient(client);
-	}
 }
 
 void	Helper::addFdToEpoll(Client* client, int fd, uint32_t event)
@@ -254,7 +253,11 @@ void	Helper::setFdFlags(int fd, uint32_t mask)
     }
 }
 
-#include <iostream>
+double	Helper::getElapsedTime(Client *client)
+{
+	time_t	currentTime = time(NULL);
+	return (difftime(currentTime, client->getLastActive()));
+}
 
 void	Helper::toLower(std::string& str) {
 	for (std::string::iterator it = str.begin(); it != str.end(); it++) {

@@ -19,6 +19,8 @@ private:
 	std::vector<char>	_response;
 	std::string			_responseStr;
 	bool				_mimeCheckDone;
+	bool				_timeout;
+	bool				_five0fourError;
 public:
 	IO();
 	IO(const IO&);
@@ -46,7 +48,11 @@ public:
 
 	void	setFd(int);
 	void	setSize(size_t);
+	void	setTimeout(bool val);
+	bool	getTimeout() const;
 
 	int		getFd() const;
 	size_t	getSize() const;
+
+	bool	get504Error() const;
 };

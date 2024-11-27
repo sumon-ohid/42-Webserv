@@ -7,8 +7,10 @@
 
 
 // Thorben
-
-
+// in IO.cpp
+#define CGI_TIMEOUT 5
+// in Epoll.cpp
+#define EPOLL_TIMEOUT_MS 100
 
 
 
@@ -17,7 +19,7 @@
 
 extern volatile sig_atomic_t stopSignal;
 
-#define DEBUG_MODE true
+#define DEBUG_MODE false
 #define GET "GET"
 #define HEAD "HEAD"
 #define POST "POST"

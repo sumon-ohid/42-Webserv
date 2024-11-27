@@ -11,12 +11,15 @@
 
 #include <cstddef>
 #include <cstring>
+#include <fcntl.h>
 #include <iostream>
 #include <netdb.h>
 #include <stdexcept>
 #include <string>
 #include <algorithm>
 #include <sys/epoll.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 HandleCgi::HandleCgi()
 {
@@ -111,8 +114,6 @@ void HandleCgi::proccessCGI(Client* client)
 		handleParentProcess(client);
 }
 
-#include <sys/stat.h>
-
 //-- Function to handle the child process
 void HandleCgi::handleChildProcess(const std::string &_locationPath, Request &request)
 {
@@ -174,27 +175,44 @@ void HandleCgi::handleParentProcess(Client* client)
 	close(_pipeIn[0]); //-- Close read end of the pipe
 	close(_pipeOut[1]); //-- Close write end of the pipe
 	Helper::addFdToEpoll(client, _pipeIn[1], EPOLLOUT);
+	Helper::setFdFlags(_pipeIn[1], O_NONBLOCK);
+	Helper::setFdFlags(_pipeOut[0], O_NONBLOCK);
 	client->_io.setFd(_pipeIn[1]);
 	client->_request.begin()->_isWrite = true;
 }
 
-void	HandleCgi::checkWaitPid()
+void	HandleCgi::checkWaitPid(Client* client)
 {
-	if (_childReaped)
+	if (_childReaped || client->_io.getTimeout() || checkCgiTimeout(client))
 		return;
 	int status = 0;
 	pid_t result = waitpid(_pid, &status, WNOHANG);
 	if (result == -1)
-		throw ("500");
+		throw std::runtime_error("500");
 	else if (result > 0)
 	{
 		// Child process has terminated
 		if (WIFEXITED(status) && DEBUG_MODE)
+		{
 			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+	        std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
+		}
 		else if (WIFSIGNALED(status))
-			throw ("500");
+			throw std::runtime_error("500");
 		_childReaped = true;
 	}
+}
+
+bool	HandleCgi::checkCgiTimeout(Client *client)
+{
+	if (Helper::getElapsedTime(client) < CGI_TIMEOUT)
+		return (false);
+	client->_io.setTimeout(true);
+	kill (_pid, SIGKILL);
+	_cgiDone = true;
+	closeCgi(client);
+	throw std::runtime_error("504");
+	return (true);
 }
 
 void	HandleCgi::closeCgi(Client* client)
@@ -203,6 +221,8 @@ void	HandleCgi::closeCgi(Client* client)
 	{
 		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
 		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+		_pipeIn[1] = -1;
+		_pipeOut[0] = -1;
 	}
 }
 
@@ -216,18 +236,42 @@ bool    HandleCgi::getCgiDone() const
     return (_cgiDone);
 }
 
+bool	HandleCgi::getChildReaped() const
+{
+	return (_childReaped);
+}
+
 int		HandleCgi::getPipeIn(unsigned i) const
 {
 	if (i > 1)
-		throw ("500");
+		throw std::runtime_error("500");
 	return (_pipeIn[i]);
+}
+
+void	HandleCgi::setPipeIn(unsigned i, int val)
+{
+	if (i > 1)
+		throw std::runtime_error("500");
+	_pipeIn[i] = val;
 }
 
 int		HandleCgi::getPipeOut(unsigned i) const
 {
 	if (i > 1)
-		throw ("500");
+		throw std::runtime_error("500");
 	return (_pipeOut[i]);
+}
+
+void	HandleCgi::setPipeOut(unsigned i, int val)
+{
+	if (i > 1)
+		throw std::runtime_error("500");
+	_pipeIn[i] = val;
+}
+
+pid_t	HandleCgi::getPid() const
+{
+	return (_pid);
 }
 
 std::string	HandleCgi::getLocationPath() const
@@ -236,10 +280,7 @@ std::string	HandleCgi::getLocationPath() const
 }
 
 HandleCgi::~HandleCgi()
-{
-    _env.clear();
-}
-
+{}
 
 //--- Copy constructor
 HandleCgi::HandleCgi(const HandleCgi &src)

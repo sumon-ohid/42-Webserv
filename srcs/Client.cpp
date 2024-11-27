@@ -11,7 +11,14 @@ Client::Client(int fd, int port, Server *serv, Socket* socket, Epoll* epoll) : _
 
 Client::Client(const Client& orig) : _fd(orig._fd), _port(orig._port), _lastActive(orig._lastActive), _numRequests(orig._numRequests), _epoll(orig._epoll), _server(orig._server), _socket(orig._socket), _request(orig._request), _isCgi(orig._isCgi) {}
 
-Client::~Client() {}
+Client::~Client() 
+{
+	if (_cgi.getPipeIn(1) > -1)
+		close (_cgi.getPipeIn(1));
+	if (_cgi.getPipeOut(0) > -1)
+		close (_cgi.getPipeOut(0));
+
+}
 
 Client&	Client::operator=(const Client& rhs)
 {
@@ -53,9 +60,9 @@ void		Client::setPort(int port)
 	_port = port;
 }
 
-void		Client::setLastActive(time_t time)
+void		Client::setLastActive()
 {
-	_lastActive = time;
+	_lastActive = time(NULL);
 }
 
 void		Client::numRequestAdd1()

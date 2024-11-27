@@ -47,24 +47,29 @@ class HandleCgi
 
 		void			initEnv(Request &request);
 		void			proccessCGI(Client*);
-		void			handleChildProcess(const std::string &_locationPath, Request &request);
-		std::string		getExecutable(const std::string &locationPath);
-		void			handleParentProcess(Client* client);
+		void			handleChildProcess(const std::string&, Request&);
+		std::string		getExecutable(const std::string&);
+		void			handleParentProcess(Client*);
 		void			checkReadOrWriteError(Client*, int);
-		void			writeToChildFd(Client* client);
+		void			writeToChildFd(Client* );
 		void			finishWriteAndPrepareReadFromChild(Client*);
 		void			processCgiDataFromChild(Client*);
-		void			checkWaitPid(void);
+		void			checkWaitPid(Client*);
 		void			readFromChildFd();
-		void			finishReadingFromChild(Client* client);
+		bool			checkCgiTimeout(Client*);
+		void			finishReadingFromChild(Client*);
 		// void			MimeTypeCheck(Client *client);
-		void			extractMimeType(size_t pos, std::string& setMime);
-		void			closeCgi(Client* client);
+		void			extractMimeType(size_t, std::string&);
+		void			closeCgi(Client*);
 
 		void			setCgiDone(bool);
 		bool			getCgiDone() const;
-		int				getPipeIn(unsigned i) const;
-		int				getPipeOut(unsigned i) const;
+		bool			getChildReaped() const;
+		int				getPipeIn(unsigned) const;
+		void			setPipeIn(unsigned, int);
+		int				getPipeOut(unsigned) const;
+		void			setPipeOut(unsigned, int);
+		pid_t			getPid(void) const; 
 		std::string		getLocationPath() const;
 
         // Function template to convert various types to string

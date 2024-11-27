@@ -34,6 +34,7 @@ class Response {
 
 		bool	getIsChunk();
 		bool	getIsFinished();
+		void	setIsFinished(bool);
 		size_t	getBodySize() const;
 
 		std::string	createHeaderString(Request& request, const std::string& body, std::string statusCode);
@@ -50,6 +51,8 @@ class Response {
 		void	sendChunk(Client*);
 
 		void	sendSimpleResponse(Client*);
+
+		void	clearHeader();
 
 		void	setIsChunk(bool);
 		void	addToBody(const std::string&);

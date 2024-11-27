@@ -28,7 +28,7 @@ private:
 	int						_nfds;
 	struct epoll_event 		_ev;
 	struct epoll_event		_events[MAX_EVENTS];
-	std::map<int, Client*>	_mpCgiClient;
+	std::map<int, Client*>	_mpClients;
 	std::list<Client*>		_lstIoClients;
 
 	// ------------- Epoll setup -------------
@@ -46,7 +46,7 @@ private:
 	 * @throws std::runtime_error If epoll_wait fails.
 	 */
 	// ------------- Monitoring -------------
-	void	Monitoring(vSrv&);
+	void	monitoring(vSrv&);
 	/**
  	* Checks if the given file descriptor corresponds to a listening socket
  	* and attempts to accept a new client connection if so.
@@ -58,12 +58,12 @@ private:
 
 	void	cgiErrorOrHungUp(int cgiFd);
 	// ------------- Client Handling -------------
-	bool	NewClient(vSrv&, int); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
+	bool	newClient(vSrv&, int); // DISCUSS: possible change: implement a flag that server does not accept new connections anymore to be able to shut it down
 	/**
 	 * Accepts a new client connection on the specified listening socket.
 	 * Returns true if the new client was successfully accepted, otherwise false.
 	 */
-	bool	AcceptNewClient(Server&, lstSocs::iterator&);
+	bool	acceptNewClient(Server&, lstSocs::iterator&);
 	// check how the event should be handled for an existing client
 	bool	existingClient(int, uint32_t);
 	void	handleCgiClient(Client*, int, uint32_t);
@@ -86,10 +86,13 @@ private:
 	// int		clientRequest(Client*);
 	// DISCUSS: should be handled in Request
 
-	void	IOFiles();
+	void	ioFiles();
 
 	void	clientResponse(Client*);
 
+	void	checkTimeouts();
+
+	void	clientRequestDone(Client*);
 	// ------------- Cleanup -------------
 	// removes the fd from the clients
 	void	removeClientFromServer(Server*, int);
@@ -110,7 +113,7 @@ public:
 	 * Initializes the epoll instance, registers listening sockets,
 	 * and enters the monitoring loop to handle incoming events.
 	 */
-	void	Routine(vSrv&);
+	void	routine(vSrv&);
 
 	void	addCgiClientToEpollMap(int, Client*);
 	void	removeCgiClientFromEpoll(int);
