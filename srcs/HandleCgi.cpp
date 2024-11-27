@@ -106,7 +106,6 @@ void HandleCgi::proccessCGI(Client* client)
 	if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
 		throw std::runtime_error("500");
 	_pid = fork();
-	std::cout << "pid after fork: " << _pid << std::endl;
 	if (_pid < 0)
 		throw std::runtime_error("500");
 	else if (_pid == 0)
@@ -208,7 +207,6 @@ void	HandleCgi::checkWaitPid(Client* client)
 
 bool	HandleCgi::checkCgiTimeout(Client *client)
 {
-	std::cout << "time passed: " << Helper::getElapsedTime(client) << std::endl;
 	if (Helper::getElapsedTime(client) < CGI_TIMEOUT)
 		return (false);
 	client->_io.setTimeout(true);

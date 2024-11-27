@@ -301,7 +301,6 @@ void	Epoll::checkTimeouts()
 			}
 			catch (std::exception &e)
 			{
-				std::cout << "timeout" << std::endl;
 				(it->second)->setLastActive();
 				(it->second)->_isCgi = false;
 				(it->second)->_request.begin()->_response->error(*(it->second)->_request.begin(), e.what(), (it->second));
@@ -342,18 +341,7 @@ void	Epoll::clientResponse(Client* client)
 	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
 		client->_request.begin()->_response->sendResponse(client);
 	if (client->_request.begin()->_response->getIsFinished())
-	{
-		// if (client->_io.getTimeout())
-		// {
-		// 	client->_isCgi = false;
-		// 	client->_request.begin()->_response->setIsChunk(false);
-		// 	client->_io.resetIO();
-		// 	client->_request.begin()->_response->error(*client->_request.begin(), "504", client);
-		// }
-		// else {
 		clientRequestDone(client);
-		// }
-	}
 }
 
 void	Epoll::clientRequestDone(Client *client)
