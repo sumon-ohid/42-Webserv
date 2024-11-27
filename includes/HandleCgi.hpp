@@ -66,7 +66,9 @@ class HandleCgi
 		bool			getCgiDone() const;
 		bool			getChildReaped() const;
 		int				getPipeIn(unsigned) const;
+		void			setPipeIn(unsigned, int);
 		int				getPipeOut(unsigned) const;
+		void			setPipeOut(unsigned, int);
 		pid_t			getPid(void) const; 
 		std::string		getLocationPath() const;
 

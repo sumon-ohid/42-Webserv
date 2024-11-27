@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <fcntl.h>
 #include <iostream>
 #include <netdb.h>
 #include <stdexcept>
@@ -105,6 +106,7 @@ void HandleCgi::proccessCGI(Client* client)
 	if (pipe(_pipeOut) == -1 || pipe(_pipeIn) == -1)
 		throw std::runtime_error("500");
 	_pid = fork();
+	std::cout << "pid after fork: " << _pid << std::endl;
 	if (_pid < 0)
 		throw std::runtime_error("500");
 	else if (_pid == 0)
@@ -176,6 +178,8 @@ void HandleCgi::handleParentProcess(Client* client)
 	close(_pipeIn[0]); //-- Close read end of the pipe
 	close(_pipeOut[1]); //-- Close write end of the pipe
 	Helper::addFdToEpoll(client, _pipeIn[1], EPOLLOUT);
+	Helper::setFdFlags(_pipeIn[1], O_NONBLOCK);
+	Helper::setFdFlags(_pipeOut[0], O_NONBLOCK);
 	client->_io.setFd(_pipeIn[1]);
 	client->_request.begin()->_isWrite = true;
 }
@@ -204,13 +208,14 @@ void	HandleCgi::checkWaitPid(Client* client)
 
 bool	HandleCgi::checkCgiTimeout(Client *client)
 {
+	std::cout << "time passed: " << Helper::getElapsedTime(client) << std::endl;
 	if (Helper::getElapsedTime(client) < CGI_TIMEOUT)
 		return (false);
 	client->_io.setTimeout(true);
-	kill (client->_cgi.getPid(), SIGKILL);
+	kill (_pid, SIGKILL);
 	_cgiDone = true;
 	closeCgi(client);
-	// throw std::runtime_error("504");
+	throw std::runtime_error("504");
 	return (true);
 }
 
@@ -220,6 +225,8 @@ void	HandleCgi::closeCgi(Client* client)
 	{
 		client->_epoll->removeCgiClientFromEpoll(_pipeIn[1]);
 		client->_epoll->removeCgiClientFromEpoll(_pipeOut[0]);
+		_pipeIn[1] = -1;
+		_pipeOut[0] = -1;
 	}
 }
 
@@ -245,11 +252,25 @@ int		HandleCgi::getPipeIn(unsigned i) const
 	return (_pipeIn[i]);
 }
 
+void	HandleCgi::setPipeIn(unsigned i, int val)
+{
+	if (i > 1)
+		throw std::runtime_error("500");
+	_pipeIn[i] = val;
+}
+
 int		HandleCgi::getPipeOut(unsigned i) const
 {
 	if (i > 1)
 		throw std::runtime_error("500");
 	return (_pipeOut[i]);
+}
+
+void	HandleCgi::setPipeOut(unsigned i, int val)
+{
+	if (i > 1)
+		throw std::runtime_error("500");
+	_pipeIn[i] = val;
 }
 
 pid_t	HandleCgi::getPid() const
@@ -263,10 +284,7 @@ std::string	HandleCgi::getLocationPath() const
 }
 
 HandleCgi::~HandleCgi()
-{
-    _env.clear();
-}
-
+{}
 
 //--- Copy constructor
 HandleCgi::HandleCgi(const HandleCgi &src)

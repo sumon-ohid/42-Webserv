@@ -91,6 +91,8 @@ private:
 	void	clientResponse(Client*);
 
 	void	checkTimeouts();
+
+	void	clientRequestDone(Client*);
 	// ------------- Cleanup -------------
 	// removes the fd from the clients
 	void	removeClientFromServer(Server*, int);

@@ -1,3 +1,7 @@
+while true; do
+	sleep 1
+	# echo 'j'
+done
 #!/bin/bash
 echo -e 'Content-Type: text/html\r\n'
 echo -e '\r\n\r\n'

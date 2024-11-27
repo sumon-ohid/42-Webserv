@@ -54,22 +54,25 @@ void	IO::checkReadOrWriteError(Client* client)
 {
 	if (_byteTracker > -1)
 		return;
-	client->_epoll->removeCgiClientFromEpoll(_fd);
-	client->_io.resetIO();
-	throw std::runtime_error("500");
+	if (!client->_isCgi)
+	{
+		client->_epoll->removeCgiClientFromEpoll(_fd);
+		client->_io.resetIO();
+		throw std::runtime_error("500");
+	}
 }
 
 void	IO::finishWrite(Client* client)
 {
 	if (client->_isCgi && client->_request.begin()->_isWrite == true)
-		finishWriteCgi(client); // pass _pipeOut[0]
+		finishWriteCgi(client);
 	resetIO();
 }
 
 void	IO::finishWriteCgi(Client* client)
 {
 	if (client->_request.begin()->_isRead == false)
-		Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN); // pass _pipeOut[0]
+		Helper::addFdToEpoll(client, client->_cgi.getPipeOut(0), EPOLLIN);
 	client->_epoll->removeCgiClientFromEpoll(client->_cgi.getPipeIn(1));
 	_fd = -1;
 	client->_request.begin()->_isWrite = false;
@@ -90,7 +93,6 @@ void	IO::resetIO()
 	_mimeCheckDone = false;
 	_timeout = false;
 }
-
 void	IO::readFromChildFd(Client* client)
 {
 	if (_timeout || client->_cgi.getPipeOut(0) < 0)
@@ -101,6 +103,8 @@ void	IO::readFromChildFd(Client* client)
 	_fd = client->_cgi.getPipeOut(0);
 	readFromFd();
 	checkReadOrWriteError(client);
+	if (_byteTracker == -1)
+		return;
 	if (_byteTracker == 0)
 		return (finishReadingFromFd(client));
 	if (!_mimeCheckDone) {
@@ -133,14 +137,15 @@ void	IO::readFromFd()
 
 void	IO::finishReadingFromFd(Client* client)
 {
+	std::cout << "finished reading" << std::endl;
 	if (client->_isCgi)
 	{
 		if (!_mimeCheckDone)
 			MimeTypeCheck(client);
 		client->_isCgi = false;
-		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
 	}
+	client->_cgi.setCgiDone(true);
 	resetIO();
 }
 

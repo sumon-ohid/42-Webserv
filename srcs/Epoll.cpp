@@ -164,6 +164,7 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 	catch (std::exception &e)
 	{
 		endCgi(client);
+		client->_isCgi = false;
 		client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
 	}
 }
@@ -267,12 +268,12 @@ void Epoll::ioFiles()
 			if ((*clientIt)->_request.begin()->_isRead)
 			{
 				(*clientIt)->_io.readFromFile(*clientIt);
-				(*clientIt)->setLastActive();
+				// (*clientIt)->setLastActive();
 			}
 			else if ((*clientIt)->_request.begin()->_isWrite)
 			{
 				(*clientIt)->_io.writeToFd(*clientIt);
-				(*clientIt)->setLastActive();
+				// (*clientIt)->setLastActive();
 			}
 			if ((*clientIt)->_io.getFd() == -1)
 				_lstIoClients.erase(clientIt);  // Erase from the list
@@ -290,9 +291,27 @@ void	Epoll::checkTimeouts()
 	for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end();)
 	{
 		std::map<int, Client*>::iterator nextIt = it;
-		++nextIt;
-		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
-			removeClient(it->second);
+		while (nextIt->second->getFd() == it->second->getFd() && nextIt != _mpClients.end())
+			++nextIt;
+		if ((it->second)->_isCgi)
+		{
+			try 
+			{
+				(it->second)->_cgi.checkCgiTimeout(it->second);
+			}
+			catch (std::exception &e)
+			{
+				std::cout << "timeout" << std::endl;
+				(it->second)->setLastActive();
+				(it->second)->_isCgi = false;
+				(it->second)->_request.begin()->_response->error(*(it->second)->_request.begin(), e.what(), (it->second));
+			}
+		}
+		else 
+		{
+			if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+				removeClient(it->second);
+		}
 		it = nextIt;
 	}
 }
@@ -324,29 +343,34 @@ void	Epoll::clientResponse(Client* client)
 		client->_request.begin()->_response->sendResponse(client);
 	if (client->_request.begin()->_response->getIsFinished())
 	{
-		if (client->_io.getTimeout())
-		{
-			client->_isCgi = false;
-			client->_request.begin()->_response->setIsChunk(false);
-			client->_io.resetIO();
-			client->_request.begin()->_response->error(*client->_request.begin(), "504", client);
+		// if (client->_io.getTimeout())
+		// {
+		// 	client->_isCgi = false;
+		// 	client->_request.begin()->_response->setIsChunk(false);
+		// 	client->_io.resetIO();
+		// 	client->_request.begin()->_response->error(*client->_request.begin(), "504", client);
+		// }
+		// else {
+		clientRequestDone(client);
+		// }
+	}
+}
+
+void	Epoll::clientRequestDone(Client *client)
+{
+	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
+	if (client->_request.size() > 1)
+		client->_request.pop_front();
+	if (client->_request.size() > 1)
+	{
+		try {
+			client->_request.begin()->executeMethod(client->getFd(), client);
 		}
-		else {
-			Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLIN);
-			if (client->_request.size() > 1)
-				client->_request.pop_front();
-			if (client->_request.size() > 1)
-			{
-				try {
-					client->_request.begin()->executeMethod(client->getFd(), client);
-				}
-				catch (std::exception &e) {
-					client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
-				}
-			}
-			client->_cgi = HandleCgi();
+		catch (std::exception &e) {
+			client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
 		}
 	}
+	client->_cgi = HandleCgi();
 }
 
 void	Epoll::addCgiClientToEpollMap(int pipeFd, Client* client)

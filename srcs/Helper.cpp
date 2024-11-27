@@ -132,6 +132,7 @@ void	Helper::checkStatus(std::string& statusCode, std::string& statusMessage) {
 
 	it = Helper::statusCodes.find(statusCode);
 	if (it == Helper::statusCodes.end()) {
+		std::cout << "status code in check Status: " << statusCode << std::endl;
 		statusCode = "500";
 		statusMessage = "Internal Server Error";
 	} else {
