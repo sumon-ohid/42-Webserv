@@ -108,6 +108,7 @@ bool		Request::operator==(const Request& other) const
 }
 
 Request::~Request() {
+	std::remove(_fileName.c_str());
 	delete _method;
 	delete _response;
 }
@@ -235,6 +236,7 @@ void readFileToString(const std::string& fileName, std::string& fileContents)
 
     //-- Close the file
     inFile.close();
+	std::remove(fileName.c_str());
 }
 
 void Request::storeRequestBody(std::string& fileName, std::size_t endPos) {
@@ -437,9 +439,9 @@ int Request::clientRequest(Client* client)
         //-- Process the request body if headers are fully checked and reading is finished
 		if (_firstLineChecked && _headerChecked && _readingFinished)
         {
-			bodyFile.close();
             if (this->_method->getName() == "POST")
                 storeRequestBody(_fileName, 0);
+			bodyFile.close();
 			std::remove(_fileName.c_str());
         }
 		else
@@ -497,6 +499,7 @@ void	Request::requestReset() {
 	delete _response;
 	_response = new Response();
 	_totalBytesRead = 0;
+	std::remove(_fileName.c_str());
 	_fileName = "/tmp/" + Helper::generateRandomId();
 }
 

@@ -130,6 +130,7 @@ void	Response::prepareChunk(Client* client)
 	{
 		std::cerr << RED << "Error sending chunk response" << RESET << std::endl;
 		client->_cgi.closeCgi(client);
+		client->_io.resetIO();
 		_finishedSending = true;
 	}
 }
