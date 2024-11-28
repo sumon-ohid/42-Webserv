@@ -137,7 +137,6 @@ void	IO::readFromFd()
 
 void	IO::finishReadingFromFd(Client* client)
 {
-	std::cout << "finished reading" << std::endl;
 	if (client->_isCgi)
 	{
 		if (!_mimeCheckDone)

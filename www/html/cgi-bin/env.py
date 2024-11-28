@@ -7,7 +7,7 @@ import cgitb
 cgitb.enable()
 
 print("""
-Content-Type: asdf/html\r\n
+Content-Type: text/html\r\n
 \r\n\r\n""")
 
 # Begin HTML output

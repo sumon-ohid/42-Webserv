@@ -8,6 +8,9 @@ import sys
 from urllib.parse import parse_qs
 from http.cookies import SimpleCookie
 
+print("Content-Type: text/html\r\n")
+print("\r\n\r\n")
+
 # Enable debugging
 cgitb.enable()
 
@@ -24,8 +27,6 @@ if "HTTP_COOKIE" in os.environ:
         if user:
             # User is already logged in
             print("""
-            Content-Type: text/html\r\n
-            \r\n\r\n
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -130,8 +131,8 @@ passwd = form.get("passwd", [""])[0].replace("%20", " ")
 
 # Validate and sanitize input data
 if not login or not passwd:
-    print("Content-Type: text/html")
-    print()
+    print("Content-Type: text/html\r\n")
+    print("\r\n\r\n")
     print("<html><body><h1>Error: Missing login or password</h1></body></html>")
     exit()
 
@@ -153,8 +154,6 @@ if user:
     cookie["session"]["max-age"] = 3600
 
     print("""
-    Content-Type: text/html\r\n
-    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -253,8 +252,6 @@ if user:
 else:
     # Display an error message
     print("""
-    Content-Type: text/html\r\n
-    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
