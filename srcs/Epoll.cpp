@@ -165,6 +165,8 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 	{
 		endCgi(client);
 		client->_isCgi = false;
+		client->_request.begin()->_response->clearHeader();
+		client->_request.begin()->_response->setIsChunk(false);
 		client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
 	}
 }
@@ -295,7 +297,7 @@ void	Epoll::checkTimeouts()
 			++nextIt;
 		if ((it->second)->_isCgi)
 		{
-			try 
+			try
 			{
 				(it->second)->_cgi.checkCgiTimeout(it->second);
 			}
@@ -306,7 +308,7 @@ void	Epoll::checkTimeouts()
 				(it->second)->_request.begin()->_response->error(*(it->second)->_request.begin(), e.what(), (it->second));
 			}
 		}
-		else 
+		else
 		{
 			if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
 			{

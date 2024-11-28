@@ -195,6 +195,8 @@ void	HandleCgi::checkWaitPid(Client* client)
 		if (WIFEXITED(status) && DEBUG_MODE)
 		{
 			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+			if (WEXITSTATUS(status) > 0)
+				throw std::runtime_error("500");
 	        std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
 		}
 		else if (WIFSIGNALED(status))
