@@ -223,20 +223,18 @@ void readFileToString(const std::string& fileName, std::string& fileContents)
     //-- Open the file in binary mode
     std::ifstream inFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!inFile.is_open()) {
-        std::cerr << "Error opening file for reading" + fileName << std::endl;
+        std::cerr << "Error opening file for reading: " << fileName << std::endl;
         return;
     }
 
-    //-- Read the contents of the file into a string
-    inFile.seekg(0, std::ios::end);
-    std::streampos fileSize = inFile.tellg();
-    fileContents.resize(static_cast<std::size_t>(fileSize));
-    inFile.seekg(0, std::ios::beg);
-    inFile.read(&fileContents[0], fileContents.size());
-
+    //-- Read the entire file into fileContents
+    std::ostringstream buffer;
+    buffer << inFile.rdbuf();
+    fileContents = buffer.str();
+    
     //-- Close the file
     inFile.close();
-	std::remove(fileName.c_str());
+    std::remove(fileName.c_str());
 }
 
 void Request::storeRequestBody(std::string& fileName, std::size_t endPos) {
@@ -409,13 +407,17 @@ int Request::clientRequest(Client* client)
 		}
 		else if (count == 0)
 			return emptyRequest(client);
-
 		buffer.resize(count);
 		validRequest(client->_server, buffer, count, *this);
 
+		bodyFile.write(buffer.data(), count);
+		bodyFile.flush(); // Ensure all data is written to disk
+		bodyFile.close();
+		std::ostringstream buffer;
+		buffer << bodyFile.rdbuf();
+		std::string res = buffer.str();
 
 		// Append data to the file
-		bodyFile.write(buffer.data(), count);
 		_totalBytesRead += count;
 
         //-- Check for Content-Length.
