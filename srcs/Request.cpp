@@ -34,7 +34,7 @@ Request::Request() {
 	_isRead =false;
 	_isWrite = false;
 	_totalBytesRead = 0;
-	_fileName = "/tmp/" + Helper::generateRandomId();
+	_fileName = "/home/tbenz/trash/" + Helper::generateRandomId();
 }
 
 Request::Request(const Request& other) {
@@ -502,7 +502,7 @@ void	Request::requestReset() {
 	_response = new Response();
 	_totalBytesRead = 0;
 	std::remove(_fileName.c_str());
-	_fileName = "/tmp/" + Helper::generateRandomId();
+	_fileName = "/home/tbenz/trash/" + Helper::generateRandomId();
 }
 
 std::string	Request::getHost() const
