@@ -1,7 +1,6 @@
 #include "../includes/Helper.hpp"
 #include "../includes/Response.hpp"
 
-#include <csignal>
 #include <cstddef>
 #include <iomanip>
 #include <sstream>
@@ -236,7 +235,7 @@ void	Helper::setCloexec(int fd)
 	int flags = fcntl(fd, F_GETFD);
 	if (flags == -1)
 		throw std::runtime_error("500");
-	flags |= FD_CLOEXEC;  // Add FD_CLOEXEC to flags BP:?
+	flags |= FD_CLOEXEC;
 	if (fcntl(fd, F_SETFD, flags) == -1)
 		throw std::runtime_error("500");
 }

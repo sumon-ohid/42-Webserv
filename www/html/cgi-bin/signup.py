@@ -11,6 +11,7 @@ from http.cookies import SimpleCookie
 # Enable debugging
 cgitb.enable()
 
+
 # Read the input data from stdin
 content_length = int(os.environ.get('CONTENT_LENGTH', 0))
 request_body = sys.stdin.read(content_length)
@@ -24,6 +25,9 @@ passwd = form.get("passwd", [""])[0].replace("&", " ")
 
 # Validate and sanitize input data
 if not email or not login or not passwd:
+    print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n""")
     print("<html><body><h1>Error: Missing form data</h1></body></html>")
     exit()
 

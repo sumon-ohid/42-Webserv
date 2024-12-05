@@ -236,7 +236,7 @@ bool	Epoll::newClient(vSrv &servers, int event_fd)
 bool	Epoll::acceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 {
 	// Get the length of the address associated with the current listening socket
-	socklen_t _addrlen = sizeof(sockIt->getAddress()); //implement function in Socket: setAddrlen BP:?
+	socklen_t _addrlen = sizeof(sockIt->getAddress());
 	// Accept a new client connection on the listening socket
 	_connSock = accept(sockIt->getFdSocket(), (struct sockaddr *) &sockIt->getAddress(), &_addrlen);
 	if (_connSock < 0)
