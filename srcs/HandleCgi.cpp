@@ -213,9 +213,7 @@ bool	HandleCgi::checkCgiTimeout(Client *client)
 	client->_io.setTimeout(true);
 	kill (_pid, SIGKILL);
 	_cgiDone = true;
-	closeCgi(client);
 	throw std::runtime_error("504");
-	return (true);
 }
 
 void	HandleCgi::closeCgi(Client* client)

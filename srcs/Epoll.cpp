@@ -301,19 +301,11 @@ void	Epoll::checkTimeouts()
 				(it->second)->_cgi.checkCgiTimeout(it->second);
 			}
 			catch (std::exception &e)
-			{	
-				if (it != _mpClients.end() && it->second != NULL)
-				{
-					(it->second)->setLastActive();
-					kill (it->second->_cgi.getPid(), SIGKILL);
-					endCgi(it->second);
-					if (!(it->second)->_request.empty() && (it->second)->_request.begin()->_response != NULL)
-					{
-						(it->second)->_request.begin()->_response->clearHeader();
-						(it->second)->_request.begin()->_response->setIsChunk(false);
-						(it->second)->_request.begin()->_response->error(*(it->second)->_request.begin(), e.what(), (it->second));
-					}
-				}
+			{
+				(it->second)->_request.begin()->_response->clearHeader();
+				(it->second)->_request.begin()->_response->setIsChunk(false);
+				(it->second)->_request.begin()->_response->error(*(it->second)->_request.begin(), e.what(), (it->second));
+				removeCgiClientFromEpoll(it->second->_io.getFd());
 			}
 		}
 		else
