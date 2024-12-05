@@ -19,7 +19,7 @@ private:
 	int				_fd;
 	int				_port;
 	time_t			_lastActive;
-	unsigned		_numRequests; //BP: do we need it?
+	unsigned		_numRequests;
 
 public:
 	Epoll*				_epoll;

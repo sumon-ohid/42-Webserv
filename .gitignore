@@ -37,4 +37,5 @@ webserv
 test.conf
 
 # SUMON
-www/html/gallery/
+# www/html/gallery/
+# www/

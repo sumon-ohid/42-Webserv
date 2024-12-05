@@ -271,10 +271,11 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
         else if (line.find("set_timeout") == 0)
         {
             size_t pos = line.find(" ");
-    
             if (timeoutCheck(line.substr(pos + 1), server) == false)
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
+        else if (line.find("set_timeout") != 0)
+            server.timeout = 0;
         else if (line == "{" || line.empty())
         {
             i++;
@@ -289,6 +290,7 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
 //-- Constructor with parameter
 ServerConfig::ServerConfig(std::string configFile) : LocationConfig(configFile)
 {
+    timeout = 0;
     this->_configFile = configFile;
     std::vector<std::string> configVector = Config::getConfig();
     size_t i = 0;

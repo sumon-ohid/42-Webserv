@@ -34,7 +34,7 @@ Request::Request() {
 	_isRead =false;
 	_isWrite = false;
 	_totalBytesRead = 0;
-	_fileName = "/home/tbenz/trash/" + Helper::generateRandomId();
+	_fileName = "/tmp/" + Helper::generateRandomId();
 }
 
 Request::Request(const Request& other) {
@@ -402,7 +402,6 @@ int Request::clientRequest(Client* client)
 		ssize_t count = recv(event_fd, &buffer[0], buffer.size(), 0);
 		if (count == -1)
 		{
-			//-- Maybe should write some error message BP:?
 			return (1);
 		}
 		else if (count == 0)
