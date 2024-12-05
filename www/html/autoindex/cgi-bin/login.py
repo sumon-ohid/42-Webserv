@@ -8,6 +8,9 @@ import sys
 from urllib.parse import parse_qs
 from http.cookies import SimpleCookie
 
+print("Content-Type: text/html\r\n")
+print("\r\n\r\n")
+
 # Enable debugging
 cgitb.enable()
 
@@ -119,6 +122,7 @@ if "HTTP_COOKIE" in os.environ:
 # Read the input data from stdin
 content_length = int(os.environ.get('CONTENT_LENGTH', 0))
 request_body = sys.stdin.read(content_length)
+sys.stdin.close()
 
 # Parse the input data
 form = parse_qs(request_body)
@@ -127,8 +131,8 @@ passwd = form.get("passwd", [""])[0].replace("%20", " ")
 
 # Validate and sanitize input data
 if not login or not passwd:
-    print("Content-Type: text/html")
-    print()
+    print("Content-Type: text/html\r\n")
+    print("\r\n\r\n")
     print("<html><body><h1>Error: Missing login or password</h1></body></html>")
     exit()
 
@@ -145,7 +149,7 @@ if user:
     cookie = SimpleCookie()
     cookie["session"] = login
     cookie["session"]["path"] = "/"
-    
+
     # Set the session cookie to expire in 1 hour
     cookie["session"]["max-age"] = 3600
 

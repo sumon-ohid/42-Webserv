@@ -164,7 +164,6 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 	catch (std::exception &e)
 	{
 		endCgi(client);
-		client->_isCgi = false;
 		client->_request.begin()->_response->clearHeader();
 		client->_request.begin()->_response->setIsChunk(false);
 		client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
@@ -293,7 +292,7 @@ void	Epoll::checkTimeouts()
 	for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end();)
 	{
 		std::map<int, Client*>::iterator nextIt = it;
-		while (nextIt->second->getFd() == it->second->getFd() && nextIt != _mpClients.end())
+		while (nextIt->second == it->second && nextIt != _mpClients.end())
 			++nextIt;
 		if ((it->second)->_isCgi)
 		{
@@ -303,24 +302,29 @@ void	Epoll::checkTimeouts()
 			}
 			catch (std::exception &e)
 			{
-				(it->second)->setLastActive();
-				(it->second)->_isCgi = false;
+				(it->second)->_request.begin()->_response->clearHeader();
+				(it->second)->_request.begin()->_response->setIsChunk(false);
 				(it->second)->_request.begin()->_response->error(*(it->second)->_request.begin(), e.what(), (it->second));
+				removeCgiClientFromEpoll(it->second->_io.getFd());
 			}
 		}
 		else
 		{
-			if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+			if (it != _mpClients.end() && it->second != NULL)
 			{
-				if (it->first == it->second->getFd())
-					removeClient(it->second);
-				else
-				 	removeCgiClientFromEpoll(it->first);
+				if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+				{
+					if (it->first == it->second->getFd())
+						removeClient(it->second);
+					else
+						removeCgiClientFromEpoll(it->first);
+				}
 			}
 		}
 		it = nextIt;
 	}
 }
+
 
 void	Epoll::clientRetrievalError(int event_fd)
 {
@@ -410,6 +414,8 @@ void	Epoll::removeClient(Client* client)
 	if (!client || !client->_server)
 		return;
 	client->_cgi.closeCgi(client);
+	if (client->_isCgi && !client->_cgi.getChildReaped())
+		kill(client->_cgi.getPid(), SIGKILL);
 	removeCgiClientFromEpoll(client->getFd());
 	removeClientIo(client);
 	removeClientFromServer(client->_server, client->getFd());

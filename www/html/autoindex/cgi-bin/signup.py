@@ -11,9 +11,11 @@ from http.cookies import SimpleCookie
 # Enable debugging
 cgitb.enable()
 
+
 # Read the input data from stdin
 content_length = int(os.environ.get('CONTENT_LENGTH', 0))
 request_body = sys.stdin.read(content_length)
+sys.stdin.close()
 
 # Parse the input data
 form = parse_qs(request_body)
@@ -23,6 +25,9 @@ passwd = form.get("passwd", [""])[0].replace("&", " ")
 
 # Validate and sanitize input data
 if not email or not login or not passwd:
+    print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n""")
     print("<html><body><h1>Error: Missing form data</h1></body></html>")
     exit()
 
@@ -47,6 +52,8 @@ existing_user = cursor.fetchone()
 if existing_user:
     # Display an error message if the email or username already exists
     print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -143,7 +150,7 @@ else:
     cookie = SimpleCookie()
     cookie["session"] = login
     cookie["session"]["path"] = "/"
-    
+
     # Set the session cookie to expire in 1 hour
     cookie["session"]["max-age"] = 3600
 
@@ -155,6 +162,8 @@ else:
 
     # Display a success message
     print("""
+    Content-Type: text/html\r\n
+    \r\n\r\n
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -253,4 +262,3 @@ else:
     """.format(login=login))
     # Close the connection
     conn.close()
-    
