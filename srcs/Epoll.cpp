@@ -413,10 +413,12 @@ void	Epoll::removeClient(Client* client)
 {
 	if (!client || !client->_server)
 		return;
-	client->_cgi.closeCgi(client);
 	if (client->_isCgi && !client->_cgi.getChildReaped())
 		kill(client->_cgi.getPid(), SIGKILL);
 	removeCgiClientFromEpoll(client->getFd());
+	if (client->_io.getFd() > 0)
+		removeCgiClientFromEpoll(client->_io.getFd());
+	client->_cgi.closeCgi(client);
 	removeClientIo(client);
 	removeClientFromServer(client->_server, client->getFd());
 }
