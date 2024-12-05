@@ -43,7 +43,7 @@ public:
 
 	// general
 	void	checkReadOrWriteError(Client*);
-	void	resetIO();
+	void	resetIO(Client *);
 
 
 	void	setFd(int);

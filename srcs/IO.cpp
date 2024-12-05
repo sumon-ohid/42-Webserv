@@ -57,7 +57,7 @@ void	IO::checkReadOrWriteError(Client* client)
 	if (!client->_isCgi)
 	{
 		client->_epoll->removeCgiClientFromEpoll(_fd);
-		client->_io.resetIO();
+		client->_io.resetIO(client);
 		throw std::runtime_error("500");
 	}
 }
@@ -66,7 +66,7 @@ void	IO::finishWrite(Client* client)
 {
 	if (client->_isCgi && client->_request.begin()->_isWrite == true)
 		finishWriteCgi(client);
-	resetIO();
+	resetIO(client);
 }
 
 void	IO::finishWriteCgi(Client* client)
@@ -80,10 +80,12 @@ void	IO::finishWriteCgi(Client* client)
 	client->_request.begin()->_response->setIsChunk(true);
 }
 
-void	IO::resetIO()
+void	IO::resetIO(Client *client)
 {
 	if (_fd > 0)
-		close (_fd);
+	{
+		client->_epoll->removeCgiClientFromEpoll(_fd);
+	}
 	_fd = -1;
 	_size = 0;
 	_byteTracker = 0;
@@ -93,6 +95,7 @@ void	IO::resetIO()
 	_mimeCheckDone = false;
 	_timeout = false;
 }
+
 void	IO::readFromChildFd(Client* client)
 {
 	if (_timeout || client->_cgi.getPipeOut(0) < 0)
@@ -145,7 +148,7 @@ void	IO::finishReadingFromFd(Client* client)
 		client->_epoll->removeCgiClientFromEpoll(_fd);
 	}
 	client->_cgi.setCgiDone(true);
-	resetIO();
+	resetIO(client);
 }
 
 void	IO::MimeTypeCheck(Client* client)
@@ -185,7 +188,7 @@ void	IO::extractMimeType(size_t pos, std::string& setMime, Client* client)
 		client->_isCgi = false;
 		client->_cgi.setCgiDone(true);
 		client->_epoll->removeCgiClientFromEpoll(_fd);
-		resetIO();
+		resetIO(client);
 		throw std::runtime_error("415");
 	}
 }

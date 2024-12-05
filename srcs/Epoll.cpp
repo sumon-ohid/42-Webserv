@@ -174,7 +174,7 @@ void	Epoll::endCgi(Client* client)
 {
 	client->_cgi.closeCgi(client);
 	client->_isCgi = false;
-	client->_io.resetIO();
+	client->_io.resetIO(client);
 }
 
 void	Epoll::handleRegularClient(Client* client, uint32_t events)
