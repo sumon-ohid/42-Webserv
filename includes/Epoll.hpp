@@ -92,7 +92,6 @@ private:
 
 	void	checkTimeouts();
 
-	void	clientRequestDone(Client*);
 	// ------------- Cleanup -------------
 	// removes the fd from the clients
 	void	removeClientFromServer(Server*, int);
@@ -132,4 +131,6 @@ public:
 	int		getFd(void) const;
 
 	bool	is_fd_valid(int fd);
+
+	void	clientRequestDone(Client*);
 };
