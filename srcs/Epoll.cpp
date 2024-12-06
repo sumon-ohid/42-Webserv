@@ -194,7 +194,8 @@ void	Epoll::handleRegularClient(Client* client, uint32_t events)
 	}
 	catch (std::exception &e)
 	{
-		client->_request.begin()->_response->error(*client->_request.begin(), e.what(),client);
+		if (!client->_request.begin()->_response->getIsFinished())
+			client->_request.begin()->_response->error(*client->_request.begin(), e.what(),client);
 	}
 }
 

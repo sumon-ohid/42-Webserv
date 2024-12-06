@@ -165,9 +165,14 @@ void	Response::sendSimpleResponse(Client* client)
 {
 	_body = _header + _body + "\r\n";
 	_bytesSent = send(client->getFd() , _body.c_str(), _body.size(), 0);
-	if (_bytesSent < 0)
-		throw std::runtime_error("Error writing to socket in Response::fallbackError!!");
 	_finishedSending = true;
+	if (_bytesSent < 0) {
+		client->_cgi.closeCgi(client);
+		client->_io.resetIO(client);
+		_finishedSending = true;
+		std::cerr << BOLD RED << "Error: sending not possible!" << std::endl;
+		return;
+	}
 	if (client->_io.getFd() > -1)
 		close(client->_io.getFd());
 	std::cout << _methodAndPath << std::endl;
