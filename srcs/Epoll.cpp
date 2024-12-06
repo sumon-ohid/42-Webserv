@@ -163,8 +163,7 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 	catch (std::exception &e)
 	{
 		endCgi(client);
-		client->_request.begin()->_response->clearHeader();
-		client->_request.begin()->_response->setIsChunk(false);
+		client->_cgi.setCgiDone(true);
 		client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
 	}
 }
