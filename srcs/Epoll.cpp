@@ -105,7 +105,23 @@ void Epoll::monitoring(vSrv& servers)
 			if (!existingClient(_events[i].data.fd, _events[i].events))  // Check if the event corresponds to one of the listening sockets
 				newClient(servers, _events[i].data.fd);
 		ioFiles();
-		checkTimeouts();
+		//checkTimeouts();
+
+	    // for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end();)
+		// {
+		// 	std::map<int, Client*>::iterator nextIt = it;
+		// 	while (nextIt->second == it->second && nextIt != _mpClients.end())
+		// 		++nextIt;
+		// 	if (it != _mpClients.end() && it->second != NULL)
+		// 	{
+		// 		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+		// 		{
+		// 			if (it->first == it->second->getFd())
+		// 				removeClient(it->second);
+		// 		}
+		// 	}
+		// 	it = nextIt;
+		// }
 	}
 }
 
@@ -308,19 +324,19 @@ void	Epoll::checkTimeouts()
 				removeCgiClientFromEpoll(it->second->_io.getFd());
 			}
 		}
-		else
-		{
-			if (it != _mpClients.end() && it->second != NULL)
-			{
-				if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
-				{
-					if (it->first == it->second->getFd())
-						removeClient(it->second);
-					else
-						removeCgiClientFromEpoll(it->first);
-				}
-			}
-		}
+		// else
+		// {
+		// 	if (it != _mpClients.end() && it->second != NULL)
+		// 	{
+		// 		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+		// 		{
+		// 			if (it->first == it->second->getFd())
+		// 				removeClient(it->second);
+		// 			else
+		// 				removeCgiClientFromEpoll(it->first);
+		// 		}
+		// 	}
+		// }
 		it = nextIt;
 	}
 }
@@ -352,7 +368,12 @@ void	Epoll::clientResponse(Client* client)
 	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
 		client->_request.begin()->_response->sendResponse(client);
 	if (client->_request.begin()->_response->getIsFinished())
-		clientRequestDone(client);
+	{
+		if (client->_request.begin()->_response->getBodySize() == 0)
+			clientRequestDone(client);
+		else
+			removeClient(client);
+	}
 }
 
 void	Epoll::clientRequestDone(Client *client)

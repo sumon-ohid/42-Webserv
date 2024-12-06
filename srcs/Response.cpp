@@ -168,7 +168,7 @@ void	Response::sendSimpleResponse(Client* client)
 		throw std::runtime_error("Error writing to socket in Response::fallbackError!!");
 	_finishedSending = true;
 	if (client->_io.getFd() > -1)
-		close(client->_io.getFd() );
+		close(client->_io.getFd());
 	std::cout << _methodAndPath << std::endl;
     std::cout << BOLD GREEN << "Response sent to client successfully 🚀" << RESET << std::endl;
 	std::cout << "--------------------------------------" << std::endl;
