@@ -105,23 +105,7 @@ void Epoll::monitoring(vSrv& servers)
 			if (!existingClient(_events[i].data.fd, _events[i].events))  // Check if the event corresponds to one of the listening sockets
 				newClient(servers, _events[i].data.fd);
 		ioFiles();
-		//checkTimeouts();
-
-	    // for (std::map<int, Client*>::iterator it = _mpClients.begin(); it != _mpClients.end();)
-		// {
-		// 	std::map<int, Client*>::iterator nextIt = it;
-		// 	while (nextIt->second == it->second && nextIt != _mpClients.end())
-		// 		++nextIt;
-		// 	if (it != _mpClients.end() && it->second != NULL)
-		// 	{
-		// 		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
-		// 		{
-		// 			if (it->first == it->second->getFd())
-		// 				removeClient(it->second);
-		// 		}
-		// 	}
-		// 	it = nextIt;
-		// }
+		checkTimeouts();
 	}
 }
 
@@ -277,11 +261,11 @@ bool	Epoll::acceptNewClient(Server &serv, lstSocs::iterator& sockIt)
 
 void Epoll::ioFiles()
 {
-	try {
-		for (std::list<Client*>::iterator clientIt = _lstIoClients.begin(); clientIt != _lstIoClients.end();)
-		{
-			std::list<Client*>::iterator nextIt = clientIt;
-			++nextIt;
+	for (std::list<Client*>::iterator clientIt = _lstIoClients.begin(); clientIt != _lstIoClients.end();)
+	{
+		std::list<Client*>::iterator nextIt = clientIt;
+		++nextIt;
+		try {
 			if ((*clientIt)->_request.begin()->_isRead)
 			{
 				(*clientIt)->_io.readFromFile(*clientIt);
@@ -294,12 +278,13 @@ void Epoll::ioFiles()
 			}
 			if ((*clientIt)->_io.getFd() == -1)
 				_lstIoClients.erase(clientIt);  // Erase from the list
-			clientIt = nextIt;  // Move to the next element
 		}
-	}
-	catch (std::exception &e)
-	{
-		std::cout << BOLD RED << "ERROR: " << e.what() << RESET << std::endl;
+		catch (std::exception &e)
+		{
+			std::cout << BOLD RED << "ERROR: " << e.what() << RESET << std::endl;
+			removeClient(*clientIt);
+		}
+		clientIt = nextIt;  // Move to the next element
 	}
 }
 
@@ -324,19 +309,19 @@ void	Epoll::checkTimeouts()
 				removeCgiClientFromEpoll(it->second->_io.getFd());
 			}
 		}
-		// else
-		// {
-		// 	if (it != _mpClients.end() && it->second != NULL)
-		// 	{
-		// 		if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
-		// 		{
-		// 			if (it->first == it->second->getFd())
-		// 				removeClient(it->second);
-		// 			else
-		// 				removeCgiClientFromEpoll(it->first);
-		// 		}
-		// 	}
-		// }
+		else
+		{
+			if (it != _mpClients.end() && it->second != NULL)
+			{
+				if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+				{
+					if (it->first == it->second->getFd())
+						removeClient(it->second);
+					else
+						removeCgiClientFromEpoll(it->first);
+				}
+			}
+		}
 		it = nextIt;
 	}
 }

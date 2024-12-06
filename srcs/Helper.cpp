@@ -146,7 +146,8 @@ void	Helper::modifyEpollEventClient(Epoll &epoll, Client *client, uint32_t event
 	event.events = events;
 	event.data.fd = client->getFd();
 	if (epoll_ctl(epoll.getFd(), EPOLL_CTL_MOD, event.data.fd, &event) == -1)
-		epoll.removeClient(client);
+		throw std::runtime_error("500");
+		// epoll.removeClient(client);
 }
 
 void	Helper::addFdToEpoll(Client* client, int fd, uint32_t event)
