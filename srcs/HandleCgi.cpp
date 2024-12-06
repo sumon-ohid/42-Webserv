@@ -186,7 +186,7 @@ void	HandleCgi::checkWaitPid(Client* client)
 	if (_childReaped || client->_io.getTimeout() || checkCgiTimeout(client))
 		return;
 	int status = 0;
-	pid_t result = waitpid(_pid, &status, WNOHANG);
+	pid_t result = waitpid(_pid, &status, WNOHANG);	
 	if (result == -1)
 		throw std::runtime_error("500");
 	else if (result > 0)

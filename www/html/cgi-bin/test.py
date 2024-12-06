@@ -4,5 +4,7 @@ Content-Type: text/html\r\n
 
 pri()
 
+# print("Hello from test")
+
 while True:
     pass
