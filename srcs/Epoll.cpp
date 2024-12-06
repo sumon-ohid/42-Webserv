@@ -163,8 +163,10 @@ void	Epoll::handleCgiClient(Client* client, int eventFd, uint32_t events)
 	catch (std::exception &e)
 	{
 		endCgi(client);
+		client->_request.begin()->_response->clearBody();
 		client->_cgi.setCgiDone(true);
 		client->_request.begin()->_response->error(*client->_request.begin(), e.what(), client);
+		client->_request.begin()->_response->addToBody("0\r\n\r\n");
 	}
 }
 
@@ -308,7 +310,7 @@ void	Epoll::checkTimeouts()
 				removeCgiClientFromEpoll(it->second->_io.getFd());
 			}
 		}
-		else 
+		else
 		{
 			if (it != _mpClients.end() && it->second != NULL)
 			{
