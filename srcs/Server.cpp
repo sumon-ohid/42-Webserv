@@ -139,7 +139,7 @@ void	Server::disconnectClients(void)
 	for (mpCl::iterator it = _clients.begin(); it != _clients.end();)
 	{
 		int	fd = (it++)->second.getFd();
-		if (fd != -1)
+		if (fd != -1 && _epoll->is_fd_valid(fd))
 			_epoll->removeClientEpoll(fd);
 	}
 	_clients.clear();

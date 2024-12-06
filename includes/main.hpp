@@ -12,8 +12,6 @@
 // in Epoll.cpp
 #define EPOLL_TIMEOUT_MS 100
 
-
-
 // Benny
 #include <csignal>
 

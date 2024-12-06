@@ -275,7 +275,7 @@ void ServerConfig::serverBlock(std::string line, size_t &i, std::vector<std::str
                 throw std::runtime_error(BOLD RED "ERROR : " + line + " [ NOT VALID ]" RESET);
         }
         else if (line.find("set_timeout") != 0)
-            server.timeout = 0;
+            server.timeout = -1;
         else if (line == "{" || line.empty())
         {
             i++;

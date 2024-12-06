@@ -4,7 +4,6 @@
 #include "../includes/Helper.hpp"
 #include "../includes/main.hpp"
 
-
 #include <exception>
 #include <fcntl.h>
 #include <iostream>
@@ -310,14 +309,16 @@ void	Epoll::checkTimeouts()
 				removeCgiClientFromEpoll(it->second->_io.getFd());
 			}
 		}
-		else
+		else 
 		{
 			if (it != _mpClients.end() && it->second != NULL)
 			{
-				if (Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
+				if ((it->second)->_server->getServerConfig().getTimeout() != -1 && Helper::getElapsedTime(it->second) > (it->second)->_server->getServerConfig().getTimeout())
 				{
 					if (it->first == it->second->getFd())
+					{
 						removeClient(it->second);
+					}
 					else
 						removeCgiClientFromEpoll(it->first);
 				}
