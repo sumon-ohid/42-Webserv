@@ -56,4 +56,6 @@ class Response {
 
 		void	setIsChunk(bool);
 		void	addToBody(const std::string&);
+
+		void	clearBody();
 };
