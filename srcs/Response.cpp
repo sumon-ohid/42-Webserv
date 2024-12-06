@@ -235,7 +235,7 @@ void	Response::error(Request& request, std::string statusCode, Client *client)
 		catch (std::exception &e)
 		{
 			try {
-				std::cerr << BOLD RED << "ERROR: " << e.what() << " " << statusMessage << RESET << std::endl;
+				std::cerr << BOLD RED << "ERROR: " << statusCode << " " << statusMessage << RESET << std::endl;
 				fallbackError(request, statusCode, client);
 			} catch (std::exception& e) {
 				std::cerr << BOLD RED << e.what() << RESET << std::endl;
