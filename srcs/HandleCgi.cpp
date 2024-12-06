@@ -186,7 +186,7 @@ void	HandleCgi::checkWaitPid(Client* client)
 	if (_childReaped || client->_io.getTimeout() || checkCgiTimeout(client))
 		return;
 	int status = 0;
-	pid_t result = waitpid(_pid, &status, WNOHANG);
+	pid_t result = waitpid(_pid, &status, WNOHANG);	
 	if (result == -1)
 		throw std::runtime_error("500");
 	else if (result > 0)
@@ -194,8 +194,8 @@ void	HandleCgi::checkWaitPid(Client* client)
 		// Child process has terminated
 		if (WIFEXITED(status))
 		{
-			// if (DEBUG_MODE)
-			// 	std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+			if (DEBUG_MODE)
+				std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
 			if (WEXITSTATUS(status) > 0)
 				throw std::runtime_error("500");
 	        std::cout << BOLD GREEN << "CGI script executed successfully." << RESET << std::endl;
