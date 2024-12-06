@@ -368,7 +368,12 @@ void	Epoll::clientResponse(Client* client)
 	if ((client->_isCgi && client->_request.begin()->_response->getBodySize() > 0) || !client->_isCgi  || (client->_isCgi && client->_cgi.getCgiDone()))
 		client->_request.begin()->_response->sendResponse(client);
 	if (client->_request.begin()->_response->getIsFinished())
-		clientRequestDone(client);
+	{
+		if (client->_request.begin()->_response->getBodySize() == 0)
+			clientRequestDone(client);
+		else
+			removeClient(client);
+	}
 }
 
 void	Epoll::clientRequestDone(Client *client)
