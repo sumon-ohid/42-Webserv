@@ -100,7 +100,8 @@ void Response::createHeaderAndBodyString(Request& request,std::string& body, std
 	if (_header.empty())
 		_header = createHeaderString(request, body, statusCode);
 	_body += body;
-	Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
+	if (!_headerSent)
+		Helper::modifyEpollEventClient(*client->_epoll, client, EPOLLOUT);
 }
 
 void	Response::sendResponse(Client* client)
