@@ -254,8 +254,8 @@ void	Helper::setFdFlags(int fd, uint32_t mask)
 
 double	Helper::getElapsedTime(Client *client)
 {
-	time_t	currentTime = time(NULL);
-	return (difftime(currentTime, client->getLastActive()));
+	time_t	currentTime = std::time(NULL);
+	return (std::difftime(currentTime, client->getLastActive()));
 }
 
 void	Helper::toLower(std::string& str) {
