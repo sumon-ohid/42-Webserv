@@ -66,5 +66,5 @@ lsof -t -i :PORT
 ## Siege Stress Test
 
 ```
-siege -c 256 -r 1000 http://localhost:8000
+siege -c 25 -r 1000 http://localhost:8000
 ```
